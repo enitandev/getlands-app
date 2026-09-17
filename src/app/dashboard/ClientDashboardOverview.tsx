@@ -43,13 +43,13 @@ export default function ClientDashboardOverview({ user, activeAnnouncement }: { 
             </div>
           <div className="flex gap-[15px]">
             <div className="bg-white/10 px-[16px] py-[10px] rounded-full text-[12px] font-bold">
-              {user.holdings.filter(h => h.opportunity.category === 'land').length} Land
+              {user.holdings.filter((h: any) => h.opportunity.category === 'land').length} Land
             </div>
             <div className="bg-white/10 px-[16px] py-[10px] rounded-full text-[12px] font-bold">
-              {user.holdings.filter(h => h.opportunity.category === 'farm').length} Farm Cycles
+              {user.holdings.filter((h: any) => h.opportunity.category === 'farm').length} Farm Cycles
             </div>
             <div className="bg-white/10 px-[16px] py-[10px] rounded-full text-[12px] font-bold">
-              {user.holdings.filter(h => h.opportunity.category === 'land_banking').length} Land Banking
+              {user.holdings.filter((h: any) => h.opportunity.category === 'land_banking').length} Land Banking
             </div>
           </div>
           </div>
@@ -84,7 +84,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement }: { 
           </div>
           
           <div className="space-y-[15px]">
-            {user.holdings.slice(0, 3).map(holding => (
+            {user.holdings.slice(0, 3).map((holding: any) => (
               <Link key={holding.id} href={`/dashboard/holdings/${holding.id}`} className="bg-white border border-black/5 rounded-[20px] p-[20px] flex items-center justify-between hover:border-[#008b45]/30 transition-colors cursor-pointer block">
                 <div className="flex gap-[20px] items-center">
                   <div className="w-[50px] h-[50px] rounded-full bg-[#eef3ef] text-[#008b45] flex items-center justify-center font-bold text-[10px] tracking-[0.1em] uppercase">
@@ -107,7 +107,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement }: { 
           <h2 className="font-manrope text-[24px] tracking-[-0.03em] text-ink mb-[20px]">Needs Attention</h2>
           
           <div className="space-y-[15px]">
-            {user.notifications.map(notification => (
+            {user.notifications.map((notification: any) => (
               <div key={notification.id} className="bg-white border border-black/5 rounded-[20px] p-[20px] shadow-sm">
                 <div className="flex justify-between items-start mb-[10px]">
                   <span className="text-[10px] font-extrabold tracking-[0.1em] uppercase text-[#008b45]">
