@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  firstName      String
+  lastName       String
+  email          String        @unique
+  role           String        @default("customer") // admin, customer, sales
+  walletBalance  Float         @default(0.0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  holdings       Holding[]
+  transactions   Transaction[]
+  notifications  Notification[]
+}
+
+model Opportunity {
+  id                  String     @id @default(uuid())
+  title               String
+  slug                String     @unique
+  category            String     // land, farm, land_banking
+  location            String
+  state               String
+  coverImage          String
+  status              String     @default("available") // available, sold_out, draft
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  // Type-specific fields (nullable because they don't apply to all)
+  price               Float?     // For Land
+  landSize            String?    // For Land
+  documentationStatus String?    // For Land
+
+  slotPrice           Float?     // For Farm
+  projectedReturn     String?    // For Farm
+  returnsFrequency    String?    // For Farm (e.g. 'every 2 months')
+  duration            String?    // For Farm & Land Banking
+
+  acquisitionPrice    Float?     // For Land Banking
+  statedExitValue     Float?     // For Land Banking
+
+  holdings            Holding[]
+}
+
+model Holding {
+  id            String       @id @default(uuid())
+  userId        String
+  opportunityId String
+  totalAmount   Float
+  dateAcquired  DateTime     @default(now())
+  status        String       @default("active") // active, completed, matured
+
+  user          User         @relation(fields: [userId], references: [id])
+  opportunity   Opportunity  @relation(fields: [opportunityId], references: [id])
+}
+
+model Transaction {
+  id            String    @id @default(uuid())
+  userId        String
+  type          String    // deposit, withdrawal, investment
+  amount        Float
+  status        String    @default("success") // pending, success, failed
+  reference     String    @unique
+  date          DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+model Announcement {
+  id            String    @id @default(uuid())
+  title         String
+  message       String
+  type          String    // promo, alert, info
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Notification {
+  id            String    @id @default(uuid())
+  userId        String?   // null if global/admin notification
+  title         String
+  message       String
+  unread        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  user          User?     @relation(fields: [userId], references: [id])
+}

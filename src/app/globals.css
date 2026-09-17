@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-green: #008b45;
+  --color-green2: #19a75e;
+  --color-ink: #0c1110;
+  --color-muted: #66716c;
+  --color-paper: #f5f8f5;
+  --color-line: rgba(12, 17, 16, 0.11);
+  --color-dark: #07100b;
+  --color-white: #f7faf8;
+
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-manrope: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-custom: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer utilities {
+  .grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+
+@theme {
+  --animate-fade-in: fade-in 0.3s ease-out forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
