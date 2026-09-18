@@ -24,5 +24,5 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   if (!user) redirect('/login');
 
-  return <ClientCheckout opportunity={opp} walletBalance={user.walletBalance} />;
+  return <ClientCheckout opportunity={opp} walletBalance={user.walletBalance} user={user} />;
 }

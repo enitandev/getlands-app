@@ -1,4 +1,5 @@
-"use client";
+with open('src/app/checkout/ClientCheckout.tsx', 'w') as f:
+    f.write("""\"use client\";
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/mockData';
 import { checkoutAction } from '@/app/actions/checkout';
@@ -264,3 +265,4 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user }
     </div>
   );
 }
+""")
