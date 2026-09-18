@@ -20,6 +20,7 @@ export async function createOpportunity(formData: FormData) {
   const location = formData.get('location') as string;
   const state = formData.get('state') as string;
   const status = formData.get('status') as string;
+  const description = formData.get('description') as string;
   
   // Generate a basic slug
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000);
@@ -70,6 +71,7 @@ export async function createOpportunity(formData: FormData) {
     state,
     status,
     coverImage,
+    description,
   };
 
   if (category === 'land') {
@@ -99,6 +101,7 @@ export async function editOpportunity(id: string, formData: FormData) {
   const location = formData.get('location') as string;
   const state = formData.get('state') as string;
   const status = formData.get('status') as string;
+  const description = formData.get('description') as string;
   let coverImage = '';
   const file = formData.get('coverImage') as File;
   if (file && file.size > 0) {
@@ -140,7 +143,7 @@ export async function editOpportunity(id: string, formData: FormData) {
   const opp = await prisma.opportunity.findUnique({ where: { id } });
   if (!opp) return;
 
-  const data: any = { title, location, state, status };
+  const data: any = { title, location, state, status, description };
   if (coverImage) data.coverImage = coverImage;
 
   if (opp.category === 'land') {

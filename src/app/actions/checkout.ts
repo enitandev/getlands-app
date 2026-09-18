@@ -36,6 +36,7 @@ export async function checkoutAction(formData: FormData) {
   const opportunityId = formData.get('opportunityId') as string;
   const paymentMethod = formData.get('paymentMethod') as string; // 'wallet' or 'bank'
   const totalAmount = parseFloat(formData.get('totalAmount') as string);
+  const units = parseFloat(formData.get('units') as string || '1');
   
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found');
@@ -68,6 +69,7 @@ export async function checkoutAction(formData: FormData) {
         userId,
         opportunityId,
         totalAmount,
+        units,
         status: 'active'
       }
     });
@@ -92,6 +94,7 @@ export async function checkoutAction(formData: FormData) {
         userId,
         opportunityId,
         totalAmount,
+        units,
         status: 'pending' // Note: 'pending' might not be in schema enum, but it's string so it's fine. Wait, schema defaults to 'active', but string is fine.
       }
     });

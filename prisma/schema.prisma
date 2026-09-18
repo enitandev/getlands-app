@@ -58,6 +58,7 @@ model Opportunity {
   location            String
   state               String
   coverImage          String
+  description         String?    @db.Text
   status              String     @default("available") // available, sold_out, draft
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
@@ -83,6 +84,7 @@ model Holding {
   userId        String
   opportunityId String
   totalAmount   Float
+  units         Float        @default(1)
   dateAcquired  DateTime     @default(now())
   status        String       @default("active") // active, completed, matured
 

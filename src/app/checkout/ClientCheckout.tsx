@@ -4,7 +4,7 @@ import { formatCurrency } from '@/lib/mockData';
 import { checkoutAction } from '@/app/actions/checkout';
 import { toast } from '@/components/ui/Toast';
 
-export default function ClientCheckout({ opportunity: opp, walletBalance, user }: { opportunity: any, walletBalance: number, user?: any }) {
+export default function ClientCheckout({ opportunity: opp, walletBalance, user, quantity = 1 }: { opportunity: any, walletBalance: number, user?: any, quantity?: number }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
   const [file, setFile] = useState<File | null>(null);
@@ -35,7 +35,8 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user }
     return 0;
   };
 
-  const total = getPrice();
+  const unitPrice = getPrice();
+  const total = unitPrice * quantity;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -48,6 +49,7 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user }
     fd.append("opportunityId", opp.id);
     fd.append("paymentMethod", paymentMethod);
     fd.append("totalAmount", total.toString());
+    fd.append("units", quantity.toString());
     
     // In a real app we would upload the receipt to Supabase Storage here
     // if (file) { ... upload logic ... fd.append("receiptUrl", url) }
@@ -201,7 +203,7 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user }
               <img src={opp.coverImage} alt={opp.title} className="w-full h-full object-cover" />
             </div>
             <div>
-              <h4 className="font-bold text-[15px] text-[#1a1a1a] line-clamp-1">{opp.title}</h4>
+              <h4 className="font-bold text-[15px] text-[#1a1a1a] line-clamp-1">{opp.title} {quantity > 1 && <span className="text-[#008b45] ml-1">x{quantity}</span>}</h4>
               <p className="text-[13px] text-gray-500 line-clamp-1">{opp.location}</p>
               <div className="mt-1 inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-bold uppercase tracking-wider rounded-md">
                 {opp.category.replace('_', ' ')}
