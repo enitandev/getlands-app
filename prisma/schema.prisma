@@ -9,17 +9,45 @@ datasource db {
 }
 
 model User {
-  id             String        @id @default(uuid())
-  firstName      String
-  lastName       String
-  email          String        @unique
-  role           String        @default("customer") // admin, customer, sales
-  walletBalance  Float         @default(0.0)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  holdings       Holding[]
-  transactions   Transaction[]
-  notifications  Notification[]
+  id                    String        @id @default(uuid())
+  firstName             String
+  lastName              String
+  email                 String        @unique
+  role                  String        @default("customer") // admin, customer, sales
+  walletBalance         Float         @default(0.0)
+  
+  // Settings & Profile
+  avatarUrl             String?
+  phoneNumber           String?
+  homeAddress           String?
+  
+  // KYC
+  kycStatus             String        @default("unverified") // unverified, pending, verified
+  kycTier               Int           @default(1)
+  nationalIdUrl         String?
+  utilityBillUrl        String?
+  
+  // Next of Kin
+  nextOfKinName         String?
+  nextOfKinPhone        String?
+  nextOfKinEmail        String?
+  nextOfKinRelationship String?
+  
+  // Bank Details
+  bankName              String?
+  accountNumber         String?
+  accountName           String?
+  
+  // Security
+  password              String        @default("")
+  resetPasswordToken    String?
+  resetPasswordExpires  DateTime?
+  
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  holdings              Holding[]
+  transactions          Transaction[]
+  notifications         Notification[]
 }
 
 model Opportunity {

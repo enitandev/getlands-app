@@ -1,9 +1,10 @@
-"use server";
-import { prisma } from '@/lib/prisma';
-import { createSession, deleteSession } from '@/lib/session';
-import { redirect } from 'next/navigation';
+with open('src/app/actions/auth.ts', 'r') as f:
+    content = f.read()
 
-export async function loginAction(formData: FormData) {
+import re
+
+# Rewrite loginAction
+new_login = """export async function loginAction(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -26,14 +27,10 @@ export async function loginAction(formData: FormData) {
   } else {
     redirect('/dashboard');
   }
-}
+}"""
 
-export async function logoutAction() {
-  await deleteSession();
-  redirect('/login');
-}
-
-export async function registerAction(formData: FormData) {
+# Rewrite registerAction
+new_register = """export async function registerAction(formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -68,53 +65,24 @@ export async function registerAction(formData: FormData) {
   } else {
     redirect('/dashboard');
   }
-}
+}"""
 
-export async function requestPasswordResetAction(formData: FormData) {
-  const email = formData.get('email') as string;
-  if (!email) return { error: 'Email is required' };
+# Replace in content using regex because we just wrote them in previous steps
+content = re.sub(r'export async function loginAction.*?\n}', new_login, content, flags=re.DOTALL)
+content = re.sub(r'export async function registerAction.*?\n}', new_register, content, flags=re.DOTALL)
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    // For security, don't reveal if user exists or not
-    return { success: true };
-  }
-
-  // Generate a simple token
-  const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  // Set expiry to 1 hour from now
-  const resetExpires = new Date(Date.now() + 3600000);
-
-  await prisma.user.update({
+# Also fix reset password
+content = content.replace(
+"""  await prisma.user.update({
     where: { id: user.id },
     data: {
-      resetPasswordToken: resetToken,
-      resetPasswordExpires: resetExpires
+      // In a real app we would hash this password
+      // password: hash(password),
+      resetPasswordToken: null,
+      resetPasswordExpires: null
     }
-  });
-
-  // POC: Output the link to server console for testing
-  console.log(`[PASSWORD RESET LINK]: http://localhost:3000/reset-password?token=${resetToken}`);
-
-  return { success: true, token: resetToken };
-}
-
-export async function resetPasswordAction(formData: FormData) {
-  const token = formData.get('token') as string;
-  const password = formData.get('password') as string;
-
-  if (!token || !password) return { error: 'Invalid request' };
-
-  const user = await prisma.user.findFirst({
-    where: {
-      resetPasswordToken: token,
-      resetPasswordExpires: { gt: new Date() }
-    }
-  });
-
-  if (!user) return { error: 'Invalid or expired token' };
-
-  const bcrypt = require('bcryptjs');
+  });""",
+"""  const bcrypt = require('bcryptjs');
   const hashedPassword = await bcrypt.hash(password, 10);
 
   await prisma.user.update({
@@ -124,7 +92,8 @@ export async function resetPasswordAction(formData: FormData) {
       resetPasswordToken: null,
       resetPasswordExpires: null
     }
-  });
+  });"""
+)
 
-  return { success: true };
-}
+with open('src/app/actions/auth.ts', 'w') as f:
+    f.write(content)

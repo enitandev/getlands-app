@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Manrope } from "next/font/google";
 import "./globals.css";
+import { ToastContainer } from "@/components/ui/Toast";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink overflow-x-hidden" suppressHydrationWarning>
         <div className="grain pointer-events-none fixed inset-0 z-[100] opacity-[0.025]" />
+        <ToastContainer />
         {children}
       </body>
     </html>

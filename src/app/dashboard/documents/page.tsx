@@ -1,47 +1,19 @@
-"use client";
-import React from 'react';
-
 export default function DocumentsPage() {
-  const documents = [
-    { id: '1', title: 'Deed of Assignment - Abeokuta Plot', date: 'Feb 16, 2025', type: 'deed', status: 'verified' },
-    { id: '2', title: 'Payment Receipt - Pepper Cycle', date: 'Aug 01, 2025', type: 'receipt', status: 'verified' },
-    { id: '3', title: 'Allocation Letter - Abeokuta', date: 'Feb 15, 2025', type: 'allocation', status: 'verified' },
-    { id: '4', title: 'MOU - Abeokuta Land Banking', date: 'Sep 10, 2025', type: 'mou', status: 'pending' },
-  ];
-
   return (
-    <div className="space-y-[40px]">
-      <section>
-        <div className="text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase mb-[10px]">MY GETLANDS</div>
-        <h1 className="font-manrope text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[20px]">
-          Documents
-        </h1>
-        <p className="text-[15px] text-[#68736d] max-w-[500px]">
-          Access your deeds, receipts, and allocation letters securely. Documents are generated after payment verification.
-        </p>
-      </section>
+    <div className="space-y-[30px] h-full flex flex-col">
+      <div>
+        <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[10px]">Documents</h1>
+        <p className="text-[13px] lg:text-[14px] text-[#68736d]">Access your deeds, receipts, and allocation letters securely.</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[20px]">
-        {documents.map(doc => (
-          <div key={doc.id} className="bg-white border border-black/5 rounded-[20px] p-[24px] hover:shadow-[0_15px_40px_rgba(0,0,0,0.06)] transition-shadow">
-            <div className="w-[40px] h-[40px] rounded-full bg-[#f7f9f7] flex items-center justify-center mb-[20px]">
-              <svg width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 4.5C1 2.567 2.567 1 4.5 1H9L17 9V15.5C17 17.433 15.433 19 13.5 19H4.5C2.567 19 1 17.433 1 15.5V4.5Z" stroke="#008b45" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 1V9H17" stroke="#008b45" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            
-            <strong className="block text-[15px] text-ink mb-[6px]">{doc.title}</strong>
-            <span className="block text-[12px] text-[#7a847f] mb-[20px]">Issued: {doc.date}</span>
-            
-            <div className="flex items-center justify-between border-t border-line pt-[15px]">
-              <span className={`text-[11px] font-bold uppercase tracking-[0.05em] ${doc.status === 'verified' ? 'text-[#008b45]' : 'text-[#f5a623]'}`}>
-                {doc.status}
-              </span>
-              <button className="text-[13px] font-bold text-ink hover:text-[#008b45] transition-colors" onClick={() => alert('Downloading document...')}>Download</button>
-            </div>
-          </div>
-        ))}
+      <div className="bg-white rounded-[24px] border border-black/5 shadow-sm flex-1 flex flex-col items-center justify-center p-12 min-h-[400px]">
+        <div className="w-[80px] h-[80px] bg-[#eef3ef] rounded-full flex items-center justify-center mb-6">
+          <svg className="text-[#008b45]" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <h2 className="text-[20px] font-bold text-ink mb-2">No Documents Available</h2>
+        <p className="text-[#68736d] text-[14px] max-w-[320px] text-center">
+          Legal documents, receipts, and MOUs will automatically appear here once your investments are fully verified and processed.
+        </p>
       </div>
     </div>
   );
