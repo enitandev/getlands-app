@@ -98,23 +98,23 @@ export default function ClientSettings({ user }: { user: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">First Name</label>
-                <input name="firstName" type="text" defaultValue={user.firstName} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                <input name="firstName" type="text" defaultValue={user.firstName} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Last Name</label>
-                <input name="lastName" type="text" defaultValue={user.lastName} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                <input name="lastName" type="text" defaultValue={user.lastName} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Email Address</label>
-                <input type="email" defaultValue={user.email} disabled className="w-full h-[50px] bg-[#f3f4f6] text-[#68736d] rounded-[12px] px-[15px] outline-none cursor-not-allowed" />
+                <input type="email" defaultValue={user.email} disabled className="w-full h-[50px] bg-gray-50 border border-gray-200 text-[#68736d] rounded-[12px] px-[15px] outline-none cursor-not-allowed" />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Phone Number</label>
-                <input name="phoneNumber" type="tel" defaultValue={user.phoneNumber || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                <input name="phoneNumber" type="tel" defaultValue={user.phoneNumber || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Home Address</label>
-                <input name="homeAddress" type="text" defaultValue={user.homeAddress || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                <input name="homeAddress" type="text" defaultValue={user.homeAddress || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" />
               </div>
             </div>
             <div className="pt-[10px] flex justify-end">
@@ -187,11 +187,11 @@ export default function ClientSettings({ user }: { user: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Full Name</label>
-                <input name="nextOfKinName" type="text" defaultValue={user.nextOfKinName || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                <input name="nextOfKinName" type="text" defaultValue={user.nextOfKinName || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Relationship</label>
-                <select name="nextOfKinRelationship" defaultValue={user.nextOfKinRelationship || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
+                <select name="nextOfKinRelationship" defaultValue={user.nextOfKinRelationship || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required>
                   <option value="" disabled>Select relationship</option>
                   <option value="spouse">Spouse</option>
                   <option value="sibling">Sibling</option>
@@ -202,11 +202,11 @@ export default function ClientSettings({ user }: { user: any }) {
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Phone Number</label>
-                <input name="nextOfKinPhone" type="tel" defaultValue={user.nextOfKinPhone || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                <input name="nextOfKinPhone" type="tel" defaultValue={user.nextOfKinPhone || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Email Address</label>
-                <input name="nextOfKinEmail" type="email" defaultValue={user.nextOfKinEmail || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                <input name="nextOfKinEmail" type="email" defaultValue={user.nextOfKinEmail || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" />
               </div>
             </div>
             <div className="pt-[10px] flex justify-end">
@@ -223,7 +223,7 @@ export default function ClientSettings({ user }: { user: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Bank Name</label>
-                <select name="bankName" defaultValue={user.bankName || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
+                <select name="bankName" defaultValue={user.bankName || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required>
                   <option value="" disabled>Select bank</option>
                   <option value="gtb">Guaranty Trust Bank</option>
                   <option value="zenith">Zenith Bank</option>
@@ -233,11 +233,11 @@ export default function ClientSettings({ user }: { user: any }) {
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Account Number</label>
-                <input name="accountNumber" type="text" defaultValue={user.accountNumber || ''} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                <input name="accountNumber" type="text" defaultValue={user.accountNumber || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-[13px] font-bold text-ink mb-[8px]">Account Name</label>
-                <input type="text" defaultValue={`${user.firstName} ${user.lastName}`} disabled className="w-full h-[50px] bg-[#f3f4f6] text-[#68736d] rounded-[12px] px-[15px] outline-none cursor-not-allowed" />
+                <input name="accountName" type="text" defaultValue={user.accountName || `${user.firstName} ${user.lastName}`} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
                 <p className="text-[11px] text-[#7a847f] mt-[5px]">Account name must match your verified profile name.</p>
               </div>
             </div>

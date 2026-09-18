@@ -32,11 +32,12 @@ export async function updateBankDetailsAction(formData: FormData) {
 
   const bankName = formData.get('bankName') as string;
   const accountNumber = formData.get('accountNumber') as string;
+  const accountName = formData.get('accountName') as string;
 
   try {
     await prisma.user.update({
       where: { id: session.userId as string },
-      data: { bankName, accountNumber }
+      data: { bankName, accountNumber, accountName }
     });
     revalidatePath('/dashboard/settings');
     return { success: true };

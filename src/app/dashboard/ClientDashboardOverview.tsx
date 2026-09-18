@@ -30,7 +30,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement }: { 
       <section>
         <div className="text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase mb-[10px]">MY GETLANDS</div>
         <h1 className="font-manrope text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[20px]">
-          Welcome back, Emeka.
+          Welcome back, {user.firstName}.
         </h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px]">
