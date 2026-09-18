@@ -1,4 +1,5 @@
 "use server";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import { prisma } from '@/lib/prisma';
 import { createSession, deleteSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
@@ -20,6 +21,7 @@ export async function loginAction(formData: FormData) {
   }
 
   await createSession(user.id, user.role);
+  await sendWelcomeEmail(user.email, user.firstName);
 
   if (user.role === 'admin') {
     redirect('/admin');
@@ -62,6 +64,7 @@ export async function registerAction(formData: FormData) {
   });
 
   await createSession(user.id, user.role);
+  await sendWelcomeEmail(user.email, user.firstName);
 
   if (user.role === 'admin') {
     redirect('/admin');
@@ -95,6 +98,7 @@ export async function requestPasswordResetAction(formData: FormData) {
 
   // POC: Output the link to server console for testing
   console.log(`[PASSWORD RESET LINK]: http://localhost:3000/reset-password?token=${resetToken}`);
+  await sendPasswordResetEmail(user.email, resetToken);
 
   return { success: true, token: resetToken };
 }
