@@ -10,7 +10,7 @@ export async function loginAction(formData: FormData) {
   if (!email || !password) return { error: 'Email and password required' };
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.password) return { error: 'Invalid email or password' };
+  if (!user) return { error: 'Invalid email or password' };
 
   const bcrypt = require('bcryptjs');
   const isValid = await bcrypt.compare(password, user.password);
