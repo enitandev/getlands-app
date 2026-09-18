@@ -25,5 +25,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   if (!user) redirect('/login');
 
-  return <ClientCheckout opportunity={opp} walletBalance={user.walletBalance} user={user} quantity={qty} />;
+  const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
+
+  return <ClientCheckout opportunity={opp} walletBalance={user.walletBalance} user={user} quantity={qty} settings={settings} />;
 }

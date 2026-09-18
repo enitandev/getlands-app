@@ -4,7 +4,7 @@ import { formatCurrency } from '@/lib/mockData';
 import { checkoutAction } from '@/app/actions/checkout';
 import { toast } from '@/components/ui/Toast';
 
-export default function ClientCheckout({ opportunity: opp, walletBalance, user, quantity = 1 }: { opportunity: any, walletBalance: number, user?: any, quantity?: number }) {
+export default function ClientCheckout({ opportunity: opp, walletBalance, user, quantity = 1, settings }: { opportunity: any, walletBalance: number, user?: any, quantity?: number, settings?: any }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
   const [file, setFile] = useState<File | null>(null);

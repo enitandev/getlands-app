@@ -48,6 +48,7 @@ model User {
   holdings              Holding[]
   transactions          Transaction[]
   notifications         Notification[]
+  commissions           Commission[]
 }
 
 model Opportunity {
@@ -123,4 +124,39 @@ model Notification {
   createdAt     DateTime  @default(now())
 
   user          User?     @relation(fields: [userId], references: [id])
+}
+
+model PlatformSetting {
+  id                    String   @id @default("global")
+  companyName           String   @default("Getlands Real-Asset Marketplace")
+  supportEmail          String   @default("support@getlands.shop")
+  processingFee         Float    @default(1.5)
+  agentCommission       Float    @default(5.0)
+  
+  corporateBankName     String   @default("Moniepoint Microfinance Bank")
+  corporateAccountName  String   @default("GETLANDS")
+  corporateAccountNumber String  @default("9133485636")
+
+  updatedAt             DateTime @updatedAt
+}
+
+model Lead {
+  id                String   @id @default(uuid())
+  name              String
+  email             String
+  expressedInterest String
+  status            String   @default("NEW") // NEW, CONTACTED, CONVERTED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Commission {
+  id          String   @id @default(uuid())
+  agentId     String
+  amount      Float
+  status      String   @default("PENDING") // PENDING, PAID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agent       User     @relation(fields: [agentId], references: [id])
 }
