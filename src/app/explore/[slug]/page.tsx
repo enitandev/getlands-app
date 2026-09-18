@@ -5,6 +5,13 @@ import ClientCheckoutCard from './ClientCheckoutCard';
 
 export default async function OpportunityDetail({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
+  
+  const formatDuration = (val: string | null) => {
+    if (!val) return 'N/A';
+    const isNumeric = /^\d+$/.test(val.trim());
+    return isNumeric ? `${val} MONTHS` : val;
+  };
+
   const opp = await prisma.opportunity.findUnique({
     where: { slug: resolvedParams.slug }
   });
@@ -58,14 +65,14 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
               
               {opp.category === 'farm' && (
                 <>
-                  <li className="flex gap-[20px]"><span className="w-[140px] text-[#7a847f]">Duration:</span> <b className="text-[#1a1a1a]">{opp.duration}</b></li>
+                  <li className="flex gap-[20px]"><span className="w-[140px] text-[#7a847f]">Duration:</span> <b className="text-[#1a1a1a]">{formatDuration(opp.duration)}</b></li>
                   <li className="flex gap-[20px]"><span className="w-[140px] text-[#7a847f]">Target Return:</span> <b className="text-[#008b45]">{opp.projectedReturn} {opp.returnsFrequency ? `(${opp.returnsFrequency})` : ""}</b></li>
                 </>
               )}
 
               {opp.category === 'land_banking' && (
                 <>
-                  <li className="flex gap-[20px]"><span className="w-[140px] text-[#7a847f]">Holding Period:</span> <b className="text-[#1a1a1a]">{opp.duration}</b></li>
+                  <li className="flex gap-[20px]"><span className="w-[140px] text-[#7a847f]">Holding Period:</span> <b className="text-[#1a1a1a]">{formatDuration(opp.duration)}</b></li>
                 </>
               )}
             </ul>

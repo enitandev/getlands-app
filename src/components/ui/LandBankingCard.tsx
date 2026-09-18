@@ -13,6 +13,12 @@ interface LandBankingCardProps {
 }
 
 export function LandBankingCard({ title, location, duration, entryPrice, exitPrice, photoClass = '', imageUrl, className = '', status }: LandBankingCardProps) {
+  const formatDuration = (val: string) => {
+    if (!val) return '';
+    const isNumeric = /^\d+$/.test(val.trim());
+    return isNumeric ? `${val} MONTHS` : val;
+  };
+
   return (
     <article className={`absolute w-[320px] bg-[#fcf9f2] rounded-[24px] overflow-hidden shadow-[0_35px_80px_rgba(29,72,46,0.15)] border border-[#008b45]/10 ${className}`}>
       <div 
@@ -20,7 +26,7 @@ export function LandBankingCard({ title, location, duration, entryPrice, exitPri
         style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
       >
         <div className="absolute top-[15px] left-[15px] bg-white/90 text-ink px-[10px] py-[6px] rounded-full text-[9px] font-extrabold uppercase shadow-sm">
-          {duration}
+          {formatDuration(duration)}
         </div>
       </div>
       <div className="relative p-[15px_19px_15px] flex flex-col justify-between h-[180px]">

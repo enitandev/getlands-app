@@ -16,6 +16,12 @@ interface FarmCardProps {
 }
 
 export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFrequency, price, photoClass = '', imageUrl, className = '' }: FarmCardProps) {
+  const formatDuration = (val: string) => {
+    if (!val) return '';
+    const isNumeric = /^\d+$/.test(val.trim());
+    return isNumeric ? `${val} MONTHS` : val;
+  };
+
   return (
     <article className={`farm-card group h-[520px] rounded-[25px] overflow-hidden relative bg-[#102218] text-white shadow-[0_28px_60px_rgba(24,53,36,0.12)] ${className}`}>
       <div 
@@ -25,7 +31,7 @@ export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFr
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(4,13,8,0.05)] via-[40%] to-[#09160e] to-[69%]" />
       
       <div className="absolute top-[18px] left-[18px] bg-white/90 text-[#213029] px-[10px] py-[7px] rounded-full text-[9px] font-extrabold uppercase z-10">
-        {cycle}
+        {formatDuration(cycle)}
       </div>
 
       <div className="absolute left-[23px] right-[23px] bottom-[23px] z-10">
