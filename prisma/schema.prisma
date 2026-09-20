@@ -65,6 +65,7 @@ model Opportunity {
   coverImage          String
   description         String?    @db.Text
   status              String     @default("available") // available, sold_out, draft
+  featured            Boolean    @default(false)
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
 

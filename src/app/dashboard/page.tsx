@@ -23,10 +23,17 @@ export default async function DashboardOverviewPage() {
 
   if (!user) redirect('/login');
 
+  const featuredOpps = await prisma.opportunity.findMany({
+    where: { featured: true, status: { not: 'draft' } },
+    take: 2,
+    orderBy: { createdAt: 'desc' },
+    include: { cohorts: { orderBy: { createdAt: 'desc' }, take: 1 } }
+  });
+
   const activeAnnouncement = await prisma.announcement.findFirst({
     where: { isActive: true },
     orderBy: { createdAt: 'desc' }
   });
 
-  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} />;
+  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} featuredOpps={featuredOpps} />;
 }

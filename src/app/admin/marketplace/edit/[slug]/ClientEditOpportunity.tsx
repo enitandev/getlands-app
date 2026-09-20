@@ -118,6 +118,12 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
                 <option value="draft">Draft (Hidden)</option>
               </select>
             </div>
+
+            <div className="flex items-center gap-[10px] h-[50px] mt-[20px] md:mt-0">
+              <input type="checkbox" id="featured" name="featured" value="true" defaultChecked={initialData.featured} className="w-[20px] h-[20px] accent-[#008b45] cursor-pointer" />
+              <label htmlFor="featured" className="text-[13px] font-bold text-ink cursor-pointer">Feature on Dashboard</label>
+            </div>
+
           </div>
         </div>
 

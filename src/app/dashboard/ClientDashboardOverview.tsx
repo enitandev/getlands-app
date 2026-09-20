@@ -4,11 +4,9 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/mockData';
 import { Button } from '@/components/ui/Button';
 
-export default function ClientDashboardOverview({ user, activeAnnouncement }: { user: any, activeAnnouncement: any }) {
+export default function ClientDashboardOverview({ user, activeAnnouncement, featuredOpps = [] }: { user: any, activeAnnouncement: any, featuredOpps?: any[] }) {
   const totalValue = user.holdings.reduce((sum: number, h: any) => sum + h.totalAmount, 0);
   
-
-
   if (!user.holdings || user.holdings.length === 0) {
     return (
       <div className="space-y-[40px] animate-fade-in">
@@ -29,15 +27,34 @@ export default function ClientDashboardOverview({ user, activeAnnouncement }: { 
               Explore Marketplace
             </Link>
           </div>
-          <div className="relative z-10 grid grid-cols-2 gap-[15px] shrink-0">
-             <div className="bg-white/5 border border-white/10 rounded-[16px] p-[20px] backdrop-blur-md">
-                <div className="text-[11px] text-[#8ea096] font-bold uppercase tracking-wider mb-[5px]">Featured</div>
-                <div className="font-manrope text-[16px] text-white leading-tight">Tomato Cycle</div>
-             </div>
-             <div className="bg-white/5 border border-white/10 rounded-[16px] p-[20px] backdrop-blur-md">
-                <div className="text-[11px] text-[#8ea096] font-bold uppercase tracking-wider mb-[5px]">Upcoming</div>
-                <div className="font-manrope text-[16px] text-white leading-tight">Cassava Cycle</div>
-             </div>
+          
+          <div className="relative z-10 flex overflow-x-auto snap-x snap-mandatory gap-[15px] shrink-0 pb-[10px] md:pb-0 scrollbar-hide md:grid md:grid-cols-2 w-full md:w-auto mt-[20px] md:mt-0">
+             {featuredOpps.map((opp, i) => {
+               const cohort = opp.cohorts && opp.cohorts.length > 0 ? opp.cohorts[0] : null;
+               const status = cohort ? cohort.status : opp.status;
+               let label = 'Featured';
+               if (status === 'COMING_SOON') label = 'Upcoming';
+               else if (status === 'PRE_ORDER') label = 'Pre-Order Open';
+               
+               return (
+                 <Link href={`/explore/${opp.slug}`} key={opp.id} className="block w-[200px] md:w-auto shrink-0 snap-center bg-white/5 border border-white/10 rounded-[16px] p-[20px] backdrop-blur-md hover:bg-white/10 transition-colors">
+                    <div className="flex justify-between items-center mb-[5px]">
+                      <div className="text-[11px] text-[#8ea096] font-bold uppercase tracking-wider">{label}</div>
+                      {cohort && (cohort.status === 'OPEN' || cohort.status === 'PRE_ORDER') && (
+                        <div className="w-[8px] h-[8px] rounded-full bg-[#008b45] animate-pulse"></div>
+                      )}
+                    </div>
+                    <div className="font-manrope text-[16px] text-white leading-tight line-clamp-2">{opp.title}</div>
+                 </Link>
+               );
+             })}
+             
+             {featuredOpps.length === 0 && (
+               <div className="bg-white/5 border border-white/10 rounded-[16px] p-[20px] backdrop-blur-md">
+                  <div className="text-[11px] text-[#8ea096] font-bold uppercase tracking-wider mb-[5px]">Featured</div>
+                  <div className="font-manrope text-[16px] text-white leading-tight">New opportunities loading...</div>
+               </div>
+             )}
           </div>
         </section>
       </div>
