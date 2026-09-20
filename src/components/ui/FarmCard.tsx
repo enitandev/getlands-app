@@ -31,10 +31,10 @@ export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFr
   return (
     <article className={`farm-card group h-[520px] rounded-[25px] overflow-hidden relative bg-[#102218] text-white shadow-[0_28px_60px_rgba(24,53,36,0.12)] ${className}`}>
       <div 
-        className={`farm-photo absolute inset-[0_0_42%_0] bg-cover bg-center transition-transform duration-[1.1s] ease-custom group-hover:scale-[1.06] ${photoClass}`} 
+        className={`farm-photo absolute inset-[0_0_50%_0] bg-cover bg-center transition-transform duration-[1.1s] ease-custom group-hover:scale-[1.06] ${photoClass}`} 
         style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(4,13,8,0.05)] via-[40%] to-[#09160e] to-[69%]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#09160e] from-[55%] via-[#09160e]/80 via-[75%] to-transparent" />
       
       
       <div className="absolute top-[18px] left-[18px] flex gap-[8px] z-10">

@@ -1,14 +1,9 @@
-"use client";
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { OpportunityCategory, formatCurrency } from '@/lib/mockData';
-import { MarketCard } from '@/components/ui/MarketCard';
-import { FarmCard } from '@/components/ui/FarmCard';
-import { LandBankingCard } from '@/components/ui/LandBankingCard';
+import re
 
-export default function ClientExplore({ opportunities, isLoggedIn, role }: { opportunities: any[], isLoggedIn?: boolean, role?: string }) {
-  const [activeCategory, setActiveCategory] = useState<OpportunityCategory | 'all'>('all');
-  
+with open('src/app/explore/ClientExplore.tsx', 'r') as f:
+    content = f.read()
+
+sorting_logic = """
   const filtered = opportunities.filter(opp => activeCategory === 'all' || opp.category === activeCategory);
   
   const featured = filtered.filter(opp => opp.featured);
@@ -82,36 +77,15 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
       );
     }
   };
+"""
 
-  return (
-    <main className="min-h-screen bg-[#f7f9f7] pt-[90px] lg:pt-[120px] pb-[80px]">
-      <header className="fixed z-50 top-[10px] lg:top-[18px] left-1/2 -translate-x-1/2 w-[calc(100%-36px)] lg:w-[min(1480px,calc(100%-72px))] h-[60px] lg:h-[68px] flex items-center justify-between">
-        <Link href="/" className="brand block w-[120px] lg:w-[143px]">
-          <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />
-        </Link>
-        <div className="flex items-center gap-[10px]">
-          {isLoggedIn ? (
-            <Link href={role === 'admin' ? '/admin' : '/dashboard'} className="px-[20px] py-[10px] bg-[#008b45] text-white rounded-full text-[13px] font-bold shadow-[0_8px_20px_rgba(0,139,69,0.25)] hover:bg-[#007339] transition-colors">
-              {role === 'admin' ? 'Admin Panel' : 'Dashboard'}
-            </Link>
-          ) : (
-            <Link href="/login" className="text-[#18201c] text-[14px] font-bold">Sign In</Link>
-          )}
-        </div>
-      </header>
+content = re.sub(
+    r'const filtered = opportunities\.filter\([\s\S]*?\);\n\n  return \(',
+    sorting_logic.strip() + '\n\n  return (',
+    content
+)
 
-      <div className="px-[22px] lg:px-[max(6vw,72px)]">
-        <h1 className="font-manrope text-[40px] lg:text-[60px] tracking-[-0.05em] mb-[30px]">
-          Marketplace
-        </h1>
-
-        <div className="flex gap-[10px] overflow-x-auto pb-[20px] mb-[30px] scrollbar-hide">
-          <button onClick={() => setActiveCategory('all')} className={`whitespace-nowrap px-[18px] py-[10px] rounded-full text-[12px] font-bold transition-colors ${activeCategory === 'all' ? 'bg-[#18201c] text-white' : 'bg-white border border-black/10 text-[#4a554f] hover:bg-[#eef3ef]'}`}>All Opportunities</button>
-          <button onClick={() => setActiveCategory('land')} className={`whitespace-nowrap px-[18px] py-[10px] rounded-full text-[12px] font-bold transition-colors ${activeCategory === 'land' ? 'bg-[#18201c] text-white' : 'bg-white border border-black/10 text-[#4a554f] hover:bg-[#eef3ef]'}`}>Land</button>
-          <button onClick={() => setActiveCategory('farm')} className={`whitespace-nowrap px-[18px] py-[10px] rounded-full text-[12px] font-bold transition-colors ${activeCategory === 'farm' ? 'bg-[#18201c] text-white' : 'bg-white border border-black/10 text-[#4a554f] hover:bg-[#eef3ef]'}`}>Farms</button>
-          <button onClick={() => setActiveCategory('land_banking')} className={`whitespace-nowrap px-[18px] py-[10px] rounded-full text-[12px] font-bold transition-colors ${activeCategory === 'land_banking' ? 'bg-[#18201c] text-white' : 'bg-white border border-black/10 text-[#4a554f] hover:bg-[#eef3ef]'}`}>Land Banking</button>
-        </div>
-
+ui_replacement = """
         {featured.length > 0 && (
           <div className="mb-[50px]">
             <h2 className="font-manrope text-[24px] tracking-[-0.03em] mb-[20px] text-[#18201c] flex items-center gap-[10px]">
@@ -128,7 +102,13 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[20px]">
           {standard.map(renderCard)}
         </div>
-      </div>
-    </main>
-  );
-}
+"""
+
+content = re.sub(
+    r'<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-\[20px\]">[\s\S]*?</div>\n      </div>\n    </main>',
+    ui_replacement.strip() + '\n      </div>\n    </main>',
+    content
+)
+
+with open('src/app/explore/ClientExplore.tsx', 'w') as f:
+    f.write(content)

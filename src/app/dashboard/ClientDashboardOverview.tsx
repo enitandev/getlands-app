@@ -23,7 +23,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
           <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#008b45] rounded-full blur-[100px] opacity-20 pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
           <div className="relative z-10 max-w-[400px]">
             <h2 className="font-manrope text-[24px] tracking-[-0.03em] mb-[10px]">Discover opportunities</h2>
-            <p className="text-[14px] text-[#8ea096] mb-[20px]">Land. Farms. Structured opportunities. One marketplace to discover, acquire, and manage what you own.</p>
+            <p className="text-[14px] text-[#a6baa9] mb-[20px]">Land. Farms. Structured opportunities. One marketplace to discover, acquire, and manage what you own.</p>
             <Link href="/explore" className="inline-block px-[24px] py-[14px] bg-[#008b45] text-white rounded-full font-bold text-[14px] hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.3)]">
               Explore Marketplace
             </Link>
@@ -42,7 +42,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
                     <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[#008b45] rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
                     <div>
                       <div className="flex justify-between items-center mb-[10px]">
-                        <div className="text-[10px] text-[#8ea096] font-bold uppercase tracking-wider">{label}</div>
+                        <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider">{label}</div>
                         {cohort && (cohort.status === 'OPEN' || cohort.status === 'PRE_ORDER') && (
                           <div className="w-[6px] h-[6px] rounded-full bg-[#008b45] animate-pulse"></div>
                         )}
@@ -54,17 +54,17 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
                       {opp.category === 'farm' && opp.projectedReturn ? (
                         <div>
                           <strong className="block font-manrope text-[24px] text-[#a9e7bd] leading-none mb-[2px]">{opp.projectedReturn}</strong>
-                          <span className="text-[11px] text-[#8ea096] uppercase tracking-wider">{opp.returnsFrequency || 'Target Return'}</span>
+                          <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">{opp.returnsFrequency || 'Target Return'}</span>
                         </div>
                       ) : opp.category === 'land_banking' && opp.duration ? (
                         <div>
                           <strong className="block font-manrope text-[24px] text-[#a9e7bd] leading-none mb-[2px]">{opp.duration} Months</strong>
-                          <span className="text-[11px] text-[#8ea096] uppercase tracking-wider">Holding Period</span>
+                          <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">Holding Period</span>
                         </div>
                       ) : opp.price ? (
                         <div>
                           <strong className="block font-manrope text-[20px] text-[#a9e7bd] leading-none mb-[2px]">₦{opp.price.toLocaleString()}</strong>
-                          <span className="text-[11px] text-[#8ea096] uppercase tracking-wider">Starting Price</span>
+                          <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">Starting Price</span>
                         </div>
                       ) : null}
                     </div>
@@ -85,7 +85,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
              
              {featuredOpps.length === 0 && (
                <div className="bg-white/5 border border-white/10 rounded-[16px] p-[20px] backdrop-blur-md">
-                  <div className="text-[11px] text-[#8ea096] font-bold uppercase tracking-wider mb-[5px]">Featured</div>
+                  <div className="text-[11px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[5px]">Featured</div>
                   <div className="font-manrope text-[16px] text-white leading-tight">New opportunities loading...</div>
                </div>
              )}
@@ -124,7 +124,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
           {/* Main Portfolio Box */}
           <div className="lg:col-span-2 bg-[#102218] text-white rounded-[24px] p-[30px] lg:p-[40px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-20 pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
-            <div className="text-[13px] text-[#8ea096] mb-[5px] font-bold uppercase tracking-wider">Total Holdings</div>
+            <div className="text-[13px] text-[#a6baa9] mb-[5px] font-bold uppercase tracking-wider">Total Holdings</div>
             <div className="font-manrope text-[48px] lg:text-[64px] tracking-[-0.05em] text-[#a9e7bd] leading-none mb-[30px]">
               {formatCurrency(totalValue)}
             </div>
