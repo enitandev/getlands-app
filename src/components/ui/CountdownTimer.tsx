@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 export function CountdownTimer({ targetDate, label, variant = 'dark' }: { targetDate: string | Date, label: string, variant?: 'light' | 'dark' }) {
-  const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
 
   useEffect(() => {
     const target = new Date(targetDate).getTime();
@@ -12,19 +12,20 @@ export function CountdownTimer({ targetDate, label, variant = 'dark' }: { target
       const difference = target - now;
       
       if (difference <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0 });
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
       
       setTimeLeft({
         days: Math.floor(difference / (1000 * 60 * 60 * 24)),
         hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000)
       });
     };
 
     calculateTime();
-    const interval = setInterval(calculateTime, 60000); 
+    const interval = setInterval(calculateTime, 1000); 
     
     return () => clearInterval(interval);
   }, [targetDate]);
@@ -39,6 +40,7 @@ export function CountdownTimer({ targetDate, label, variant = 'dark' }: { target
           {timeLeft.days > 0 && <span>{timeLeft.days}d</span>}
           <span>{timeLeft.hours}h</span>
           <span>{timeLeft.minutes}m</span>
+          <span className="text-[#008b45]">{timeLeft.seconds}s</span>
         </div>
       </div>
     );
@@ -51,6 +53,7 @@ export function CountdownTimer({ targetDate, label, variant = 'dark' }: { target
         {timeLeft.days > 0 && <span>{timeLeft.days}d</span>}
         <span>{timeLeft.hours}h</span>
         <span>{timeLeft.minutes}m</span>
+        <span className="text-[#a9e7bd]">{timeLeft.seconds}s</span>
       </div>
     </div>
   );
