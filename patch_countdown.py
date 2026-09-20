@@ -1,6 +1,7 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+with open('src/components/ui/CountdownTimer.tsx', 'r') as f:
+    content = f.read()
 
+replacement = """
 export function CountdownTimer({ targetDate, label, variant = 'dark' }: { targetDate: string | Date, label: string, variant?: 'light' | 'dark' }) {
   const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number } | null>(null);
 
@@ -55,3 +56,14 @@ export function CountdownTimer({ targetDate, label, variant = 'dark' }: { target
     </div>
   );
 }
+"""
+
+import re
+content = re.sub(
+    r'export function CountdownTimer\([\s\S]*?\}\)',
+    replacement.strip(),
+    content
+)
+
+with open('src/components/ui/CountdownTimer.tsx', 'w') as f:
+    f.write(content)

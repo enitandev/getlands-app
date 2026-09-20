@@ -1,4 +1,5 @@
 import React from 'react';
+import { CountdownTimer } from './CountdownTimer';
 
 interface LandBankingCardProps {
   title: string;
@@ -16,7 +17,7 @@ interface LandBankingCardProps {
   cohortClosesAt?: Date | null;
 }
 
-export function LandBankingCard({ title, location, duration, entryPrice, exitPrice, photoClass = '', imageUrl, className = '', status, cohortStatus, cohortProgress }: LandBankingCardProps) {
+export function LandBankingCard({ title, location, duration, entryPrice, exitPrice, photoClass = '', imageUrl, className = '', status, cohortStatus, cohortProgress, cohortOpensAt, cohortClosesAt }: LandBankingCardProps) {
   const formatDuration = (val: string) => {
     if (!val) return '';
     const isNumeric = /^\d+$/.test(val.trim());
@@ -56,6 +57,13 @@ export function LandBankingCard({ title, location, duration, entryPrice, exitPri
           <strong className="block font-manrope text-[18px] leading-tight text-ink mb-[2px] line-clamp-1">{title}</strong>
           <span className="text-[11px] text-[#77817c]">{location}</span>
         </div>
+        
+        {cohortStatus === 'OPEN' && cohortClosesAt && (
+          <CountdownTimer targetDate={cohortClosesAt} label="CLOSES IN" variant="light" />
+        )}
+        {(cohortStatus === 'PRE_ORDER' || cohortStatus === 'COMING_SOON') && cohortOpensAt && (
+          <CountdownTimer targetDate={cohortOpensAt} label="OPENS IN" variant="light" />
+        )}
         
         <div className="grid grid-cols-2 gap-[10px] mt-auto border-t border-black/5 pt-[10px]">
           <div>

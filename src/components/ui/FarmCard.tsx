@@ -71,6 +71,13 @@ export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFr
         )}
 
         
+        {cohortStatus === 'OPEN' && cohortClosesAt && (
+          <CountdownTimer targetDate={cohortClosesAt} label="CLOSES IN" />
+        )}
+        {(cohortStatus === 'PRE_ORDER' || cohortStatus === 'COMING_SOON') && cohortOpensAt && (
+          <CountdownTimer targetDate={cohortOpensAt} label="OPENS IN" />
+        )}
+
         <div className="border-t border-white/15 pt-[16px] grid grid-cols-[auto_1fr_auto] items-end gap-[10px]">
           <div>
             <strong className="font-manrope text-[39px] tracking-[-0.06em] text-[#a9e7bd] leading-none">{targetReturn}</strong>

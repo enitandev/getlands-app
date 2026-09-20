@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import Link from 'next/link';
+import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency } from '@/lib/mockData';
 import { Button } from '@/components/ui/Button';
 
@@ -37,7 +38,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
                else if (status === 'PRE_ORDER') label = 'Pre-Order Open';
                
                return (
-                 <Link href={`/explore/${opp.slug}`} key={opp.id} className="flex flex-col justify-between w-[200px] md:w-[240px] shrink-0 snap-center bg-[#182a20] border border-white/5 rounded-[16px] p-[20px] hover:bg-[#1d3326] transition-colors relative overflow-hidden group">
+                 <Link href={`/explore/${opp.slug}`} key={opp.id} className="flex flex-col justify-between w-[200px] md:w-[240px] shrink-0 snap-center bg-[#182a20] border border-white/5 rounded-[16px] p-[20px] hover:bg-[#1d3326] hover:shadow-[0_10px_30px_rgba(0,139,69,0.15)] hover:-translate-y-[2px] transition-all duration-300 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[#008b45] rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
                     <div>
                       <div className="flex justify-between items-center mb-[10px]">
@@ -67,6 +68,17 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
                         </div>
                       ) : null}
                     </div>
+
+                    {cohort && cohort.status === 'OPEN' && cohort.closesAt && (
+                      <div className="mt-[10px] -mb-[5px]">
+                        <CountdownTimer targetDate={cohort.closesAt} label="CLOSES IN" />
+                      </div>
+                    )}
+                    {cohort && (cohort.status === 'PRE_ORDER' || cohort.status === 'COMING_SOON') && (cohort.publicOpensAt || cohort.preorderOpensAt) && (
+                      <div className="mt-[10px] -mb-[5px]">
+                        <CountdownTimer targetDate={cohort.publicOpensAt || cohort.preorderOpensAt} label="OPENS IN" />
+                      </div>
+                    )}
                  </Link>
                );
              })}
