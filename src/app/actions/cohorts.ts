@@ -56,3 +56,11 @@ export async function updateCohortStatus(cohortId: string, status: string) {
   });
   revalidatePath('/admin/marketplace');
 }
+
+export async function deleteCohort(cohortId: string) {
+  await checkAdmin();
+  await prisma.cohort.delete({
+    where: { id: cohortId }
+  });
+  revalidatePath('/admin/marketplace');
+}

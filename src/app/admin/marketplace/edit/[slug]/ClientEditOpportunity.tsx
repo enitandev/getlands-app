@@ -1,5 +1,5 @@
 "use client";
-import { createCohort, updateCohortStatus } from '@/app/actions/cohorts';
+import { createCohort, updateCohortStatus, deleteCohort } from '@/app/actions/cohorts';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { editOpportunity } from '@/app/actions/admin';
@@ -223,7 +223,8 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
                   Capacity: ₦{c.capacityAmount.toLocaleString()} | Available: ₦{c.availableAmount.toLocaleString()}
                 </div>
               </div>
-              <div>
+              
+              <div className="flex items-center gap-[10px]">
                 <select 
                   defaultValue={c.status}
                   onChange={(e) => updateCohortStatus(c.id, e.target.value)}
@@ -239,7 +240,11 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
                   <option value="MATURING">Maturing</option>
                   <option value="COMPLETED">Completed</option>
                 </select>
+                <button type="button" onClick={async () => { if(window.confirm('Delete this cohort?')) { await deleteCohort(c.id); window.location.reload(); } }} className="text-[#e53935] hover:bg-[#e53935]/10 p-[8px] rounded-full transition-colors" title="Delete Cohort">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
               </div>
+
             </div>
           ))}
           {!initialData.cohorts?.length && (
