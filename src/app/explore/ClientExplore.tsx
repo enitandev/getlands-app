@@ -41,8 +41,17 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[20px]">
+
           {filtered.map(opp => {
+            const cohort = opp.cohorts && opp.cohorts.length > 0 ? opp.cohorts[0] : null;
+            const cohortStatus = cohort ? cohort.status : opp.status;
+            let cohortProgress = 0;
+            if (cohort && cohort.capacityAmount > 0) {
+               cohortProgress = Math.min(100, Math.round((cohort.committedAmount / cohort.capacityAmount) * 100));
+            }
+
             if (opp.category === 'land') {
+
               return (
                 <Link key={opp.id} href={`/explore/${opp.slug}`} className="block relative h-[360px] hover:-translate-y-[5px] transition-transform duration-300">
                   <MarketCard
@@ -53,6 +62,8 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
                     imageUrl={opp.coverImage}
                     status={opp.status}
                     className="w-full h-full"
+                    cohortStatus={cohortStatus}
+                    cohortProgress={cohortProgress}
                   />
                 </Link>
               );
@@ -70,6 +81,8 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
                     imageUrl={opp.coverImage}
                     status={opp.status}
                     className="w-full h-full"
+                    cohortStatus={cohortStatus}
+                    cohortProgress={cohortProgress}
                   />
                 </Link>
               );
@@ -85,6 +98,8 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
                     imageUrl={opp.coverImage}
                     status={opp.status}
                     className="w-full h-full"
+                    cohortStatus={cohortStatus}
+                    cohortProgress={cohortProgress}
                   />
                 </Link>
               );

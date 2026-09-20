@@ -10,9 +10,11 @@ interface LandBankingCardProps {
   photoClass?: string;
   imageUrl?: string;
   className?: string;
+  cohortStatus?: string;
+  cohortProgress?: number;
 }
 
-export function LandBankingCard({ title, location, duration, entryPrice, exitPrice, photoClass = '', imageUrl, className = '', status }: LandBankingCardProps) {
+export function LandBankingCard({ title, location, duration, entryPrice, exitPrice, photoClass = '', imageUrl, className = '', status, cohortStatus, cohortProgress }: LandBankingCardProps) {
   const formatDuration = (val: string) => {
     if (!val) return '';
     const isNumeric = /^\d+$/.test(val.trim());
@@ -25,9 +27,23 @@ export function LandBankingCard({ title, location, duration, entryPrice, exitPri
         className={`h-[180px] bg-cover bg-center relative ${photoClass}`} 
         style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
       >
-        <div className="absolute top-[15px] left-[15px] bg-white/90 text-ink px-[10px] py-[6px] rounded-full text-[9px] font-extrabold uppercase shadow-sm">
-          {formatDuration(duration)}
+        
+        <div className="absolute top-[15px] left-[15px] flex gap-[8px]">
+          <div className="bg-white/90 text-ink px-[10px] py-[6px] rounded-full text-[9px] font-extrabold uppercase shadow-sm">
+            {formatDuration(duration)}
+          </div>
+          {cohortStatus && (
+            <div className={`px-[10px] py-[6px] rounded-full text-[9px] font-extrabold uppercase shadow-sm ${
+              cohortStatus === 'OPEN' ? 'bg-[#008b45] text-white' :
+              cohortStatus === 'PRE_ORDER' ? 'bg-[#f5a623] text-white' :
+              cohortStatus === 'FULL' || cohortStatus === 'SOLD_OUT' ? 'bg-[#e53935] text-white' :
+              'bg-[#f7f9f7] text-[#68736d]'
+            }`}>
+              {cohortStatus === 'PRE_ORDER' ? 'PRE-ORDER' : cohortStatus.replace('_', ' ')}
+            </div>
+          )}
         </div>
+
       </div>
       <div className="relative p-[15px_19px_15px] flex flex-col justify-between h-[180px]">
         <div>

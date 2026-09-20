@@ -11,9 +11,11 @@ interface MarketCardProps {
   photoClass?: string;
   imageUrl?: string;
   className?: string;
+  cohortStatus?: string;
+  cohortProgress?: number;
 }
 
-export function MarketCard({ category, title, location, priceOrReturn, photoClass = '', imageUrl, className = '', status }: MarketCardProps) {
+export function MarketCard({ category, title, location, priceOrReturn, photoClass = '', imageUrl, className = '', status, cohortStatus, cohortProgress }: MarketCardProps) {
   return (
     <article className={`absolute w-[320px] bg-white rounded-[24px] overflow-hidden shadow-[0_35px_80px_rgba(29,72,46,0.15)] border border-black/5 ${className}`}>
       <div 

@@ -205,12 +205,27 @@ export async function approveTransaction(transactionId: string) {
       where: { userId: tx.userId, status: 'pending', totalAmount: tx.amount },
       orderBy: { dateAcquired: 'desc' }
     });
+
     if (holding) {
       await prisma.holding.update({
         where: { id: holding.id },
         data: { status: 'active' }
       });
+      
+      // Update cohort committed amount if holding is tied to a cohort
+      if (holding.cohortId) {
+        await prisma.cohort.update({
+          where: { id: holding.cohortId },
+          data: {
+            committedAmount: { increment: holding.totalAmount },
+            availableAmount: { decrement: holding.totalAmount },
+            fundedUnits: { increment: holding.units },
+            availableUnits: { decrement: holding.units }
+          }
+        });
+      }
     }
+
   }
 }
 

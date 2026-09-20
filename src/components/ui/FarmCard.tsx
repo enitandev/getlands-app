@@ -13,9 +13,12 @@ interface FarmCardProps {
   status?: string;
   imageUrl?: string;
   className?: string;
+  cohortStatus?: string;
+  cohortProgress?: number;
+  cohortLabel?: string;
 }
 
-export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFrequency, price, photoClass = '', imageUrl, className = '' }: FarmCardProps) {
+export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFrequency, price, photoClass = '', imageUrl, className = '', cohortStatus, cohortProgress, cohortLabel }: FarmCardProps) {
   const formatDuration = (val: string) => {
     if (!val) return '';
     const isNumeric = /^\d+$/.test(val.trim());
@@ -30,14 +33,40 @@ export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFr
       />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(4,13,8,0.05)] via-[40%] to-[#09160e] to-[69%]" />
       
-      <div className="absolute top-[18px] left-[18px] bg-white/90 text-[#213029] px-[10px] py-[7px] rounded-full text-[9px] font-extrabold uppercase z-10">
-        {formatDuration(cycle)}
+      
+      <div className="absolute top-[18px] left-[18px] flex gap-[8px] z-10">
+        <div className="bg-white/90 text-[#213029] px-[10px] py-[7px] rounded-full text-[9px] font-extrabold uppercase shadow-sm">
+          {formatDuration(cycle)}
+        </div>
+        {cohortStatus && (
+          <div className={`px-[10px] py-[7px] rounded-full text-[9px] font-extrabold uppercase shadow-sm ${
+            cohortStatus === 'OPEN' ? 'bg-[#008b45] text-white' :
+            cohortStatus === 'PRE_ORDER' ? 'bg-[#f5a623] text-white' :
+            cohortStatus === 'FULL' || cohortStatus === 'SOLD_OUT' ? 'bg-[#e53935] text-white' :
+            'bg-[#f7f9f7] text-[#68736d]'
+          }`}>
+            {cohortStatus === 'PRE_ORDER' ? 'PRE-ORDER' : cohortStatus.replace('_', ' ')}
+          </div>
+        )}
       </div>
+
 
       <div className="absolute left-[23px] right-[23px] bottom-[23px] z-10">
         <small className="text-[9px] tracking-[0.14em] text-[#86e2a6] font-extrabold uppercase">{crop}</small>
         <h3 className="font-manrope text-[28px] tracking-[-0.05em] my-[6px]">{title}</h3>
-        <p className="text-[11px] text-[#98a69e] m-0 mb-[20px]">{location}</p>
+        <p className="text-[11px] text-[#98a69e] m-0 mb-[15px]">{location}</p>
+        {cohortStatus === 'OPEN' && typeof cohortProgress === 'number' && (
+          <div className="mt-[15px] mb-[5px]">
+            <div className="flex justify-between text-[9px] text-[#98a69e] mb-[4px] font-bold">
+              <span>{cohortLabel || 'Funding Progress'}</span>
+              <span>{cohortProgress}%</span>
+            </div>
+            <div className="w-full h-[4px] bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-[#a9e7bd] rounded-full" style={{ width: `${cohortProgress}%` }}></div>
+            </div>
+          </div>
+        )}
+
         
         <div className="border-t border-white/15 pt-[16px] grid grid-cols-[auto_1fr_auto] items-end gap-[10px]">
           <div>

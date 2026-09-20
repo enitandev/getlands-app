@@ -10,6 +10,12 @@ export default async function ExplorePage() {
     where: {
       status: { not: 'draft' }
     },
+    include: {
+      cohorts: {
+        orderBy: { createdAt: 'desc' },
+        take: 1
+      }
+    },
     orderBy: { createdAt: 'desc' }
   });
 
