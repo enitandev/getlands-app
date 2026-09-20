@@ -182,8 +182,12 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
                     <span className="text-[12px] text-[#7a847f]">{holding.opportunity.location} · {holding.status}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <strong className="block text-[16px] text-ink">{formatCurrency(holding.total_amount)}</strong>
+                <div className="flex flex-col items-end gap-[5px]">
+                  <strong className="block text-[16px] text-ink">{formatCurrency(holding.totalAmount || 0)}</strong>
+                  <a href={`/api/documents/receipt/${holding.id}`} target="_blank" className="text-[10px] font-bold text-[#008b45] hover:underline uppercase tracking-wider flex items-center gap-[4px]" onClick={(e) => e.stopPropagation()}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Receipt
+                  </a>
                 </div>
               </Link>
             ))}
