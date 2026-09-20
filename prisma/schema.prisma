@@ -49,6 +49,7 @@ model User {
   transactions          Transaction[]
   notifications         Notification[]
   commissions           Commission[]
+  cohortReservations    CohortReservation[]
 }
 
 model Opportunity {
@@ -78,12 +79,14 @@ model Opportunity {
   statedExitValue     Float?     // For Land Banking
 
   holdings            Holding[]
+  cohorts             Cohort[]
 }
 
 model Holding {
   id            String       @id @default(uuid())
   userId        String
   opportunityId String
+  cohortId      String?
   totalAmount   Float
   units         Float        @default(1)
   dateAcquired  DateTime     @default(now())
@@ -91,6 +94,7 @@ model Holding {
 
   user          User         @relation(fields: [userId], references: [id])
   opportunity   Opportunity  @relation(fields: [opportunityId], references: [id])
+  cohort        Cohort?      @relation(fields: [cohortId], references: [id])
 }
 
 model Transaction {
@@ -159,4 +163,54 @@ model Commission {
   updatedAt   DateTime @updatedAt
 
   agent       User     @relation(fields: [agentId], references: [id])
+}
+
+
+model Cohort {
+  id                  String    @id @default(uuid())
+  opportunityId       String
+  cohortCode          String    @unique
+  name                String
+  status              String    @default("COMING_SOON") 
+  // COMING_SOON, PRE_ORDER, OPEN, FULL, ACTIVE, MATURING, COMPLETED
+  
+  capacityAmount      Float     @default(0)
+  committedAmount     Float     @default(0)
+  availableAmount     Float     @default(0)
+  
+  unitPrice           Float     @default(0)
+  totalUnits          Float     @default(0)
+  availableUnits      Float     @default(0)
+  fundedUnits         Float     @default(0)
+  
+  preorderOpensAt     DateTime?
+  publicOpensAt       DateTime?
+  closesAt            DateTime?
+  startsAt            DateTime?
+  maturityAt          DateTime?
+  completedAt         DateTime?
+  
+  targetReturnValue   Float?
+  termsSnapshot       String?   @db.Text
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  opportunity         Opportunity @relation(fields: [opportunityId], references: [id])
+  holdings            Holding[]
+  reservations        CohortReservation[]
+}
+
+model CohortReservation {
+  id          String   @id @default(uuid())
+  cohortId    String
+  userId      String
+  units       Float
+  amount      Float
+  status      String   @default("PENDING") // PENDING, CONFIRMED, EXPIRED, CANCELLED, CONVERTED
+  reservedAt  DateTime @default(now())
+  expiresAt   DateTime?
+  
+  cohort      Cohort   @relation(fields: [cohortId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 }
