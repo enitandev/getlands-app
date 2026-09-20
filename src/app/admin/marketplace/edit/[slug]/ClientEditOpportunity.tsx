@@ -13,6 +13,7 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
     const status = (document.getElementById("cohortStatus") as HTMLSelectElement).value;
     const preorder = (document.getElementById("cohortPreorder") as HTMLInputElement).value;
     const pub = (document.getElementById("cohortPublic") as HTMLInputElement).value;
+    const closes = (document.getElementById("cohortCloses") as HTMLInputElement).value;
     
     if (!name) return alert("Name is required");
 
@@ -23,6 +24,7 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
     fd.append("status", status);
     fd.append("preorderOpensAt", preorder);
     fd.append("publicOpensAt", pub);
+    fd.append("closesAt", closes);
 
     await createCohort(fd);
     setIsAddingCohort(false);
@@ -45,7 +47,7 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
       <form className="space-y-[30px]" action={editOpportunity.bind(null, initialData.id)}>
         <div className="bg-white rounded-[24px] p-[30px] border border-black/5 shadow-sm">
           <h2 className="font-manrope text-[18px] font-bold mb-[20px]">1. Select Asset Class</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[15px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-[15px]">
             {[
               { id: 'land', label: 'Land', desc: 'Outright land purchase' },
               { id: 'farm', label: 'Farm Cycle', desc: 'Fractional agricultural investment' },
@@ -205,7 +207,7 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
         {isAddingCohort && (
           <div className="bg-[#f7f9f7] p-[20px] rounded-[16px] mb-[20px] border border-black/5">
             <h3 className="font-bold text-[14px] mb-[15px]">Create Funding Cohort</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-[15px]">
+            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-[15px]">
               <input type="text" id="cohortName" placeholder="e.g. Batch 05" className="h-[45px] px-[15px] rounded-[10px] border border-black/10 outline-none focus:border-[#008b45]" />
               <input type="number" id="cohortCapacity" placeholder="Capacity Amount (₦)" className="h-[45px] px-[15px] rounded-[10px] border border-black/10 outline-none focus:border-[#008b45]" />
               <select id="cohortStatus" className="h-[45px] px-[15px] rounded-[10px] border border-black/10 outline-none focus:border-[#008b45]">
@@ -215,6 +217,7 @@ export default function ClientEditOpportunity({ initialData }: { initialData: an
               </select>
               <input type="datetime-local" id="cohortPreorder" title="Pre-order Opens At" className="h-[45px] px-[15px] rounded-[10px] border border-black/10 outline-none focus:border-[#008b45]" />
               <input type="datetime-local" id="cohortPublic" title="Public Opens At" className="h-[45px] px-[15px] rounded-[10px] border border-black/10 outline-none focus:border-[#008b45]" />
+              <input type="datetime-local" id="cohortCloses" title="Closes At" className="h-[45px] px-[15px] rounded-[10px] border border-black/10 outline-none focus:border-[#008b45]" />
               <button type="button" onClick={handleCreateCohort} className="h-[45px] bg-[#102218] text-white font-bold rounded-[10px]">Save Cohort</button>
             </div>
           </div>
