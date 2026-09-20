@@ -64,6 +64,8 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
                     className="w-full h-full"
                     cohortStatus={cohortStatus}
                     cohortProgress={cohortProgress}
+                    cohortOpensAt={cohort?.publicOpensAt || cohort?.preorderOpensAt}
+                    cohortClosesAt={cohort?.closesAt}
                   />
                 </Link>
               );
@@ -83,6 +85,8 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
                     className="w-full h-full"
                     cohortStatus={cohortStatus}
                     cohortProgress={cohortProgress}
+                    cohortOpensAt={cohort?.publicOpensAt || cohort?.preorderOpensAt}
+                    cohortClosesAt={cohort?.closesAt}
                   />
                 </Link>
               );
@@ -100,6 +104,8 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
                     className="w-full h-full"
                     cohortStatus={cohortStatus}
                     cohortProgress={cohortProgress}
+                    cohortOpensAt={cohort?.publicOpensAt || cohort?.preorderOpensAt}
+                    cohortClosesAt={cohort?.closesAt}
                   />
                 </Link>
               );

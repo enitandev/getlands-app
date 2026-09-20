@@ -12,6 +12,8 @@ interface LandBankingCardProps {
   className?: string;
   cohortStatus?: string;
   cohortProgress?: number;
+  cohortOpensAt?: Date | null;
+  cohortClosesAt?: Date | null;
 }
 
 export function LandBankingCard({ title, location, duration, entryPrice, exitPrice, photoClass = '', imageUrl, className = '', status, cohortStatus, cohortProgress }: LandBankingCardProps) {

@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { CountdownTimer } from './CountdownTimer';
 
 interface FarmCardProps {
   crop: string;
@@ -16,9 +17,11 @@ interface FarmCardProps {
   cohortStatus?: string;
   cohortProgress?: number;
   cohortLabel?: string;
+  cohortOpensAt?: Date | null;
+  cohortClosesAt?: Date | null;
 }
 
-export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFrequency, price, photoClass = '', imageUrl, className = '', cohortStatus, cohortProgress, cohortLabel }: FarmCardProps) {
+export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFrequency, price, photoClass = '', imageUrl, className = '', cohortStatus, cohortProgress, cohortLabel, cohortOpensAt, cohortClosesAt }: FarmCardProps) {
   const formatDuration = (val: string) => {
     if (!val) return '';
     const isNumeric = /^\d+$/.test(val.trim());

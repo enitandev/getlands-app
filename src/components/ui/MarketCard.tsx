@@ -13,6 +13,8 @@ interface MarketCardProps {
   className?: string;
   cohortStatus?: string;
   cohortProgress?: number;
+  cohortOpensAt?: Date | null;
+  cohortClosesAt?: Date | null;
 }
 
 export function MarketCard({ category, title, location, priceOrReturn, photoClass = '', imageUrl, className = '', status, cohortStatus, cohortProgress }: MarketCardProps) {
