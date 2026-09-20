@@ -1,5 +1,5 @@
-import { createCohort, updateCohortStatus } from '@/app/actions/cohorts';
 "use client";
+import { createCohort, updateCohortStatus } from '@/app/actions/cohorts';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { editOpportunity } from '@/app/actions/admin';
