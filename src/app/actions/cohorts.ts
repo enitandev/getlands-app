@@ -25,24 +25,36 @@ export async function createCohort(formData: FormData) {
   const publicOpensAtStr = formData.get('publicOpensAt') as string;
   const closesAtStr = formData.get('closesAt') as string;
   
+  const cohortId = formData.get('cohortId') as string | null;
   const cohortCode = `${opportunityId.substring(0, 4)}-${Math.floor(Math.random() * 10000)}`.toUpperCase();
 
-  await prisma.cohort.create({
-    data: {
-      opportunityId,
-      name,
-      cohortCode,
-      status,
-      capacityAmount,
-      availableAmount: capacityAmount,
-      unitPrice,
-      totalUnits,
-      availableUnits: totalUnits,
-      preorderOpensAt: preorderOpensAtStr ? new Date(preorderOpensAtStr) : null,
-      publicOpensAt: publicOpensAtStr ? new Date(publicOpensAtStr) : null,
-      closesAt: closesAtStr ? new Date(closesAtStr) : null,
-    }
-  });
+  const data = {
+    opportunityId,
+    name,
+    status,
+    capacityAmount,
+    unitPrice,
+    totalUnits,
+    preorderOpensAt: preorderOpensAtStr ? new Date(preorderOpensAtStr) : null,
+    publicOpensAt: publicOpensAtStr ? new Date(publicOpensAtStr) : null,
+    closesAt: closesAtStr ? new Date(closesAtStr) : null,
+  };
+
+  if (cohortId) {
+    await prisma.cohort.update({
+      where: { id: cohortId },
+      data
+    });
+  } else {
+    await prisma.cohort.create({
+      data: {
+        ...data,
+        cohortCode,
+        availableAmount: capacityAmount,
+        availableUnits: totalUnits,
+      }
+    });
+  }
 
   revalidatePath('/admin/marketplace');
   revalidatePath(`/admin/marketplace/edit/${opportunityId}`); // or whatever the slug is
