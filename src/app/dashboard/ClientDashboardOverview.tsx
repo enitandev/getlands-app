@@ -91,58 +91,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
           </div>
           
           <div className="relative z-10 flex overflow-x-auto snap-x snap-mandatory gap-[15px] shrink-0 pb-[10px] md:pb-0 scrollbar-hide md:grid md:grid-cols-2 w-full md:w-auto mt-[20px] md:mt-0">
-             {featuredOpps.map((opp, i) => {
-               const cohort = opp.cohorts && opp.cohorts.length > 0 ? opp.cohorts[0] : null;
-               const status = cohort ? cohort.status : opp.status;
-               let label = 'Featured';
-               if (status === 'COMING_SOON') label = 'Upcoming';
-               else if (status === 'PRE_ORDER') label = 'Pre-Order Open';
-               
-               return (
-                 <Link href={`/explore/${opp.slug}`} key={opp.id} className="flex flex-col justify-between w-[200px] md:w-[240px] shrink-0 snap-center bg-[#182a20] border border-white/5 rounded-[16px] p-[20px] hover:bg-[#1d3326] hover:shadow-[0_10px_30px_rgba(0,139,69,0.15)] hover:-translate-y-[2px] transition-all duration-300 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[#008b45] rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
-                    <div>
-                      <div className="flex justify-between items-center mb-[10px]">
-                        <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider">{label}</div>
-                        {cohort && (cohort.status === 'OPEN' || cohort.status === 'PRE_ORDER') && (
-                          <div className="w-[6px] h-[6px] rounded-full bg-[#008b45] animate-pulse"></div>
-                        )}
-                      </div>
-                      <div className="font-manrope text-[18px] text-white leading-tight mb-[15px]">{opp.title}</div>
-                    </div>
-                    
-                    <div className="border-t border-white/10 pt-[15px]">
-                      {opp.category === 'farm' && opp.projectedReturn ? (
-                        <div>
-                          <strong className="block font-manrope text-[24px] text-[#a9e7bd] leading-none mb-[2px]">{opp.projectedReturn}</strong>
-                          <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">{opp.returnsFrequency || 'Target Return'}</span>
-                        </div>
-                      ) : opp.category === 'land_banking' && opp.duration ? (
-                        <div>
-                          <strong className="block font-manrope text-[24px] text-[#a9e7bd] leading-none mb-[2px]">{opp.duration} Months</strong>
-                          <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">Holding Period</span>
-                        </div>
-                      ) : opp.price ? (
-                        <div>
-                          <strong className="block font-manrope text-[20px] text-[#a9e7bd] leading-none mb-[2px]">₦{opp.price.toLocaleString()}</strong>
-                          <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">Starting Price</span>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {cohort && cohort.status === 'OPEN' && cohort.closesAt && (
-                      <div className="mt-[10px] -mb-[5px]">
-                        <CountdownTimer targetDate={cohort.closesAt} label="CLOSES IN" />
-                      </div>
-                    )}
-                    {cohort && (cohort.status === 'PRE_ORDER' || cohort.status === 'COMING_SOON') && (cohort.publicOpensAt || cohort.preorderOpensAt) && (
-                      <div className="mt-[10px] -mb-[5px]">
-                        <CountdownTimer targetDate={cohort.publicOpensAt || cohort.preorderOpensAt} label="OPENS IN" />
-                      </div>
-                    )}
-                 </Link>
-               );
-             })}
+             {featuredOpps.map(opp => <MiniFeaturedCard key={opp.id} opp={opp} />)}
              
              {featuredOpps.length === 0 && (
                <div className="bg-white/5 border border-white/10 rounded-[16px] p-[20px] backdrop-blur-md">
