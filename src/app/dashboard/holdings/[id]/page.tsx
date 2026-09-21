@@ -1,9 +1,23 @@
-"use client";
 import React from 'react';
 import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/session';
+import { redirect } from 'next/navigation';
 import { formatCurrency } from '@/lib/mockData';
 
-export default function HoldingDetails() {
+export default async function ManageHoldingPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const session = await getSession();
+  
+  if (!session || !session.userId) redirect('/login');
+
+  const holding = await prisma.holding.findUnique({
+    where: { id: resolvedParams.id },
+    include: { opportunity: true, cohort: true }
+  });
+
+  if (!holding || holding.userId !== session.userId) redirect('/dashboard');
+
   return (
     <div className="space-y-[40px] max-w-[1000px] mx-auto pb-[50px]">
       <div className="flex items-center justify-between gap-[15px]">
@@ -12,8 +26,8 @@ export default function HoldingDetails() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </Link>
           <div>
-            <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[5px]">Abeokuta Land Banking</h1>
-            <p className="text-[13px] text-[#68736d]">Acquired on Oct 25, 2024 • REF-GL-8X91M2</p>
+            <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[5px]">{holding.opportunity.title}</h1>
+            <p className="text-[13px] text-[#68736d]">Acquired on {new Date(holding.dateAcquired).toLocaleDateString()} • REF-{holding.id.substring(0,8).toUpperCase()}</p>
           </div>
         </div>
         <span className="hidden lg:inline-flex px-[12px] py-[6px] bg-[#eef3ef] text-[#008b45] text-[11px] font-bold uppercase tracking-[0.05em] rounded-full">
@@ -30,15 +44,15 @@ export default function HoldingDetails() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-[20px] mb-[30px]">
               <div>
                 <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Initial Value</div>
-                <strong className="text-[20px] font-manrope text-ink">{formatCurrency(1000000)}</strong>
+                <strong className="text-[20px] font-manrope text-ink">{formatCurrency(holding.totalAmount)}</strong>
               </div>
               <div>
                 <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Current Value</div>
-                <strong className="text-[20px] font-manrope text-[#008b45]">{formatCurrency(1150000)}</strong>
+                <strong className="text-[20px] font-manrope text-[#008b45]">{formatCurrency(holding.totalAmount)}</strong>
               </div>
               <div className="col-span-2 md:col-span-1">
                 <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Appreciation</div>
-                <strong className="text-[20px] font-manrope text-[#008b45]">+15%</strong>
+                <strong className="text-[20px] font-manrope text-[#008b45]">{holding.opportunity.projectedReturn || "N/A"}</strong>
               </div>
             </div>
 
@@ -71,7 +85,7 @@ export default function HoldingDetails() {
                     <strong className="block text-[13px] text-ink">Payment Receipt</strong>
                   </div>
                 </div>
-                <button className="text-[11px] font-bold text-[#008b45] hover:underline">Download</button>
+                <a href={`/api/documents/receipt/${holding.id}`} target="_blank" className="text-[11px] font-bold text-[#008b45] hover:underline">Download</a>
               </div>
               <div className="py-[15px] flex justify-between items-center">
                 <div className="flex items-center gap-[10px]">
@@ -80,7 +94,7 @@ export default function HoldingDetails() {
                     <strong className="block text-[13px] text-ink">Signed Memorandum of Understanding</strong>
                   </div>
                 </div>
-                <button className="text-[11px] font-bold text-[#008b45] hover:underline">Download</button>
+                <button className="text-[11px] font-bold text-[#68736d] cursor-not-allowed" title="Not available yet">Pending</button>
               </div>
             </div>
           </div>
@@ -94,15 +108,17 @@ export default function HoldingDetails() {
             
             <h3 className="font-manrope text-[18px] font-bold mb-[10px]">Maturity & Exit</h3>
             <p className="text-[13px] text-[#8ea096] mb-[20px] leading-[1.6]">
-              This Land Banking holding has a 12-month lock-in period. You can request a payout or rollover upon maturity.
+              This {holding.opportunity.category.replace('_', ' ')} holding has a lock-in period. You can request a payout or rollover upon maturity.
             </p>
             
             <div className="bg-white/10 rounded-[12px] p-[15px] mb-[20px]">
               <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#8ea096] mb-[4px]">Maturity Date</div>
-              <strong className="text-[16px] text-white block">Oct 25, 2025</strong>
+              <strong className="text-[16px] text-white block">
+                {holding.cohort?.closesAt ? new Date(holding.cohort.closesAt).toLocaleDateString() : "N/A"}
+              </strong>
             </div>
 
-            <button className="w-full py-[14px] bg-white text-ink font-bold text-[14px] rounded-full hover:bg-[#eef3ef] transition-colors" onClick={() => alert('Liquidation requests can only be initiated 30 days before maturity.')}>
+            <button className="w-full py-[14px] bg-white text-ink font-bold text-[14px] rounded-full hover:bg-[#eef3ef] transition-colors">
               Request Exit / Payout
             </button>
           </div>

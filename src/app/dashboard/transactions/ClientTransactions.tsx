@@ -66,7 +66,7 @@ export default function ClientTransactions({ transactions }: { transactions: any
                 {tx.status === 'pending' ? (
                   <Link href={`/checkout?opp=REF-GL-8X91M2`} className="text-[13px] font-bold text-[#f5a623] hover:underline">Complete</Link>
                 ) : (
-                  <button className="text-[13px] font-bold text-[#008b45] hover:underline">Receipt</button>
+                  
                 )}
               </div>
             </div>
