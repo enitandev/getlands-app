@@ -252,7 +252,7 @@ export const ReceiptTemplate = ({ holding, baseUrl }: { holding: any, baseUrl: s
 
           {/* Amount Box */}
           <View style={styles.amountBox}>
-            <Text style={styles.currencySymbol}>₦</Text>
+            <Text style={styles.currencySymbol}>NGN</Text>
             <View>
               <Text style={styles.amountLabel}>AMOUNT RECEIVED</Text>
               <Text style={styles.amountValue}>{holding.totalAmount.toLocaleString()}</Text>

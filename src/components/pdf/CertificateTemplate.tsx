@@ -193,7 +193,19 @@ const styles = StyleSheet.create({
 
 export const CertificateTemplate = ({ holding }: { holding: any }) => {
   const { opportunity, user, cohort } = holding;
-  const dateObj = new Date(holding.dateAcquired || holding.createdAt || Date.now());
+const dateObj = new Date(holding.dateAcquired || holding.createdAt || Date.now());
+  
+  let durationMonths = 0;
+  if (opportunity.duration) {
+    const match = opportunity.duration.match(/(\d+)\s*(MONTH|YEAR)/i);
+    if (match) {
+      durationMonths = parseInt(match[1]);
+      if (match[2].toUpperCase().startsWith('YEAR')) durationMonths *= 12;
+    }
+  }
+  durationMonths = durationMonths || 6;
+  const maturityDate = new Date(dateObj);
+  maturityDate.setMonth(maturityDate.getMonth() + durationMonths);
   
   return (
     <Document>
@@ -224,7 +236,7 @@ export const CertificateTemplate = ({ holding }: { holding: any }) => {
               <View style={styles.statDivider} />
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>SUBSCRIPTION AMOUNT</Text>
-                <Text style={styles.statValue}>₦{holding.totalAmount.toLocaleString()}</Text>
+                <Text style={styles.statValue}>NGN {holding.totalAmount.toLocaleString()}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statBox}>
@@ -235,7 +247,7 @@ export const CertificateTemplate = ({ holding }: { holding: any }) => {
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>PROGRAMME PERIOD</Text>
                 <Text style={styles.statValue}>
-                  On or before {cohort?.closesAt ? new Date(cohort.closesAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Maturity'}
+                  On or before {maturityDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </Text>
               </View>
             </View>
@@ -261,12 +273,7 @@ export const CertificateTemplate = ({ holding }: { holding: any }) => {
                 </View>
               </View>
 
-              <View style={styles.signatureBox}>
-                <View style={styles.signatureLine}>
-                  <Text style={styles.signatureTitle}>AUTHORIZED SIGNATORY</Text>
-                  <Text style={styles.signatureCompany}>GETLANDS</Text>
-                </View>
-              </View>
+
             </View>
             
           </View>
