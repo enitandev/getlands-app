@@ -37,7 +37,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const stream = await renderToStream(<ReceiptTemplate holding={holding} baseUrl={baseUrl} />);
 
-    return new NextResponse(stream as unknown as ReadableStream, {
+    const chunks = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const pdfBuffer = Buffer.concat(chunks);
+
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="receipt-${holding.id.substring(0,8)}.pdf"`,
@@ -46,6 +52,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   } catch (error) {
     console.error('Error generating PDF:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse(`Internal Server Error: ${(error as any).message}\n\n${(error as any).stack}`, { status: 500 });
   }
 }
