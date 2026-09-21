@@ -1,5 +1,6 @@
 "use server";
 import { prisma } from '@/lib/prisma';
+import { triggerReferralBonus } from '@/lib/referral';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import fs from 'fs';
@@ -213,6 +214,9 @@ export async function approveTransaction(transactionId: string) {
         where: { id: holding.id },
         data: { status: 'active' }
       });
+
+      // Check referral bonus
+      await triggerReferralBonus(tx.userId, tx.amount);
       
       // Update cohort committed amount if holding is tied to a cohort
       if (holding.cohortId) {

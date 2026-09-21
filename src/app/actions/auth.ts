@@ -3,6 +3,8 @@ import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import { prisma } from '@/lib/prisma';
 import { createSession, deleteSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import crypto from 'crypto';
 
 export async function loginAction(formData: FormData) {
   const email = formData.get('email') as string;
@@ -53,13 +55,35 @@ export async function registerAction(formData: FormData) {
   const bcrypt = require('bcryptjs');
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // Referral Handling
+  let referredById = null;
+  const cookieStore = cookies();
+  const refCode = cookieStore.get('ref_code')?.value;
+  if (refCode) {
+    const referrer = await prisma.user.findUnique({ where: { referralCode: refCode } });
+    if (referrer) referredById = referrer.id;
+  }
+
+  // Generate a unique referral code for the new user
+  const prefix = (firstName || 'USR').substring(0, 3).toUpperCase();
+  let uniqueCode = '';
+  let isUnique = false;
+  while (!isUnique) {
+    const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
+    uniqueCode = `${prefix}-${randomSuffix}`;
+    const existingCode = await prisma.user.findUnique({ where: { referralCode: uniqueCode } });
+    if (!existingCode) isUnique = true;
+  }
+
   const user = await prisma.user.create({
     data: {
       firstName,
       lastName,
       email,
       role,
-      password: hashedPassword
+      password: hashedPassword,
+      referralCode: uniqueCode,
+      referredById
     }
   });
 

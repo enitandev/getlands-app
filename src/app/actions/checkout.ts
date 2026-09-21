@@ -2,6 +2,7 @@
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
+import { triggerReferralBonus } from '@/lib/referral';
 
 async function checkCustomer() {
   const session = await getSession();
@@ -87,6 +88,9 @@ export async function checkoutAction(formData: FormData) {
           fundedUnits: { increment: units },
           availableUnits: { decrement: units }
         }
+
+    // 5. Trigger Referral Bonus if applicable
+    await triggerReferralBonus(user.id, totalAmount);
       });
     }
 

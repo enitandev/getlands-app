@@ -45,6 +45,11 @@ model User {
   
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
+  // Referral System
+  referralCode          String?       @unique
+  referredById          String?
+  hasTriggeredReferralReward Boolean  @default(false)
+
   holdings              Holding[]
   transactions          Transaction[]
   notifications         Notification[]
@@ -140,6 +145,7 @@ model PlatformSetting {
   supportEmail          String   @default("support@getlands.shop")
   processingFee         Float    @default(1.5)
   agentCommission       Float    @default(5.0)
+  referralBonusPercentage Float    @default(10.0)
   
   corporateBankName     String   @default("Moniepoint Microfinance Bank")
   corporateAccountName  String   @default("GETLANDS")
