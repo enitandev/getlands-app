@@ -19,5 +19,16 @@ export default async function AdminCustomersPage() {
     totalValue: user.holdings.reduce((sum, h) => sum + h.totalAmount, 0)
   }));
 
-  return <ClientCustomers users={users} />;
+  const dbOpportunities = await prisma.opportunity.findMany({
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const opportunities = dbOpportunities.map(opp => ({
+    id: opp.id,
+    title: opp.title,
+    type: opp.category,
+    location: opp.location
+  }));
+
+  return <ClientCustomers users={users} opportunities={opportunities} />;
 }

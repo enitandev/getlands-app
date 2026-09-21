@@ -1,12 +1,43 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { mockOpportunities, formatCurrency } from '@/lib/mockData';
+import { formatCurrency } from '@/lib/mockData';
+import { addLegacyCustomerAction, assignOpportunityAction, deleteCustomerAction } from '@/app/actions/admin-customers';
 
-export default function ClientCustomers({ users }: { users: any[] }) {
+export default function ClientCustomers({ users, opportunities }: { users: any[], opportunities: any[] }) {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  async function handleAddCustomer(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const res = await addLegacyCustomerAction(formData);
+    setLoading(false);
+    
+    if (res.error) {
+      alert(res.error);
+    } else {
+      alert("Customer successfully created! A welcome email with an account claim link has been sent to them.");
+      setIsAddModalOpen(false);
+    }
+  }
 
+  async function handleAssignOpportunity(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const res = await assignOpportunityAction(formData);
+    setLoading(false);
+
+    if (res.error) {
+      alert(res.error);
+    } else {
+      alert("Opportunity successfully assigned!\n\nAutomated System Action:\n- Transaction Created\n- Holding Created\n- Receipt & Agreement PDFs generated on-the-fly\n- Notification Email Sent");
+      setIsAssignModalOpen(false);
+    }
+  }
 
   return (
     <div className="space-y-[30px]">
@@ -16,7 +47,7 @@ export default function ClientCustomers({ users }: { users: any[] }) {
           <p className="text-[13px] lg:text-[14px] text-[#68736d]">Manage registered users, view portfolios, and manually assign opportunities.</p>
         </div>
         <div className="flex gap-[15px] w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none px-[20px] py-[12px] bg-white border border-black/10 text-ink text-[13px] font-bold rounded-full hover:bg-[#f7f9f7] transition-colors">
+          <button onClick={() => setIsAddModalOpen(true)} className="flex-1 lg:flex-none px-[20px] py-[12px] bg-white border border-black/10 text-ink text-[13px] font-bold rounded-full hover:bg-[#f7f9f7] transition-colors">
             Add Customer
           </button>
           <button onClick={() => setIsAssignModalOpen(true)} className="flex-1 lg:flex-none px-[20px] py-[12px] bg-[#008b45] text-white text-[13px] font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
@@ -39,7 +70,7 @@ export default function ClientCustomers({ users }: { users: any[] }) {
             <div key={c.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_80px] gap-[15px] lg:gap-[20px] p-[20px] lg:p-[16px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors">
               <div className="flex gap-[15px] items-center">
                 <div className="w-[40px] h-[40px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#008b45] font-bold text-[14px]">
-                  {c.firstName + ' ' + c.lastName.charAt(0)}
+                  {c.firstName.charAt(0) + c.lastName.charAt(0)}
                 </div>
                 <div>
                   <strong className="block text-[14px] text-ink">{c.firstName + ' ' + c.lastName}</strong>
@@ -67,7 +98,16 @@ export default function ClientCustomers({ users }: { users: any[] }) {
                   <Link href={`/admin/customers/${c.id}`} className="text-[13px] font-bold text-[#008b45] hover:underline transition-colors">
                     Profile
                   </Link>
-                  <button className="text-[13px] font-bold text-[#e53935] hover:underline transition-colors" onClick={() => window.confirm('Are you sure you want to delete this customer?')}>
+                  <button 
+                    className="text-[13px] font-bold text-[#e53935] hover:underline transition-colors disabled:opacity-50" 
+                    disabled={loading}
+                    onClick={async () => {
+                      if (window.confirm('Are you sure you want to delete this customer? This will also delete their transactions and holdings.')) {
+                        setLoading(true);
+                        await deleteCustomerAction(c.id);
+                        setLoading(false);
+                      }
+                    }}>
                     Delete
                   </button>
                 </div>
@@ -77,57 +117,109 @@ export default function ClientCustomers({ users }: { users: any[] }) {
         </div>
       </div>
 
-      {/* Assign Modal */}
-      {isAssignModalOpen && (
+      {/* Add Customer Modal */}
+      {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in">
-          <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl">
-            <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-white z-10 rounded-t-[24px]">
-              <h2 className="font-manrope text-[20px] font-bold text-ink tracking-[-0.03em]">Assign Opportunity</h2>
-              <button onClick={() => setIsAssignModalOpen(false)} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors">
+          <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-white z-10 shrink-0">
+              <h2 className="font-manrope text-[20px] font-bold text-ink tracking-[-0.03em]">Add Legacy Customer</h2>
+              <button type="button" onClick={() => setIsAddModalOpen(false)} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
-            <form className="p-[20px] lg:p-[30px]" onSubmit={(e) => {
-              e.preventDefault();
-              alert("Opportunity successfully assigned!\n\nAutomated System Action:\n- Holding Created for Emeka Abraham\n- Receipt Generated\n- Investment Certificate Generated\n- MOU Generated");
-              setIsAssignModalOpen(false);
-            }}>
-              <div className="space-y-[20px] mb-[30px]">
+            <div className="overflow-y-auto p-[20px] lg:p-[30px]">
+              <form id="add-customer-form" onSubmit={handleAddCustomer} className="space-y-[20px]">
+                <div className="grid grid-cols-2 gap-[15px]">
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">First Name</label>
+                    <input name="firstName" type="text" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Last Name</label>
+                    <input name="lastName" type="text" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-bold text-ink mb-[8px]">Email Address</label>
+                  <input name="email" type="email" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-bold text-ink mb-[8px]">Phone Number</label>
+                  <input name="phone" type="tel" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                </div>
+              </form>
+            </div>
+
+            <div className="p-[20px] lg:p-[30px] border-t border-black/5 bg-white shrink-0">
+              <button form="add-customer-form" type="submit" disabled={loading} className="w-full py-[14px] bg-[#008b45] text-white font-bold text-[14px] rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50">
+                {loading ? 'Creating...' : 'Create Customer & Send Claim Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Modal */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in">
+          <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-white z-10 shrink-0">
+              <h2 className="font-manrope text-[20px] font-bold text-ink tracking-[-0.03em]">Assign Opportunity</h2>
+              <button type="button" onClick={() => setIsAssignModalOpen(false)} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto p-[20px] lg:p-[30px]">
+              <form id="assign-opportunity-form" onSubmit={handleAssignOpportunity} className="space-y-[20px]">
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Select Customer</label>
-                  <select className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
+                  <select name="userId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
+                    <option value="">-- Choose a customer --</option>
                     {users.map(c => <option key={c.id} value={c.id}>{c.firstName + ' ' + c.lastName} ({c.email})</option>)}
                   </select>
                 </div>
                 
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Select Opportunity</label>
-                  <select className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
-                    {mockOpportunities.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
+                  <select name="opportunityId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
+                    <option value="">-- Choose an opportunity --</option>
+                    {opportunities.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
                   </select>
                 </div>
                 
+                <div className="grid grid-cols-2 gap-[15px]">
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Amount Paid (₦)</label>
+                    <input name="amountPaid" type="number" step="0.01" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Units</label>
+                    <input name="units" type="number" step="0.01" defaultValue="1" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[8px]">Payment Status</label>
-                  <select className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors">
-                    <option value="paid">Fully Paid (Offline)</option>
-                    <option value="installment">Installment Started</option>
-                  </select>
+                  <label className="block text-[13px] font-bold text-ink mb-[8px]">Date Acquired (Important for backdating)</label>
+                  <input name="dateAcquired" type="date" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                  <p className="text-[11px] text-[#68736d] mt-[5px]">Maturity calculations will be based on this date.</p>
                 </div>
 
                 <div className="bg-[#eef3ef]/50 border border-[#008b45]/20 rounded-[12px] p-[15px] flex gap-[10px] items-start">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-[2px]"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                   <p className="text-[11px] text-[#4a554f] leading-[1.5]">
-                    <strong>Note on Documentation:</strong> Completing this assignment will automatically generate the required Receipt, Investment Certificate, and MOU for the customer.
+                    <strong>Note on Documentation:</strong> Completing this assignment will automatically generate the required Receipt, Investment Certificate, and MOU for the customer based on the amount and date specified above.
                   </p>
                 </div>
-              </div>
-              
-              <button type="submit" className="w-full py-[14px] bg-[#008b45] text-white font-bold text-[14px] rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)]">
-                Assign & Generate Documents
+              </form>
+            </div>
+            
+            <div className="p-[20px] lg:p-[30px] border-t border-black/5 bg-white shrink-0">
+              <button form="assign-opportunity-form" type="submit" disabled={loading} className="w-full py-[14px] bg-[#008b45] text-white font-bold text-[14px] rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50">
+                {loading ? 'Assigning...' : 'Assign & Generate Documents'}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
