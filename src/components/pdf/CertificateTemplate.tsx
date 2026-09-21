@@ -221,11 +221,20 @@ const dateObj = new Date(holding.dateAcquired || holding.createdAt || Date.now()
             <Text style={styles.certifyText}>This is to certify that</Text>
             <Text style={styles.customerName}>{user.firstName} {user.lastName}</Text>
             
-            <Text style={styles.subscribedText}>has successfully subscribed to the</Text>
-            <Text style={styles.programmeText}>{opportunity.title.toUpperCase()}</Text>
-            
-            <View style={styles.batchBadge}>
-              <Text style={styles.batchBadgeText}>{cohort ? cohort.name.toUpperCase() : 'STANDARD BATCH'}</Text>
+            <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
+              <Text style={styles.subscribedText}>has successfully subscribed to the</Text>
+              <Text style={styles.programmeText}>{opportunity.title.toUpperCase()}</Text>
+              
+              <View style={styles.batchBadge}>
+                <Text style={styles.batchBadgeText}>{cohort ? cohort.name.toUpperCase() : 'STANDARD BATCH'}</Text>
+              </View>
+
+              <View style={[styles.seal, { position: 'absolute', right: 60, top: -10 }]}>
+                <View style={styles.sealInner}>
+                  <Text style={{fontSize: 8, color: '#d4af37', fontWeight: 'bold'}}>GETLANDS</Text>
+                  <Text style={{fontSize: 6, color: '#d4af37'}}>SEAL</Text>
+                </View>
+              </View>
             </View>
 
             <View style={styles.statsRow}>
@@ -266,12 +275,7 @@ const dateObj = new Date(holding.dateAcquired || holding.createdAt || Date.now()
                 </View>
               </View>
               
-              <View style={styles.seal}>
-                <View style={styles.sealInner}>
-                  <Text style={{fontSize: 8, color: '#d4af37', fontWeight: 'bold'}}>GETLANDS</Text>
-                  <Text style={{fontSize: 6, color: '#d4af37'}}>SEAL</Text>
-                </View>
-              </View>
+
 
 
             </View>
