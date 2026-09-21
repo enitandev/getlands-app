@@ -8,6 +8,12 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 5000);
+  };
 
   async function handleAddCustomer(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -17,13 +23,13 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
     setLoading(false);
     
     if (res.error) {
-      alert(res.error);
+      showToast(res.error || "An error occurred.");
     } else {
       const wasEmailSent = formData.get('sendEmail') === 'on';
       if (wasEmailSent) {
-        alert("Customer successfully created! A welcome email with an account claim link has been sent to them.");
+        showToast("Customer successfully created! A welcome email with an account claim link has been sent to them.");
       } else {
-        alert("Customer successfully created! You can now assign them an opportunity and manually send their invite later.");
+        showToast("Customer successfully created! You can now assign them an opportunity.");
       }
       setIsAddModalOpen(false);
     }
@@ -37,9 +43,9 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
     setLoading(false);
 
     if (res.error) {
-      alert(res.error);
+      showToast(res.error || "An error occurred.");
     } else {
-      alert("Opportunity successfully assigned!\n\nAutomated System Action:\n- Transaction Created\n- Holding Created\n- Receipt & Agreement PDFs generated on-the-fly\n- Notification Email Sent");
+      showToast("Opportunity successfully assigned and documents generated!");
       setIsAssignModalOpen(false);
     }
   }
@@ -108,8 +114,8 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                         setLoading(true);
                         const res = await sendInviteAction(c.id);
                         setLoading(false);
-                        if(res.error) alert(res.error);
-                        else alert("Invite sent successfully!");
+                        if(res.error) showToast(res.error || "An error occurred.");
+                        else showToast("Invite sent successfully!");
                       }
                     }}>
                     Send Invite
@@ -246,6 +252,15 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
           </div>
         </div>
       )}
-    </div>
-  );
+    
+      {toastMessage && (
+        <div className="fixed bottom-[30px] right-[30px] bg-[#1a1a1a] text-white px-[24px] py-[16px] rounded-[12px] shadow-2xl z-[100] animate-fade-in flex items-center gap-[12px] max-w-[400px]">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <p className="text-[14px] leading-[1.4] font-medium">{toastMessage}</p>
+          <button onClick={() => setToastMessage("")} className="ml-auto opacity-50 hover:opacity-100 transition-opacity">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      )}
+    </div>  );
 }
