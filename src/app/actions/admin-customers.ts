@@ -24,6 +24,8 @@ export async function addLegacyCustomerAction(formData: FormData) {
   // Set expiry to 7 days for claim links
   const resetExpires = new Date(Date.now() + 7 * 24 * 3600000);
 
+  const sendEmail = formData.get('sendEmail') === 'on';
+
   const user = await prisma.user.create({
     data: {
       firstName,
@@ -37,7 +39,9 @@ export async function addLegacyCustomerAction(formData: FormData) {
     }
   });
 
-  await sendClaimAccountEmail(user.email, user.firstName, resetToken);
+  if (sendEmail) {
+    await sendClaimAccountEmail(user.email, user.firstName, resetToken);
+  }
   revalidatePath('/admin/customers');
 
   return { success: true };
@@ -104,5 +108,24 @@ export async function deleteCustomerAction(userId: string) {
   await prisma.user.delete({ where: { id: userId } });
   
   revalidatePath('/admin/customers');
+  return { success: true };
+}
+
+export async function sendInviteAction(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return { error: 'User not found' };
+
+  const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const resetExpires = new Date(Date.now() + 7 * 24 * 3600000);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: resetExpires
+    }
+  });
+
+  await sendClaimAccountEmail(user.email, user.firstName, resetToken);
   return { success: true };
 }

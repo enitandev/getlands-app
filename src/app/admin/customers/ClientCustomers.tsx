@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/mockData';
-import { addLegacyCustomerAction, assignOpportunityAction, deleteCustomerAction } from '@/app/actions/admin-customers';
+import { addLegacyCustomerAction, assignOpportunityAction, deleteCustomerAction, sendInviteAction } from '@/app/actions/admin-customers';
 
 export default function ClientCustomers({ users, opportunities }: { users: any[], opportunities: any[] }) {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -19,7 +19,12 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
     if (res.error) {
       alert(res.error);
     } else {
-      alert("Customer successfully created! A welcome email with an account claim link has been sent to them.");
+      const wasEmailSent = formData.get('sendEmail') === 'on';
+      if (wasEmailSent) {
+        alert("Customer successfully created! A welcome email with an account claim link has been sent to them.");
+      } else {
+        alert("Customer successfully created! You can now assign them an opportunity and manually send their invite later.");
+      }
       setIsAddModalOpen(false);
     }
   }
@@ -95,6 +100,20 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
               
               <div className="mt-[10px] lg:mt-0 text-right">
                 <div className="flex justify-end items-center gap-[15px]">
+                  <button 
+                    className="text-[13px] font-bold text-ink hover:text-[#008b45] transition-colors disabled:opacity-50" 
+                    disabled={loading}
+                    onClick={async () => {
+                      if (window.confirm(`Send a 'Claim Account' email to ${c.firstName}?`)) {
+                        setLoading(true);
+                        const res = await sendInviteAction(c.id);
+                        setLoading(false);
+                        if(res.error) alert(res.error);
+                        else alert("Invite sent successfully!");
+                      }
+                    }}>
+                    Send Invite
+                  </button>
                   <Link href={`/admin/customers/${c.id}`} className="text-[13px] font-bold text-[#008b45] hover:underline transition-colors">
                     Profile
                   </Link>
@@ -148,12 +167,16 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Phone Number</label>
                   <input name="phone" type="tel" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" />
                 </div>
+                <div className="flex items-center gap-[10px] mt-[10px]">
+                  <input type="checkbox" name="sendEmail" id="sendEmail" defaultChecked className="w-[18px] h-[18px] accent-[#008b45]" />
+                  <label htmlFor="sendEmail" className="text-[13px] text-ink cursor-pointer">Send 'Claim Account' Email instantly</label>
+                </div>
               </form>
             </div>
 
             <div className="p-[20px] lg:p-[30px] border-t border-black/5 bg-white shrink-0">
               <button form="add-customer-form" type="submit" disabled={loading} className="w-full py-[14px] bg-[#008b45] text-white font-bold text-[14px] rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50">
-                {loading ? 'Creating...' : 'Create Customer & Send Claim Email'}
+                {loading ? 'Creating...' : 'Create Customer'}
               </button>
             </div>
           </div>
