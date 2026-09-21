@@ -2,14 +2,6 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font, Svg, Path, Circle, Rect, G } from '@react-pdf/renderer';
 
 // Register fonts for a more premium look
-Font.register({
-  family: 'Playfair',
-  src: 'https://fonts.gstatic.com/s/playfairdisplay/v21/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtM.ttf'
-});
-Font.register({
-  family: 'DancingScript',
-  src: 'https://fonts.gstatic.com/s/dancingscript/v24/IfsqT0O56149Z0qI4pzINZkPqFw.ttf'
-});
 
 const styles = StyleSheet.create({
   page: {
@@ -71,7 +63,8 @@ const styles = StyleSheet.create({
   receivedFrom: {
     fontSize: 14,
     color: '#d4af37',
-    fontFamily: 'Playfair',
+    fontFamily: 'Times-Roman',
+    fontStyle: 'italic',
     
     marginBottom: 10,
   },
@@ -168,7 +161,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     left: 20,
-    fontFamily: 'DancingScript',
+    fontFamily: 'Times-Roman',
+    fontStyle: 'italic',
     fontSize: 36,
     color: '#003319',
     transform: 'rotate(-5deg)',
