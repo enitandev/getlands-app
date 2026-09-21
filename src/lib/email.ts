@@ -124,7 +124,7 @@ export async function sendClaimAccountEmail(email: string, firstName: string, to
   await sendResendEmail(email, 'Claim your Getlands Account', html);
 }
 
-export async function sendNewInvestmentEmail(email: string, firstName: string, opportunityName: string, units: number) {
+export async function sendNewInvestmentEmail(email: string, firstName: string, opportunityName: string, units: number, resetToken?: string | null) {
   const html = `
     <div style="font-family: Arial, sans-serif; max-w-xl mx-auto p-6 bg-white border border-gray-200 rounded-xl">
       <div style="text-align: center; margin-bottom: 24px;">
@@ -138,8 +138,8 @@ export async function sendNewInvestmentEmail(email: string, firstName: string, o
         Your official Allocation Letter, Subscription Agreement, and Payment Receipt have been generated and are now available for download.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="https://getlands.shop/dashboard/holdings" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
-          View Your Portfolio
+        <a href="${resetToken ? `https://getlands.shop/reset-password?token=${resetToken}` : `https://getlands.shop/dashboard/holdings`}" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
+          ${resetToken ? "Set Password & View Portfolio" : "View Your Portfolio"}
         </a>
       </div>
       <p style="color: #666; font-size: 14px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">

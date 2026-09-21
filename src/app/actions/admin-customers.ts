@@ -93,7 +93,13 @@ export async function assignOpportunityAction(formData: FormData) {
   });
 
   // 3. Send email notification
-  await sendNewInvestmentEmail(user.email, user.firstName, opportunity.title, units);
+  // If user has an active reset token (e.g. they are a new legacy customer who hasn't claimed their account)
+  // we pass it so the email button says "Set Password & View Portfolio" instead of just "View Portfolio"
+  let token = null;
+  if (user.resetPasswordToken && user.resetPasswordExpires && user.resetPasswordExpires > new Date()) {
+    token = user.resetPasswordToken;
+  }
+  await sendNewInvestmentEmail(user.email, user.firstName, opportunity.title, units, token);
 
   revalidatePath('/admin/customers');
   revalidatePath(`/admin/customers/${userId}`);
