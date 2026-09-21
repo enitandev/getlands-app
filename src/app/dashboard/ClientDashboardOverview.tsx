@@ -8,6 +8,64 @@ import { FarmCard } from '@/components/ui/FarmCard';
 import { LandBankingCard } from '@/components/ui/LandBankingCard';
 import { Button } from '@/components/ui/Button';
 
+
+function MiniFeaturedCard({ opp }: { opp: any }) {
+  const cohort = opp.cohorts && opp.cohorts.length > 0 ? opp.cohorts[0] : null;
+  const status = cohort ? cohort.status : opp.status;
+  let label = 'Featured';
+  if (status === 'COMING_SOON') label = 'Upcoming';
+  else if (status === 'PRE_ORDER') label = 'Pre-Order Open';
+  
+  return (
+    <Link href={`/explore/${opp.slug}`} className="flex flex-col justify-between w-[200px] md:w-[240px] shrink-0 snap-center bg-[#182a20] border border-white/5 rounded-[16px] p-[20px] hover:bg-[#1d3326] hover:shadow-[0_10px_30px_rgba(0,139,69,0.15)] hover:-translate-y-[2px] transition-all duration-300 relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[#008b45] rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+      <div>
+        <div className="flex justify-between items-center mb-[10px]">
+          <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider">{label}</div>
+          {cohort && (cohort.status === 'OPEN' || cohort.status === 'PRE_ORDER') && (
+            <div className="w-[6px] h-[6px] rounded-full bg-[#008b45] animate-pulse"></div>
+          )}
+        </div>
+        <div className="font-manrope text-[18px] text-white leading-tight mb-[15px]">{opp.title}</div>
+      </div>
+      
+      <div className="border-t border-white/10 pt-[15px]">
+        {opp.category === 'farm' && opp.projectedReturn ? (
+          <div>
+            <strong className="block font-manrope text-[24px] text-[#a9e7bd] leading-none mb-[2px]">{opp.projectedReturn}</strong>
+            <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">{opp.returnsFrequency || 'Target Return'}</span>
+          </div>
+        ) : opp.category === 'land_banking' && opp.duration ? (
+          <div>
+            <strong className="block font-manrope text-[24px] text-[#a9e7bd] leading-none mb-[2px]">{opp.duration} Months</strong>
+            <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">Holding Period</span>
+          </div>
+        ) : opp.price ? (
+          <div>
+            <strong className="block font-manrope text-[20px] text-[#a9e7bd] leading-none mb-[2px]">₦{opp.price.toLocaleString()}</strong>
+            <span className="text-[11px] text-[#a6baa9] uppercase tracking-wider">Starting Price</span>
+          </div>
+        ) : null}
+      </div>
+
+      {cohort && cohort.status === 'OPEN' && cohort.closesAt && (
+        <div className="mt-[10px]">
+          <CountdownTimer targetDate={cohort.closesAt} label="CLOSES IN" />
+        </div>
+      )}
+      {cohort && (cohort.status === 'PRE_ORDER' || cohort.status === 'COMING_SOON') && (cohort.publicOpensAt || cohort.preorderOpensAt) && (
+        <div className="mt-[10px]">
+          <CountdownTimer targetDate={cohort.publicOpensAt || cohort.preorderOpensAt} label="OPENS IN" />
+        </div>
+      )}
+      
+      <div className="mt-[15px] block w-full py-[10px] text-center bg-[#008b45] hover:bg-[#007339] transition-colors rounded-full text-[12px] font-bold text-white shadow-lg">
+        View Details
+      </div>
+    </Link>
+  );
+}
+
 export default function ClientDashboardOverview({ user, activeAnnouncement, featuredOpps = [] }: { user: any, activeAnnouncement: any, featuredOpps?: any[] }) {
   const totalValue = user.holdings.reduce((sum: number, h: any) => sum + h.totalAmount, 0);
   
@@ -166,6 +224,30 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
         </div>
       </section>
 
+      {/* Hot Right Now Banner */}
+      {featuredOpps.length > 0 && (
+        <section className="bg-[#102218] rounded-[24px] p-[25px] flex flex-col lg:flex-row items-center justify-between gap-[30px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-10 pointer-events-none -translate-y-1/2 -translate-x-1/3"></div>
+          
+          <div className="lg:w-[35%] shrink-0 text-white z-10">
+            <div className="flex items-center gap-[10px] mb-[10px]">
+              <span className="w-[8px] h-[8px] rounded-full bg-[#008b45] animate-pulse shadow-[0_0_10px_rgba(0,139,69,0.5)]"></span>
+              <span className="text-[12px] tracking-[0.14em] font-extrabold text-[#86e2a6] uppercase">Hot Right Now</span>
+            </div>
+            <h2 className="font-manrope text-[24px] lg:text-[28px] tracking-[-0.03em] mb-[10px] leading-tight">New opportunities are live.</h2>
+            <p className="text-[13px] text-[#a6baa9] mb-[20px]">Don't miss out on the latest verified real-asset investments available on Getlands.</p>
+            <Link href="/explore" className="inline-block px-[20px] py-[10px] bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-full font-bold text-[13px] transition-colors">
+              Explore All ↗
+            </Link>
+          </div>
+
+          <div className="lg:w-[65%] w-full flex overflow-x-auto snap-x snap-mandatory gap-[15px] pb-[10px] lg:pb-0 scrollbar-hide z-10">
+            {featuredOpps.map((opp: any) => <MiniFeaturedCard key={opp.id} opp={opp} />)}
+          </div>
+        </section>
+      )}
+
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-[30px] lg:gap-[40px]">
         <section className="lg:col-span-7">
           <div className="flex items-center justify-between mb-[20px]">
@@ -220,46 +302,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
         </section>
       </div>
 
-      {/* Hot Right Now Section */}
-      <section className="mt-[40px] pt-[40px] border-t border-black/5">
-        <div className="flex items-center justify-between mb-[20px]">
-          <h2 className="font-manrope text-[24px] tracking-[-0.03em] text-ink flex items-center gap-[10px]">
-            <span className="w-[8px] h-[8px] rounded-full bg-[#008b45] animate-pulse shadow-[0_0_10px_rgba(0,139,69,0.5)]"></span>
-            Hot Right Now
-          </h2>
-          <Link href="/explore" className="text-[13px] font-bold text-[#008b45] hover:underline">Explore all</Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[20px]">
-          {featuredOpps.slice(0, 3).map((opp: any) => {
-            const cohort = opp.cohorts && opp.cohorts.length > 0 ? opp.cohorts[0] : null;
-            const cohortStatus = cohort ? cohort.status : opp.status;
-            let cohortProgress = 0;
-            if (cohort && cohort.capacityAmount > 0) {
-               cohortProgress = Math.min(100, Math.round((cohort.committedAmount / cohort.capacityAmount) * 100));
-            }
-
-            if (opp.category === 'land') {
-              return (
-                <Link key={opp.id} href={`/explore/${opp.slug}`} className="block relative h-[360px] hover:-translate-y-[5px] transition-transform duration-300">
-                  <MarketCard category="Land" title={opp.title} location={`${opp.location}, ${opp.state}`} priceOrReturn={formatCurrency(opp.price)} imageUrl={opp.coverImage} status={opp.status} className="w-full h-full" cohortStatus={cohortStatus} cohortProgress={cohortProgress} cohortOpensAt={cohort?.publicOpensAt || cohort?.preorderOpensAt} cohortClosesAt={cohort?.closesAt} />
-                </Link>
-              );
-            } else if (opp.category === 'farm') {
-              return (
-                <Link key={opp.id} href={`/explore/${opp.slug}`} className="block relative h-[360px] hover:-translate-y-[5px] transition-transform duration-300">
-                  <FarmCard crop={opp.title.split(' ')[0]} cycle={opp.duration || 'N/A'} title={opp.title} location={`${opp.location}, ${opp.state}`} targetReturn={opp.projectedReturn || '0%'} returnsFrequency={opp.returnsFrequency} price={formatCurrency(opp.slotPrice || 0)} imageUrl={opp.coverImage} status={opp.status} className="w-full h-full" cohortStatus={cohortStatus} cohortProgress={cohortProgress} cohortOpensAt={cohort?.publicOpensAt || cohort?.preorderOpensAt} cohortClosesAt={cohort?.closesAt} />
-                </Link>
-              );
-            } else {
-              return (
-                <Link key={opp.id} href={`/explore/${opp.slug}`} className="block relative h-[360px] hover:-translate-y-[5px] transition-transform duration-300">
-                  <LandBankingCard title={opp.title} location={`${opp.location}, ${opp.state}`} duration={opp.duration || 'N/A'} entryPrice={formatCurrency(opp.acquisitionPrice || 0)} exitPrice={formatCurrency(opp.statedExitValue || 0)} imageUrl={opp.coverImage} status={opp.status} className="w-full h-full" cohortStatus={cohortStatus} cohortProgress={cohortProgress} cohortOpensAt={cohort?.publicOpensAt || cohort?.preorderOpensAt} cohortClosesAt={cohort?.closesAt} />
-                </Link>
-              );
-            }
-          })}
-        </div>
-      </section>
+      
     </div>
   );
 }
