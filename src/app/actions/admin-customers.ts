@@ -61,9 +61,14 @@ export async function assignOpportunityAction(formData: FormData) {
   const dateAcquired = dateAcquiredStr ? new Date(dateAcquiredStr) : new Date();
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  const opportunity = await prisma.opportunity.findUnique({ where: { id: opportunityId } });
+  const opportunity = await prisma.opportunity.findUnique({ 
+    where: { id: opportunityId },
+    include: { cohorts: { where: { status: 'OPEN' }, take: 1 } }
+  });
 
   if (!user || !opportunity) return { error: 'User or Opportunity not found' };
+
+  const activeCohort = opportunity.cohorts.length > 0 ? opportunity.cohorts[0] : null;
 
   // Generate unique reference
   const reference = `REF-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -85,12 +90,26 @@ export async function assignOpportunityAction(formData: FormData) {
     data: {
       userId,
       opportunityId,
+      cohortId: activeCohort ? activeCohort.id : undefined,
       totalAmount: amountPaid,
       units,
       dateAcquired,
       status: 'active'
     }
   });
+
+  // 3. Update Cohort funding progress if it exists
+  if (activeCohort) {
+    await prisma.cohort.update({
+      where: { id: activeCohort.id },
+      data: {
+        committedAmount: { increment: amountPaid },
+        fundedUnits: { increment: units },
+        availableAmount: { decrement: amountPaid },
+        availableUnits: { decrement: units }
+      }
+    });
+  }
 
   // 3. Send email notification
   // If user has an active reset token (e.g. they are a new legacy customer who hasn't claimed their account)
