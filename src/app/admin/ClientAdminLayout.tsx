@@ -25,7 +25,6 @@ export default function ClientAdminLayout({ children, initials, fullName }: { ch
     { name: 'Marketplace', path: '/admin/marketplace', icon: AdminIcons.Marketplace },
     { name: 'Announcements', path: '/admin/announcements', icon: AdminIcons.Documents },
     { name: 'Finance', path: '/admin/finance', icon: AdminIcons.Finance },
-    { name: 'Documents', path: '/admin/documents', icon: AdminIcons.Documents },
     { name: 'Customers', path: '/admin/customers', icon: AdminIcons.Customers },
     { name: 'Messages', path: '/admin/messages', icon: AdminIcons.Messages },
     { name: 'Sales', path: '/admin/sales', icon: AdminIcons.Sales },

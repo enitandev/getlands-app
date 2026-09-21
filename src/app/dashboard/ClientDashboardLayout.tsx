@@ -58,7 +58,6 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
     { name: 'Overview', path: '/dashboard', icon: Icons.Overview },
     { name: 'Holdings', path: '/dashboard/holdings', icon: Icons.Holdings },
     { name: 'Transactions', path: '/dashboard/transactions', icon: Icons.Transactions },
-    { name: 'Documents', path: '/dashboard/documents', icon: Icons.Documents },
     { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages },
     { name: 'Settings', path: '/dashboard/settings', icon: Icons.Settings },
     { name: 'Marketplace', path: '/explore', icon: Icons.Marketplace }
