@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { sendClaimAccountEmail, sendNewInvestmentEmail } from '@/lib/email';
 import { triggerReferralBonus } from '@/lib/referral';
 import { revalidatePath } from 'next/cache';
+import crypto from 'crypto';
 
 export async function addLegacyCustomerAction(formData: FormData) {
   const firstName = formData.get('firstName') as string;
