@@ -133,20 +133,20 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                 <div className="grid grid-cols-2 gap-[15px]">
                   <div>
                     <label className="block text-[13px] font-bold text-ink mb-[8px]">First Name</label>
-                    <input name="firstName" type="text" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                    <input name="firstName" type="text" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required />
                   </div>
                   <div>
                     <label className="block text-[13px] font-bold text-ink mb-[8px]">Last Name</label>
-                    <input name="lastName" type="text" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                    <input name="lastName" type="text" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Email Address</label>
-                  <input name="email" type="email" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                  <input name="email" type="email" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required />
                 </div>
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Phone Number</label>
-                  <input name="phone" type="tel" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                  <input name="phone" type="tel" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" />
                 </div>
               </form>
             </div>
@@ -175,7 +175,7 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
               <form id="assign-opportunity-form" onSubmit={handleAssignOpportunity} className="space-y-[20px]">
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Select Customer</label>
-                  <select name="userId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
+                  <select name="userId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required>
                     <option value="">-- Choose a customer --</option>
                     {users.map(c => <option key={c.id} value={c.id}>{c.firstName + ' ' + c.lastName} ({c.email})</option>)}
                   </select>
@@ -183,7 +183,7 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                 
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Select Opportunity</label>
-                  <select name="opportunityId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required>
+                  <select name="opportunityId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required>
                     <option value="">-- Choose an opportunity --</option>
                     {opportunities.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
                   </select>
@@ -192,17 +192,17 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                 <div className="grid grid-cols-2 gap-[15px]">
                   <div>
                     <label className="block text-[13px] font-bold text-ink mb-[8px]">Amount Paid (₦)</label>
-                    <input name="amountPaid" type="number" step="0.01" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                    <input name="amountPaid" type="number" step="0.01" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required />
                   </div>
                   <div>
                     <label className="block text-[13px] font-bold text-ink mb-[8px]">Units</label>
-                    <input name="units" type="number" step="0.01" defaultValue="1" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                    <input name="units" type="number" step="0.01" defaultValue="1" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Date Acquired (Important for backdating)</label>
-                  <input name="dateAcquired" type="date" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" required />
+                  <input name="dateAcquired" type="date" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required />
                   <p className="text-[11px] text-[#68736d] mt-[5px]">Maturity calculations will be based on this date.</p>
                 </div>
 
