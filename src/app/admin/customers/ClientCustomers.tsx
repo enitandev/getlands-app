@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { toast } from '@/components/ui/Toast';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { formatCurrency } from '@/lib/mockData';
 import { addLegacyCustomerAction, assignOpportunityAction, deleteCustomerAction, sendInviteAction } from '@/app/actions/admin-customers';
 
@@ -8,12 +10,9 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 5000);
-  };
+  const [confirmConfig, setConfirmConfig] = useState<{isOpen: boolean, title: string, message: string, action: (() => void) | null, isDestructive?: boolean}>({
+    isOpen: false, title: '', message: '', action: null
+  });
 
   async function handleAddCustomer(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,13 +22,13 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
     setLoading(false);
     
     if (res.error) {
-      showToast(res.error || "An error occurred.");
+      toast(res.error || "An error occurred.");
     } else {
       const wasEmailSent = formData.get('sendEmail') === 'on';
       if (wasEmailSent) {
-        showToast("Customer successfully created! A welcome email with an account claim link has been sent to them.");
+        toast("Customer successfully created! A welcome email with an account claim link has been sent to them.");
       } else {
-        showToast("Customer successfully created! You can now assign them an opportunity.");
+        toast("Customer successfully created! You can now assign them an opportunity.");
       }
       setIsAddModalOpen(false);
     }
@@ -43,9 +42,9 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
     setLoading(false);
 
     if (res.error) {
-      showToast(res.error || "An error occurred.");
+      toast(res.error || "An error occurred.");
     } else {
-      showToast("Opportunity successfully assigned and documents generated!");
+      toast("Opportunity successfully assigned and documents generated!");
       setIsAssignModalOpen(false);
     }
   }
@@ -109,14 +108,21 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                   <button 
                     className="text-[13px] font-bold text-ink hover:text-[#008b45] transition-colors disabled:opacity-50" 
                     disabled={loading}
-                    onClick={async () => {
-                      if (window.confirm(`Send a 'Claim Account' email to ${c.firstName}?`)) {
-                        setLoading(true);
-                        const res = await sendInviteAction(c.id);
-                        setLoading(false);
-                        if(res.error) showToast(res.error || "An error occurred.");
-                        else showToast("Invite sent successfully!");
-                      }
+                    onClick={() => {
+                      setConfirmConfig({
+                        isOpen: true,
+                        title: 'Send Invite',
+                        message: `This will send a 'Claim Account' email to ${c.firstName} with a secure link to set their password. Proceed?`,
+                        isDestructive: false,
+                        action: async () => {
+                          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                          setLoading(true);
+                          const res = await sendInviteAction(c.id);
+                          setLoading(false);
+                          if(res.error) toast(res.error, 'error');
+                          else toast("Invite sent successfully!", 'success');
+                        }
+                      });
                     }}>
                     Send Invite
                   </button>
@@ -126,12 +132,20 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                   <button 
                     className="text-[13px] font-bold text-[#e53935] hover:underline transition-colors disabled:opacity-50" 
                     disabled={loading}
-                    onClick={async () => {
-                      if (window.confirm('Are you sure you want to delete this customer? This will also delete their transactions and holdings.')) {
-                        setLoading(true);
-                        await deleteCustomerAction(c.id);
-                        setLoading(false);
-                      }
+                    onClick={() => {
+                      setConfirmConfig({
+                        isOpen: true,
+                        title: 'Delete Customer',
+                        message: 'Are you sure you want to delete this customer? This will also permanently delete their transactions and holdings.',
+                        isDestructive: true,
+                        action: async () => {
+                          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                          setLoading(true);
+                          await deleteCustomerAction(c.id);
+                          setLoading(false);
+                          toast('Customer deleted successfully', 'success');
+                        }
+                      });
                     }}>
                     Delete
                   </button>
@@ -253,14 +267,18 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
         </div>
       )}
     
-      {toastMessage && (
-        <div className="fixed bottom-[30px] right-[30px] bg-[#1a1a1a] text-white px-[24px] py-[16px] rounded-[12px] shadow-2xl z-[100] animate-fade-in flex items-center gap-[12px] max-w-[400px]">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-          <p className="text-[14px] leading-[1.4] font-medium">{toastMessage}</p>
-          <button onClick={() => setToastMessage("")} className="ml-auto opacity-50 hover:opacity-100 transition-opacity">
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
-      )}
+      
+    
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        isDestructive={confirmConfig.isDestructive}
+        confirmText={confirmConfig.isDestructive ? "Delete" : "Send Email"}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (confirmConfig.action) confirmConfig.action();
+        }}
+      />
     </div>  );
 }
