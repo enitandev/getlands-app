@@ -1,4 +1,6 @@
-import React from 'react';
+import re
+
+new_content = """import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font, Svg, Path, Circle, Rect, G } from '@react-pdf/renderer';
 
 // Register fonts for a more premium look
@@ -290,9 +292,9 @@ export const ReceiptTemplate = ({ holding, baseUrl }: { holding: any, baseUrl: s
               <Svg viewBox="0 0 100 100" style={styles.stamp}>
                 <Circle cx="50" cy="50" r="45" stroke="#008b45" strokeWidth="2" fill="none" />
                 <Circle cx="50" cy="50" r="40" stroke="#008b45" strokeWidth="1" fill="none" strokeDasharray="4,4" />
-                <Text x="16" y="55" fill="#008b45" style={{ fontSize: 14, fontWeight: 'bold' }}>APPROVED</Text>
-                <Text x="32" y="32" fill="#008b45" style={{ fontSize: 8 }}>GETLANDS</Text>
-                <Text x="32" y="75" fill="#008b45" style={{ fontSize: 8 }}>OFFICIAL</Text>
+                <Text x="16" y="55" fill="#008b45" fontSize="14" style={{ fontWeight: 'bold' }}>APPROVED</Text>
+                <Text x="32" y="32" fill="#008b45" fontSize="8">GETLANDS</Text>
+                <Text x="32" y="75" fill="#008b45" fontSize="8">OFFICIAL</Text>
               </Svg>
 
               <Text style={styles.signatureLine}>Programme Manager{'\n'}GETLANDS</Text>
@@ -312,3 +314,7 @@ export const ReceiptTemplate = ({ holding, baseUrl }: { holding: any, baseUrl: s
     </Document>
   );
 };
+"""
+
+with open('src/components/pdf/ReceiptTemplate.tsx', 'w') as f:
+    f.write(new_content)
