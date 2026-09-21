@@ -130,7 +130,7 @@ const dateAcquired = new Date(holding.dateAcquired);
                     <strong className="block text-[13px] text-ink">Signed Memorandum of Understanding</strong>
                   </div>
                 </div>
-                <a href={`/api/documents/agreement/${holding.id}`} target="_blank" className="text-[11px] font-bold text-[#008b45] hover:underline">Download</a>
+                <a href={`/api/documents/agreement/${holding.id}?t=${Date.now()}`} target="_blank" className="text-[11px] font-bold text-[#008b45] hover:underline">Download</a>
               </div>
             </div>
           </div>
