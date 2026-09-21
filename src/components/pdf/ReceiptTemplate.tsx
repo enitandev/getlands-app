@@ -72,12 +72,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#d4af37',
     fontFamily: 'Playfair',
-    fontStyle: 'italic',
+    
     marginBottom: 10,
   },
   customerName: {
     fontSize: 22,
-    fontWeight: 'heavy',
+    fontWeight: 'bold',
     color: '#102218',
     marginBottom: 5,
     textTransform: 'uppercase',
@@ -103,14 +103,14 @@ const styles = StyleSheet.create({
   amountLabel: {
     fontSize: 11,
     color: '#d4af37',
-    fontWeight: 'heavy',
+    fontWeight: 'bold',
     marginBottom: 8,
     letterSpacing: 1,
   },
   amountValue: {
     fontSize: 36,
     color: '#102218',
-    fontWeight: 'heavy',
+    fontWeight: 'bold',
   },
   currencySymbol: {
     backgroundColor: '#008b45',
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   detailLabel: {
     width: '35%',
     fontSize: 11,
-    fontWeight: 'heavy',
+    fontWeight: 'bold',
     color: '#102218',
     letterSpacing: 1,
   },
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     marginTop: 60,
     paddingTop: 8,
     fontSize: 10,
-    fontWeight: 'heavy',
+    fontWeight: 'bold',
     color: '#102218',
   },
   signatureText: {
