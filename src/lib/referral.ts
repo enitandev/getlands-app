@@ -35,7 +35,8 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
           userId: referrer.id,
           type: 'referral_bonus',
           amount: bonusAmount,
-          status: 'success'
+          status: 'success',
+          reference: `REF-BONUS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
         }
       }),
       prisma.user.update({

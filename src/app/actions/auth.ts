@@ -57,7 +57,7 @@ export async function registerAction(formData: FormData) {
 
   // Referral Handling
   let referredById = null;
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const refCode = cookieStore.get('ref_code')?.value;
   if (refCode) {
     const referrer = await prisma.user.findUnique({ where: { referralCode: refCode } });

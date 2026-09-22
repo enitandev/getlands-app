@@ -88,11 +88,11 @@ export async function checkoutAction(formData: FormData) {
           fundedUnits: { increment: units },
           availableUnits: { decrement: units }
         }
+      });
+    }
 
     // 5. Trigger Referral Bonus if applicable
     await triggerReferralBonus(user.id, totalAmount);
-      });
-    }
 
     redirect('/dashboard/holdings');
 
