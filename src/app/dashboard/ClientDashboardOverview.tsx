@@ -87,13 +87,50 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
   );
 
   const totalValue = user.holdings.reduce((sum: number, h: any) => sum + h.totalAmount, 0);
+
+  const MobileSuperHeader = () => (
+    <div className="md:hidden bg-[#102218] text-white rounded-[20px] p-[20px] mb-[15px] relative overflow-hidden shadow-[0_15px_40px_rgba(16,34,24,0.15)] animate-fade-in">
+      <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-20 pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
+      
+      <div className="relative z-10 flex justify-between items-start mb-[20px]">
+        <div>
+          <div className="text-[11px] text-[#a6baa9] uppercase tracking-[0.1em] font-bold mb-[4px]">Wallet Balance</div>
+          <div className="font-manrope text-[36px] tracking-[-0.03em] font-bold text-white leading-none">
+            {formatCurrency(user.walletBalance)}
+          </div>
+        </div>
+        <Link href="/dashboard/wallet" className="bg-[#008b45] text-white px-[16px] py-[8px] rounded-full text-[12px] font-bold shadow-[0_4px_10px_rgba(0,139,69,0.3)] hover:bg-[#007339] transition-colors">
+          Fund
+        </Link>
+      </div>
+
+      <div className="relative z-10 border-t border-white/10 pt-[15px] flex items-end justify-between">
+        <div>
+          <div className="text-[10px] text-[#a6baa9] uppercase tracking-[0.1em] font-bold mb-[4px]">Total Holdings</div>
+          <div className="font-manrope text-[20px] text-[#a9e7bd] font-bold leading-none">
+            {formatCurrency(totalValue)}
+          </div>
+        </div>
+        <div className="flex gap-[6px]">
+          <div className="bg-white/10 px-[10px] py-[4px] rounded-full text-[10px] font-bold text-white">
+            {user.holdings.filter((h: any) => h.opportunity?.category === 'land').length} Land
+          </div>
+          <div className="bg-white/10 px-[10px] py-[4px] rounded-full text-[10px] font-bold text-white">
+            {user.holdings.filter((h: any) => h.opportunity?.category === 'farm').length} Farm
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   
   if (!user.holdings || user.holdings.length === 0) {
     return (
-      <div className="space-y-[20px] md:space-y-[40px] animate-fade-in">
-        <section>
+      <div className="space-y-[15px] md:space-y-[40px]">
+        <MobileSuperHeader />
+        <section className="hidden md:block animate-fade-in">
           <div className="text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase mb-[10px]">MY GETLANDS</div>
-          <h1 className="font-manrope text-[28px] md:text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[10px] md:mb-[20px]">
+          <h1 className="font-manrope text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[20px]">
             Welcome, {user.firstName}.
           </h1>
           <p className="text-[16px] text-[#68736d] max-w-[500px]">Your portfolio starts here.</p>
