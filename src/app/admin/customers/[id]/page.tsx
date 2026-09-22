@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
+import { LegacyReferralModal } from '../LegacyReferralModal';
 
 export default async function CustomerProfile({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -36,6 +37,10 @@ export default async function CustomerProfile({ params }: { params: Promise<{ id
             <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[5px]">Customer Profile</h1>
             <p className="text-[13px] text-[#68736d]">Detailed view of holdings and documents.</p>
           </div>
+        </div>
+        
+        <div className="flex gap-[10px]">
+          {!user.referredById && <LegacyReferralModal referredUserId={user.id} />}
         </div>
       </div>
 

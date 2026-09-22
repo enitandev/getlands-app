@@ -5,6 +5,9 @@ import { logoutAction } from '@/app/actions/auth';
 import { usePathname } from 'next/navigation';
 
 const Icons = {
+  Referrals: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+  ),
   Overview: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="7" height="9" rx="1"></rect>
@@ -60,6 +63,7 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
     { name: 'Transactions', path: '/dashboard/transactions', icon: Icons.Transactions },
     { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages },
     { name: 'Settings', path: '/dashboard/settings', icon: Icons.Settings },
+    { name: 'Referrals', path: '/dashboard/referrals', icon: Icons.Referrals },
     { name: 'Marketplace', path: '/explore', icon: Icons.Marketplace }
   ];
 
