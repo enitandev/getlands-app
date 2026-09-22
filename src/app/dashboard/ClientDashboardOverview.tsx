@@ -164,7 +164,8 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
   }
 
   return (
-    <div className="space-y-[20px] md:space-y-[40px]">
+    <div className="space-y-[15px] md:space-y-[40px]">
+      <MobileSuperHeader />
       {activeAnnouncement && (
         <div className="bg-[#008b45] text-white p-[20px] rounded-[16px] shadow-[0_10px_30px_rgba(0,139,69,0.2)] flex flex-col md:flex-row md:items-center justify-between gap-[15px] animate-fade-in">
           <div className="flex gap-[15px] items-center">
@@ -182,9 +183,10 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
         </div>
       )}
 
+      <div className="hidden md:block">
       <section>
         <div className="text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase mb-[10px]">MY GETLANDS</div>
-        <h1 className="font-manrope text-[28px] md:text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[10px] md:mb-[20px]">
+        <h1 className="font-manrope text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[20px]">
           Welcome back, {user.firstName}.
         </h1>
         
@@ -230,6 +232,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
           </div>
         </div>
       </section>
+      </div>
 
       <ReferralBanner />
 
