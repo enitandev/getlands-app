@@ -69,22 +69,19 @@ function MiniFeaturedCard({ opp }: { opp: any }) {
 export default function ClientDashboardOverview({ user, activeAnnouncement, featuredOpps = [], referralBonusPercentage = 10 }: { user: any, activeAnnouncement: any, featuredOpps?: any[], referralBonusPercentage?: number }) {
 
   const ReferralBanner = () => (
-    <div className="bg-[#eef3ef] border border-[#008b45]/20 rounded-[20px] p-[25px] flex flex-col md:flex-row justify-between items-center gap-[20px] relative overflow-hidden group hover:bg-[#e6efe9] transition-colors">
+    <div className="bg-[#eef3ef] border border-[#008b45]/20 rounded-[16px] md:rounded-[20px] p-[16px] md:p-[25px] flex flex-row justify-between items-center gap-[15px] md:gap-[20px] relative overflow-hidden group hover:bg-[#e6efe9] transition-colors">
       <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-[#008b45] rounded-full blur-[60px] opacity-10 pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
       <div className="relative z-10 flex-1">
-        <div className="text-[11px] text-[#008b45] font-bold uppercase tracking-[0.1em] mb-[8px] flex items-center gap-[6px]">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          Refer & Earn
-        </div>
-        <h3 className="font-manrope text-[20px] tracking-[-0.03em] font-bold text-ink leading-tight mb-[5px]">
-          Earn {referralBonusPercentage}% in cash!
+        <h3 className="font-manrope text-[15px] md:text-[20px] tracking-[-0.03em] font-bold text-[#008b45] md:text-ink leading-tight flex items-center gap-[6px]">
+          <svg className="hidden md:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Refer & Earn {referralBonusPercentage}% 🎁
         </h3>
-        <p className="text-[14px] text-[#68736d] max-w-[500px]">
+        <p className="hidden md:block text-[14px] text-[#68736d] max-w-[500px] mt-[5px]">
           Invite a friend to Getlands. When they make their first investment, you get {referralBonusPercentage}% of their purchase credited straight to your wallet.
         </p>
       </div>
-      <Link href="/dashboard/referrals" className="relative z-10 shrink-0 px-[20px] py-[12px] bg-white text-[#008b45] font-bold text-[13px] rounded-full border border-[#008b45]/20 shadow-sm hover:shadow-md hover:border-[#008b45]/40 transition-all">
-        Get Your Link
+      <Link href="/dashboard/referrals" className="relative z-10 shrink-0 px-[16px] py-[8px] md:px-[20px] md:py-[12px] bg-white text-[#008b45] font-bold text-[12px] md:text-[13px] rounded-full border border-[#008b45]/20 shadow-sm hover:shadow-md hover:border-[#008b45]/40 transition-all text-center">
+        Get Link
       </Link>
     </div>
   );
@@ -93,10 +90,10 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
   
   if (!user.holdings || user.holdings.length === 0) {
     return (
-      <div className="space-y-[40px] animate-fade-in">
+      <div className="space-y-[20px] md:space-y-[40px] animate-fade-in">
         <section>
           <div className="text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase mb-[10px]">MY GETLANDS</div>
-          <h1 className="font-manrope text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[20px]">
+          <h1 className="font-manrope text-[28px] md:text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[10px] md:mb-[20px]">
             Welcome, {user.firstName}.
           </h1>
           <p className="text-[16px] text-[#68736d] max-w-[500px]">Your portfolio starts here.</p>
@@ -130,7 +127,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
   }
 
   return (
-    <div className="space-y-[40px]">
+    <div className="space-y-[20px] md:space-y-[40px]">
       {activeAnnouncement && (
         <div className="bg-[#008b45] text-white p-[20px] rounded-[16px] shadow-[0_10px_30px_rgba(0,139,69,0.2)] flex flex-col md:flex-row md:items-center justify-between gap-[15px] animate-fade-in">
           <div className="flex gap-[15px] items-center">
@@ -150,19 +147,19 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
 
       <section>
         <div className="text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase mb-[10px]">MY GETLANDS</div>
-        <h1 className="font-manrope text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[20px]">
+        <h1 className="font-manrope text-[28px] md:text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[10px] md:mb-[20px]">
           Welcome back, {user.firstName}.
         </h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px]">
           {/* Main Portfolio Box */}
-          <div className="lg:col-span-2 bg-[#102218] text-white rounded-[24px] p-[30px] lg:p-[40px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
+          <div className="lg:col-span-2 bg-[#102218] text-white rounded-[24px] p-[24px] md:p-[30px] lg:p-[40px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-20 pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
             <div className="text-[13px] text-[#a6baa9] mb-[5px] font-bold uppercase tracking-wider">Total Holdings</div>
-            <div className="font-manrope text-[48px] lg:text-[64px] tracking-[-0.05em] text-[#a9e7bd] leading-none mb-[30px]">
+            <div className="font-manrope text-[36px] md:text-[48px] lg:text-[64px] tracking-[-0.05em] text-[#a9e7bd] leading-none mb-[20px] md:mb-[30px]">
               {formatCurrency(totalValue)}
             </div>
-          <div className="flex gap-[15px]">
+          <div className="flex flex-wrap gap-[10px] md:gap-[15px]">
             <div className="bg-white/10 px-[16px] py-[10px] rounded-full text-[12px] font-bold">
               {user.holdings.filter((h: any) => h.opportunity.category === 'land').length} Land
             </div>
@@ -201,7 +198,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
 
       {/* Hot Right Now Banner */}
       {featuredOpps.length > 0 && (
-        <section className="bg-[#102218] rounded-[24px] p-[25px] flex flex-col lg:flex-row items-center justify-between gap-[30px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
+        <section className="bg-[#102218] rounded-[24px] p-[20px] md:p-[25px] flex flex-col lg:flex-row items-center justify-between gap-[20px] md:gap-[30px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
           <div className="absolute top-0 left-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-10 pointer-events-none -translate-y-1/2 -translate-x-1/3"></div>
           
           <div className="lg:w-[35%] shrink-0 text-white z-10">
@@ -209,9 +206,9 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
               <span className="w-[8px] h-[8px] rounded-full bg-[#008b45] animate-pulse shadow-[0_0_10px_rgba(0,139,69,0.5)]"></span>
               <span className="text-[12px] tracking-[0.14em] font-extrabold text-[#86e2a6] uppercase">Hot Right Now</span>
             </div>
-            <h2 className="font-manrope text-[24px] lg:text-[28px] tracking-[-0.03em] mb-[10px] leading-tight">New opportunities are live.</h2>
-            <p className="text-[13px] text-[#a6baa9] mb-[20px]">Don't miss out on the latest verified real-asset investments available on Getlands.</p>
-            <Link href="/explore" className="inline-block px-[20px] py-[10px] bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-full font-bold text-[13px] transition-colors">
+            <h2 className="font-manrope text-[20px] md:text-[24px] lg:text-[28px] tracking-[-0.03em] mb-[10px] leading-tight">New opportunities are live.</h2>
+            <p className="hidden md:block text-[13px] text-[#a6baa9] mb-[20px]">Don't miss out on the latest verified real-asset investments available on Getlands.</p>
+            <Link href="/explore" className="hidden md:inline-block px-[20px] py-[10px] bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-full font-bold text-[13px] transition-colors">
               Explore All ↗
             </Link>
           </div>
