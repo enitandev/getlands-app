@@ -238,7 +238,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
 
       {/* Hot Right Now Banner */}
       {featuredOpps.length > 0 && (
-        <section className="bg-[#102218] rounded-[24px] p-[20px] md:p-[25px] flex flex-col lg:flex-row items-center justify-between gap-[20px] md:gap-[30px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
+        <section className="bg-[#102218] rounded-[24px] p-[15px] md:p-[25px] flex flex-col lg:flex-row md:items-center justify-between gap-[10px] md:gap-[30px] shadow-[0_20px_50px_rgba(16,34,24,0.1)] relative overflow-hidden">
           <div className="absolute top-0 left-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-10 pointer-events-none -translate-y-1/2 -translate-x-1/3"></div>
           
           <div className="lg:w-[35%] shrink-0 text-white z-10">
@@ -246,7 +246,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
               <span className="w-[8px] h-[8px] rounded-full bg-[#008b45] animate-pulse shadow-[0_0_10px_rgba(0,139,69,0.5)]"></span>
               <span className="text-[12px] tracking-[0.14em] font-extrabold text-[#86e2a6] uppercase">Hot Right Now</span>
             </div>
-            <h2 className="font-manrope text-[20px] md:text-[24px] lg:text-[28px] tracking-[-0.03em] mb-[10px] leading-tight">New opportunities are live.</h2>
+            <h2 className="font-manrope text-[16px] md:text-[24px] lg:text-[28px] tracking-[-0.03em] mb-[5px] md:mb-[10px] leading-tight">New opportunities are live.</h2>
             <p className="hidden md:block text-[13px] text-[#a6baa9] mb-[20px]">Don't miss out on the latest verified real-asset investments available on Getlands.</p>
             <Link href="/explore" className="hidden md:inline-block px-[20px] py-[10px] bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-full font-bold text-[13px] transition-colors">
               Explore All ↗
