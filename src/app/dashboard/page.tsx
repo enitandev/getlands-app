@@ -23,9 +23,8 @@ export default async function DashboardOverviewPage() {
 
   if (!user) redirect('/login');
 
-  const featuredOpps = await prisma.opportunity.findMany({
-    where: { featured: true, status: { not: 'draft' } },
-    take: 2,
+  const opportunities = await prisma.opportunity.findMany({
+    where: { status: { not: 'draft' } },
     orderBy: { createdAt: 'desc' },
     include: { cohorts: { orderBy: { createdAt: 'desc' }, take: 1 } }
   });
@@ -38,5 +37,5 @@ export default async function DashboardOverviewPage() {
   const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
   const referralBonusPercentage = settings?.referralBonusPercentage || 10;
 
-  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} featuredOpps={featuredOpps} referralBonusPercentage={referralBonusPercentage} />;
+  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} opportunities={opportunities} referralBonusPercentage={referralBonusPercentage} />;
 }

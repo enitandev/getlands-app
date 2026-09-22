@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency } from '@/lib/mockData';
 
-export default function ClientDashboardOverview({ user, opportunities }: any) {
+export default function ClientDashboardOverview({ user, opportunities = [] }: any) {
   // Find a featured opportunity (ideally Farm or whatever is closing first)
   const featuredOpp = opportunities.find((o: any) => o.status === 'OPEN' && o.category === 'farm') || opportunities[0];
   const cohort = featuredOpp?.cohorts?.[0];
