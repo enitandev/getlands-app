@@ -2,16 +2,62 @@
 import React, { useState } from 'react';
 import { logoutAction } from '@/app/actions/auth';
 import { updatePersonalInfoAction, updateBankDetailsAction, updateNextOfKinAction, submitKycAction } from '@/app/actions/user';
+import { getBanksAction, verifyBankAccountAction } from '@/app/actions/paystack';
 import { toast } from '@/components/ui/Toast';
 
 export default function ClientSettings({ user }: { user: any }) {
-  const [activeTab, setActiveTab] = useState<'profile' | 'kyc' | 'next_of_kin' | 'bank'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'bank' | 'next_of_kin' | 'kyc'>('profile');
 
   // Loading states
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingBank, setLoadingBank] = useState(false);
   const [loadingKin, setLoadingKin] = useState(false);
   const [loadingKyc, setLoadingKyc] = useState(false);
+
+  // Bank Verification States
+  const [banks, setBanks] = useState<any[]>([]);
+  const [selectedBankCode, setSelectedBankCode] = useState('');
+  const [selectedBankName, setSelectedBankName] = useState(user.bankName || '');
+  const [accountNumber, setAccountNumber] = useState(user.accountNumber || '');
+  const [verifiedName, setVerifiedName] = useState(user.accountName || '');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+
+  React.useEffect(() => {
+    async function loadBanks() {
+      const res = await getBanksAction();
+      if (res.banks) {
+        setBanks(res.banks);
+        if (user.bankName) {
+           const match = res.banks.find((b: any) => b.name === user.bankName);
+           if (match) setSelectedBankCode(match.code);
+        }
+      }
+    }
+    loadBanks();
+  }, [user.bankName]);
+
+  React.useEffect(() => {
+    if (accountNumber.length === 10 && selectedBankCode) {
+      verifyAccount();
+    } else if (accountNumber.length < 10) {
+      if (verifiedName !== user.accountName) setVerifiedName('');
+      setVerifyError('');
+    }
+  }, [accountNumber, selectedBankCode]);
+
+  const verifyAccount = async () => {
+    setIsVerifying(true);
+    setVerifyError('');
+    const res = await verifyBankAccountAction(accountNumber, selectedBankCode);
+    setIsVerifying(false);
+    if (res.error) {
+       setVerifyError(res.error);
+       setVerifiedName('');
+    } else if (res.accountName) {
+       setVerifiedName(res.accountName);
+    }
+  };
 
   const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,18 +85,8 @@ export default function ClientSettings({ user }: { user: any }) {
     const formData = new FormData(e.currentTarget);
     const res = await updateNextOfKinAction(formData);
     if (res?.error) toast(res.error, 'error');
-    else toast('Next of Kin updated successfully');
+    else toast('Next of Kin details updated');
     setLoadingKin(false);
-  };
-
-  const handleKycSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoadingKyc(true);
-    const formData = new FormData(e.currentTarget);
-    const res = await submitKycAction(formData);
-    if (res?.error) toast(res.error, 'error');
-    else toast('KYC documents submitted for review');
-    setLoadingKyc(false);
   };
 
   return (
@@ -65,23 +101,17 @@ export default function ClientSettings({ user }: { user: any }) {
           Personal Info
           {activeTab === 'profile' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
-        <button onClick={() => setActiveTab('kyc')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative flex items-center gap-[6px] ${activeTab === 'kyc' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-          KYC Verification
-          {user.kycStatus === 'verified' && (
-            <svg className="text-[#008b45]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"></circle><path d="M8 12l3 3 5-6" stroke="white" strokeWidth="2" strokeLinecap="round"></path></svg>
-          )}
-          {user.kycStatus === 'pending' && (
-            <svg className="text-yellow-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"></circle><line x1="12" y1="8" x2="12" y2="12" stroke="white" strokeWidth="2"></line><line x1="12" y1="16" x2="12.01" y2="16" stroke="white" strokeWidth="2"></line></svg>
-          )}
-          {activeTab === 'kyc' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
+        <button onClick={() => setActiveTab('bank')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'bank' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
+          Bank Details
+          {activeTab === 'bank' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
         <button onClick={() => setActiveTab('next_of_kin')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'next_of_kin' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
           Next of Kin
           {activeTab === 'next_of_kin' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
-        <button onClick={() => setActiveTab('bank')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'bank' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-          Bank Details
-          {activeTab === 'bank' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
+        <button onClick={() => setActiveTab('kyc')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative flex items-center gap-[6px] ${activeTab === 'kyc' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
+          KYC Verification
+          {activeTab === 'kyc' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
       </div>
 
@@ -125,60 +155,82 @@ export default function ClientSettings({ user }: { user: any }) {
           </form>
         )}
 
-        {activeTab === 'kyc' && (
-          <div className="space-y-[30px]">
-            <div className={`border rounded-[16px] p-[20px] flex items-start gap-[15px] ${user.kycStatus === 'verified' ? 'bg-[#eef3ef] border-[#008b45]/20' : user.kycStatus === 'pending' ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'}`}>
-              <div className={`w-[40px] h-[40px] rounded-full text-white flex items-center justify-center shrink-0 ${user.kycStatus === 'verified' ? 'bg-[#008b45]' : user.kycStatus === 'pending' ? 'bg-yellow-500' : 'bg-gray-400'}`}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        {activeTab === 'bank' && (
+          <form className="space-y-[20px]" onSubmit={(e) => {
+            if (!verifiedName) {
+              e.preventDefault();
+              toast('Please enter a valid account number to verify your name first.', 'error');
+              return;
+            }
+            handleBankSubmit(e);
+          }}>
+            <p className="text-[13px] text-[#68736d] mb-[20px]">This is the account where your maturity payouts and dividends will be credited. It must be verified before saving.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
+              <div>
+                <label className="block text-[13px] font-bold text-ink mb-[8px]">Bank Name</label>
+                <input type="hidden" name="bankName" value={selectedBankName} />
+                <select 
+                  value={selectedBankCode}
+                  onChange={(e) => {
+                    setSelectedBankCode(e.target.value);
+                    const b = banks.find(b => b.code === e.target.value);
+                    if(b) setSelectedBankName(b.name);
+                  }}
+                  className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" 
+                  required
+                >
+                  <option value="" disabled>Select bank</option>
+                  {banks.map((b: any) => (
+                    <option key={b.code} value={b.code}>{b.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <h3 className="font-manrope font-bold text-ink text-[16px] mb-[4px]">
-                  {user.kycStatus === 'verified' ? 'Tier 2 Verified' : user.kycStatus === 'pending' ? 'Verification Pending' : 'Unverified'}
-                </h3>
-                <p className="text-[13px] text-[#4a554f]">
-                  {user.kycStatus === 'verified' ? 'Your identity has been verified. You can invest up to ₦50,000,000.' : user.kycStatus === 'pending' ? 'Your documents are being reviewed by our compliance team.' : 'Please submit your documents to unlock higher investment limits.'}
-                </p>
+                <label className="block text-[13px] font-bold text-ink mb-[8px]">Account Number</label>
+                <input 
+                  name="accountNumber" 
+                  type="text" 
+                  maxLength={10}
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
+                  className={`w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border transition-colors shadow-sm ${verifyError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:border-[#008b45] focus:ring-[#008b45]/20'}`} 
+                  required 
+                  placeholder="10 digit account number"
+                />
+                {verifyError && <p className="text-[11px] text-red-500 mt-[5px]">{verifyError}</p>}
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[13px] font-bold text-ink mb-[8px]">Verified Account Name</label>
+                <div className="relative">
+                  <input 
+                    name="accountName" 
+                    type="text" 
+                    value={verifiedName} 
+                    readOnly
+                    className={`w-full h-[50px] bg-gray-50 rounded-[12px] px-[15px] outline-none border transition-colors shadow-sm text-gray-700 font-medium ${verifiedName ? 'border-[#008b45]/50 bg-[#eef3ef]' : 'border-gray-300 cursor-not-allowed'}`} 
+                    required 
+                    placeholder="Auto-filled securely after typing account number"
+                  />
+                  {isVerifying && (
+                    <div className="absolute right-[15px] top-[15px]">
+                      <div className="w-[20px] h-[20px] border-2 border-[#008b45]/20 border-t-[#008b45] rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  {verifiedName && !isVerifying && (
+                    <div className="absolute right-[15px] top-[15px] text-[#008b45]">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[11px] text-[#7a847f] mt-[5px]">For your security, we lock this name to prevent withdrawals to fraudulent accounts.</p>
               </div>
             </div>
-            
-            {user.kycStatus === 'unverified' ? (
-              <form onSubmit={handleKycSubmit} className="space-y-[20px]">
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[8px]">National ID (NIN) / Passport</label>
-                  <input name="ninFile" type="file" accept="image/*,.pdf" className="w-full text-[13px]" required />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[8px]">Utility Bill (Proof of Address)</label>
-                  <input name="utilityFile" type="file" accept="image/*,.pdf" className="w-full text-[13px]" required />
-                </div>
-                <div className="pt-[10px] flex justify-end">
-                  <button type="submit" disabled={loadingKyc} className="px-[24px] py-[12px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
-                    {loadingKyc ? 'Uploading...' : 'Submit Documents'}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div>
-                <h3 className="font-bold text-ink text-[14px] mb-[15px]">Submitted Documents</h3>
-                <div className="space-y-[10px]">
-                  <div className="flex justify-between items-center p-[15px] border border-black/5 rounded-[12px]">
-                    <div className="flex items-center gap-[10px]">
-                      <svg className="text-[#68736d]" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                      <span className="text-[13px] font-bold text-ink">National ID (NIN)</span>
-                    </div>
-                    <span className={`text-[11px] font-bold uppercase tracking-widest ${user.kycStatus === 'verified' ? 'text-[#008b45]' : 'text-yellow-600'}`}>{user.kycStatus}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-[15px] border border-black/5 rounded-[12px]">
-                    <div className="flex items-center gap-[10px]">
-                      <svg className="text-[#68736d]" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                      <span className="text-[13px] font-bold text-ink">Utility Bill</span>
-                    </div>
-                    <span className={`text-[11px] font-bold uppercase tracking-widest ${user.kycStatus === 'verified' ? 'text-[#008b45]' : 'text-yellow-600'}`}>{user.kycStatus}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+            <div className="pt-[10px] flex justify-end">
+              <button type="submit" disabled={loadingBank || !verifiedName} className="px-[24px] py-[12px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
+                {loadingBank ? 'Saving...' : 'Save Bank Details'}
+              </button>
+            </div>
+          </form>
         )}
 
         {activeTab === 'next_of_kin' && (
@@ -217,36 +269,19 @@ export default function ClientSettings({ user }: { user: any }) {
           </form>
         )}
 
-        {activeTab === 'bank' && (
-          <form className="space-y-[20px]" onSubmit={handleBankSubmit}>
-            <p className="text-[13px] text-[#68736d] mb-[20px]">This is the account where your maturity payouts and dividends will be credited.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Bank Name</label>
-                <select name="bankName" defaultValue={user.bankName || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required>
-                  <option value="" disabled>Select bank</option>
-                  <option value="gtb">Guaranty Trust Bank</option>
-                  <option value="zenith">Zenith Bank</option>
-                  <option value="moniepoint">Moniepoint Microfinance Bank</option>
-                  <option value="access">Access Bank</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Account Number</label>
-                <input name="accountNumber" type="text" defaultValue={user.accountNumber || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Account Name</label>
-                <input name="accountName" type="text" defaultValue={user.accountName || `${user.firstName} ${user.lastName}`} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
-                <p className="text-[11px] text-[#7a847f] mt-[5px]">Account name must match your verified profile name.</p>
-              </div>
+        {activeTab === 'kyc' && (
+          <div className="bg-[#f7f9f7] rounded-[20px] p-[40px] text-center border border-black/5 flex flex-col items-center justify-center">
+            <div className="w-[60px] h-[60px] bg-white rounded-full flex items-center justify-center shadow-sm mb-[20px]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </div>
-            <div className="pt-[10px] flex justify-end">
-              <button type="submit" disabled={loadingBank} className="px-[24px] py-[12px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
-                {loadingBank ? 'Saving...' : 'Save Bank Details'}
-              </button>
+            <h3 className="font-manrope text-[20px] font-bold text-ink mb-[10px]">Data Protection Standard</h3>
+            <p className="text-[14px] text-[#68736d] max-w-[400px] mb-[20px]">
+              To protect your privacy and comply with NDPR regulations, we defer advanced KYC data collection until you make your first large withdrawal.
+            </p>
+            <div className="inline-block px-[16px] py-[8px] bg-white text-[#008b45] text-[12px] font-bold rounded-full border border-[#008b45]/20 shadow-sm">
+              KYC Coming Soon
             </div>
-          </form>
+          </div>
         )}
       </div>
 
