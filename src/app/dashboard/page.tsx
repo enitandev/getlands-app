@@ -35,5 +35,8 @@ export default async function DashboardOverviewPage() {
     orderBy: { createdAt: 'desc' }
   });
 
-  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} featuredOpps={featuredOpps} />;
+  const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
+  const referralBonusPercentage = settings?.referralBonusPercentage || 10;
+
+  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} featuredOpps={featuredOpps} referralBonusPercentage={referralBonusPercentage} />;
 }

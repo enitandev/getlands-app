@@ -1,15 +1,16 @@
+import re
+
 with open('src/app/dashboard/page.tsx', 'r') as f:
     content = f.read()
 
-content = content.replace(
-    "const activeAnnouncement = await prisma.announcement.findFirst({",
-    "const featuredOpps = await prisma.opportunity.findMany({\n    where: { featured: true, status: { not: 'draft' } },\n    take: 2,\n    orderBy: { createdAt: 'desc' }\n  });\n\n  const activeAnnouncement = await prisma.announcement.findFirst({"
-)
+pattern = r"(  const activeAnnouncement = await prisma\.announcement\.findFirst\(\{\n    where: \{ isActive: true \},\n    orderBy: \{ createdAt: 'desc' \}\n  \}\);)"
+replacement = r"\1\n\n  const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });\n  const referralBonusPercentage = settings?.referralBonusPercentage || 10;"
+content = re.sub(pattern, replacement, content)
 
-content = content.replace(
-    "<ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} />",
-    "<ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} featuredOpps={featuredOpps} />"
-)
+return_pattern = r"(return <ClientDashboardOverview user=\{user\} activeAnnouncement=\{activeAnnouncement\} featuredOpps=\{featuredOpps\} />;)"
+return_replacement = r"return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} featuredOpps={featuredOpps} referralBonusPercentage={referralBonusPercentage} />;"
+content = re.sub(return_pattern, return_replacement, content)
 
 with open('src/app/dashboard/page.tsx', 'w') as f:
     f.write(content)
+
