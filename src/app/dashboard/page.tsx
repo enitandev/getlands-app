@@ -12,7 +12,7 @@ export default async function DashboardOverviewPage() {
     where: { id: session.userId as string },
     include: {
       holdings: {
-        include: { opportunity: true }
+        include: { opportunity: true, cohort: true }
       },
       notifications: {
         take: 3,
