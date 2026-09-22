@@ -1,4 +1,5 @@
-"use client";
+with open('src/app/dashboard/ClientDashboardOverview.tsx', 'w') as f:
+    f.write('''"use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
@@ -135,7 +136,7 @@ export default function ClientDashboardOverview({ user, opportunities }: any) {
                 <div className="bg-white/5 border border-white/10 rounded-[12px] p-[15px] flex-1">
                   <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[5px]">CLOSES IN</div>
                   <div className="font-mono text-[18px] font-bold text-white">
-                    <CountdownTimer targetDate={cohort ? cohort.endDate : featuredOpp.createdAt} label="" />
+                    <CountdownTimer endDate={cohort ? cohort.endDate : featuredOpp.createdAt} />
                   </div>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-[12px] p-[15px] flex-1">
@@ -448,3 +449,4 @@ export default function ClientDashboardOverview({ user, opportunities }: any) {
     </div>
   );
 }
+''')
