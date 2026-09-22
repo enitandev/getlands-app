@@ -1,30 +1,17 @@
-"use client";
-import React, { useState } from 'react';
-import { logoutAction } from '@/app/actions/auth';
-import { updatePersonalInfoAction, updateBankDetailsAction, updateNextOfKinAction, submitKycAction, getBankHistoryAction } from '@/app/actions/user';
-import { getBanksAction, verifyBankAccountAction } from '@/app/actions/paystack';
-import { toast } from '@/components/ui/Toast';
+import re
 
-export default function ClientSettings({ user }: { user: any }) {
-  const [activeTab, setActiveTab] = useState<'profile' | 'bank' | 'next_of_kin' | 'kyc'>('profile');
+with open('src/app/dashboard/settings/ClientSettings.tsx', 'r') as f:
+    content = f.read()
 
-  // Loading states
-  const [loadingProfile, setLoadingProfile] = useState(false);
-  const [loadingBank, setLoadingBank] = useState(false);
-  const [loadingKin, setLoadingKin] = useState(false);
-  const [loadingKyc, setLoadingKyc] = useState(false);
+# 1. Update imports
+import_old = "import { updatePersonalInfoAction, updateBankDetailsAction, updateNextOfKinAction, submitKycAction } from '@/app/actions/user';"
+import_new = "import { updatePersonalInfoAction, updateBankDetailsAction, updateNextOfKinAction, submitKycAction, getBankHistoryAction } from '@/app/actions/user';"
+content = content.replace(import_old, import_new)
 
-  // Bank Verification States
-  const [banks, setBanks] = useState<any[]>([]);
-  const [selectedBankCode, setSelectedBankCode] = useState('');
-  const [selectedBankName, setSelectedBankName] = useState(user.bankName || '');
-  const [accountNumber, setAccountNumber] = useState(user.accountNumber || '');
-  const [verifiedName, setVerifiedName] = useState(user.accountName || '');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verifyError, setVerifyError] = useState('');
-  
-  // Custom Bank Dropdown States
-  const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
+# 2. Add State for Bank History and View Mode
+states_old = """  const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
+  const [bankSearchTerm, setBankSearchTerm] = useState('');"""
+states_new = """  const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
   const [bankSearchTerm, setBankSearchTerm] = useState('');
   
   const [bankHistory, setBankHistory] = useState<any[]>([]);
@@ -44,55 +31,20 @@ export default function ClientSettings({ user }: { user: any }) {
     if (activeTab === 'bank') {
       fetchBankHistory();
     }
-  }, [activeTab]);
+  }, [activeTab]);"""
+content = content.replace(states_old, states_new)
 
-  React.useEffect(() => {
-    async function loadBanks() {
-      const res = await getBanksAction();
-      if (res.banks) {
-        setBanks(res.banks);
-        if (user.bankName) {
-           const match = res.banks.find((b: any) => b.name === user.bankName);
-           if (match) setSelectedBankCode(match.code);
-        }
-      }
-    }
-    loadBanks();
-  }, [user.bankName]);
-
-  React.useEffect(() => {
-    if (accountNumber.length === 10 && selectedBankCode) {
-      verifyAccount();
-    } else if (accountNumber.length < 10) {
-      if (verifiedName !== user.accountName) setVerifiedName('');
-      setVerifyError('');
-    }
-  }, [accountNumber, selectedBankCode]);
-
-  const verifyAccount = async () => {
-    setIsVerifying(true);
-    setVerifyError('');
-    const res = await verifyBankAccountAction(accountNumber, selectedBankCode);
-    setIsVerifying(false);
-    if (res.error) {
-       setVerifyError(res.error);
-       setVerifiedName('');
-    } else if (res.accountName) {
-       setVerifiedName(res.accountName);
-    }
-  };
-
-  const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+# 3. Rewrite BankSubmit handler to refresh history
+handle_bank_old = """  const handleBankSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoadingProfile(true);
+    setLoadingBank(true);
     const formData = new FormData(e.currentTarget);
-    const res = await updatePersonalInfoAction(formData);
+    const res = await updateBankDetailsAction(formData);
     if (res?.error) toast(res.error, 'error');
-    else toast('Profile updated successfully');
-    setLoadingProfile(false);
-  };
-
-  const handleBankSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    else toast('Bank details saved successfully');
+    setLoadingBank(false);
+  };"""
+handle_bank_new = """  const handleBankSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoadingBank(true);
     const formData = new FormData(e.currentTarget);
@@ -111,85 +63,13 @@ export default function ClientSettings({ user }: { user: any }) {
       setSelectedBankName('');
     }
     setLoadingBank(false);
-  };
+  };"""
+content = content.replace(handle_bank_old, handle_bank_new)
 
-  const handleKinSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoadingKin(true);
-    const formData = new FormData(e.currentTarget);
-    const res = await updateNextOfKinAction(formData);
-    if (res?.error) toast(res.error, 'error');
-    else toast('Next of Kin details updated');
-    setLoadingKin(false);
-  };
+# 4. Replace Bank Form UI completely
+bank_form_pattern = r"\{activeTab === 'bank' && \(.*?\)\}\n\n        \{activeTab === 'next_of_kin'"
 
-  return (
-    <div className="space-y-[30px]">
-      <div>
-        <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[10px]">Account Settings</h1>
-        <p className="text-[13px] lg:text-[14px] text-[#68736d]">Manage your profile, KYC verification, and payout details.</p>
-      </div>
-
-      <div className="flex gap-[20px] lg:gap-[30px] border-b border-black/10 overflow-x-auto scrollbar-hide">
-        <button onClick={() => setActiveTab('profile')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'profile' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-          Personal Info
-          {activeTab === 'profile' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
-        </button>
-        <button onClick={() => setActiveTab('bank')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'bank' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-          Bank Details
-          {activeTab === 'bank' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
-        </button>
-        <button onClick={() => setActiveTab('next_of_kin')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'next_of_kin' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-          Next of Kin
-          {activeTab === 'next_of_kin' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
-        </button>
-        <button onClick={() => setActiveTab('kyc')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative flex items-center gap-[6px] ${activeTab === 'kyc' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-          KYC Verification
-          {activeTab === 'kyc' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
-        </button>
-      </div>
-
-      <div className="bg-white rounded-[24px] p-[20px] lg:p-[30px] border border-black/5 shadow-sm max-w-[800px]">
-        
-        {activeTab === 'profile' && (
-          <form className="space-y-[30px]" onSubmit={handleProfileSubmit}>
-            <div className="flex items-center gap-[20px]">
-              <div className="w-[80px] h-[80px] rounded-full bg-[#008b45] text-white flex items-center justify-center text-[24px] font-bold tracking-tight">
-                {user.firstName[0]}{user.lastName[0]}
-              </div>
-              <button type="button" className="text-[13px] font-bold text-ink hover:text-[#008b45] transition-colors">Change Photo</button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">First Name</label>
-                <input name="firstName" type="text" defaultValue={user.firstName} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
-              </div>
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Last Name</label>
-                <input name="lastName" type="text" defaultValue={user.lastName} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
-              </div>
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Email Address</label>
-                <input type="email" defaultValue={user.email} disabled className="w-full h-[50px] bg-gray-50 border border-gray-200 text-[#68736d] rounded-[12px] px-[15px] outline-none cursor-not-allowed" />
-              </div>
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Phone Number</label>
-                <input name="phoneNumber" type="tel" defaultValue={user.phoneNumber || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Home Address</label>
-                <input name="homeAddress" type="text" defaultValue={user.homeAddress || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" />
-              </div>
-            </div>
-            <div className="pt-[10px] flex justify-end">
-              <button type="submit" disabled={loadingProfile} className="px-[24px] py-[12px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
-                {loadingProfile ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {activeTab === 'bank' && (
+new_bank_tab = r"""{activeTab === 'bank' && (
           <div className="space-y-[30px]">
             {!isAddingBank && (bankHistory.length > 0 || user.bankName) && (
               <div className="space-y-[20px]">
@@ -385,66 +265,10 @@ export default function ClientSettings({ user }: { user: any }) {
           </div>
         )}
 
-        {activeTab === 'next_of_kin' && (
-          <form className="space-y-[20px]" onSubmit={handleKinSubmit}>
-            <p className="text-[13px] text-[#68736d] mb-[20px]">This person will be contacted and given rights to your assets in the event of an emergency.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Full Name</label>
-                <input name="nextOfKinName" type="text" defaultValue={user.nextOfKinName || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
-              </div>
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Relationship</label>
-                <select name="nextOfKinRelationship" defaultValue={user.nextOfKinRelationship || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required>
-                  <option value="" disabled>Select relationship</option>
-                  <option value="spouse">Spouse</option>
-                  <option value="sibling">Sibling</option>
-                  <option value="parent">Parent</option>
-                  <option value="child">Child</option>
-                  <option value="friend">Friend</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Phone Number</label>
-                <input name="nextOfKinPhone" type="tel" defaultValue={user.nextOfKinPhone || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" required />
-              </div>
-              <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Email Address</label>
-                <input name="nextOfKinEmail" type="email" defaultValue={user.nextOfKinEmail || ''} className="w-full h-[50px] bg-white rounded-[12px] px-[15px] outline-none border border-gray-300 focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/20 transition-colors shadow-sm" />
-              </div>
-            </div>
-            <div className="pt-[10px] flex justify-end">
-              <button type="submit" disabled={loadingKin} className="px-[24px] py-[12px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
-                {loadingKin ? 'Saving...' : 'Update Details'}
-              </button>
-            </div>
-          </form>
-        )}
+        {activeTab === 'next_of_kin'"""
 
-        {activeTab === 'kyc' && (
-          <div className="bg-[#f7f9f7] rounded-[20px] p-[40px] text-center border border-black/5 flex flex-col items-center justify-center">
-            <div className="w-[60px] h-[60px] bg-white rounded-full flex items-center justify-center shadow-sm mb-[20px]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            </div>
-            <h3 className="font-manrope text-[20px] font-bold text-ink mb-[10px]">Data Protection Standard</h3>
-            <p className="text-[14px] text-[#68736d] max-w-[400px] mb-[20px]">
-              To protect your privacy and comply with NDPR regulations, we defer advanced KYC data collection until you make your first large withdrawal.
-            </p>
-            <div className="inline-block px-[16px] py-[8px] bg-white text-[#008b45] text-[12px] font-bold rounded-full border border-[#008b45]/20 shadow-sm">
-              KYC Coming Soon
-            </div>
-          </div>
-        )}
-      </div>
+content = re.sub(bank_form_pattern, lambda m: new_bank_tab, content, flags=re.DOTALL)
 
-      <div className="max-w-[800px]">
-        <form action={logoutAction}>
-          <button type="submit" className="flex items-center gap-[10px] px-[24px] py-[14px] bg-white border border-[#e53935]/20 text-[#e53935] font-bold rounded-[16px] hover:bg-[#e53935]/5 transition-colors shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            Log Out of Getlands
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
+with open('src/app/dashboard/settings/ClientSettings.tsx', 'w') as f:
+    f.write(content)
+

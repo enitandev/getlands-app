@@ -33,10 +33,11 @@ model User {
   nextOfKinEmail        String?
   nextOfKinRelationship String?
   
-  // Bank Details
+  // Bank Details (Legacy flat fields - moving towards BankAccount model)
   bankName              String?
   accountNumber         String?
   accountName           String?
+  bankAccounts          BankAccount[]
   
   // Security
   password              String        @default("")
@@ -327,4 +328,16 @@ model Delivery {
   deliveredAt  DateTime?
   
   order        ShopOrder  @relation(fields: [orderId], references: [id])
+}
+
+
+model BankAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  bankName      String
+  accountNumber String
+  accountName   String
+  status        String   @default("active") // "active" or "retired"
+  createdAt     DateTime @default(now())
 }
