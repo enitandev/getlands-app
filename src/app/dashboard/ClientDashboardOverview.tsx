@@ -123,6 +123,8 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
              )}
           </div>
         </section>
+
+        <ReferralBanner />
       </div>
     );
   }
@@ -194,6 +196,8 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, feat
           </div>
         </div>
       </section>
+
+      <ReferralBanner />
 
       {/* Hot Right Now Banner */}
       {featuredOpps.length > 0 && (
