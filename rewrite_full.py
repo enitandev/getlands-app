@@ -1,4 +1,5 @@
-"use client";
+with open('src/app/dashboard/ClientDashboardOverview.tsx', 'w') as f:
+    f.write('''"use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
@@ -47,7 +48,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
   const parsePercent = (opp: any) => {
     if (!opp) return null;
     const str = opp.projectedReturn || "";
-    const match = str.match(/(\d+(\.\d+)?)/);
+    const match = str.match(/(\\d+(\\.\\d+)?)/);
     if (match) return parseFloat(match[1]);
     return null;
   };
@@ -494,3 +495,4 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
     </div>
   );
 }
+''')
