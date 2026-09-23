@@ -167,7 +167,7 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
           </div>
         </header>
         
-        <div className="px-[15px] lg:px-[60px] pt-[15px] lg:py-[50px] max-w-[1200px] mx-auto">
+        <div className="px-[15px] lg:px-[60px] pt-[15px] lg:py-[50px] max-w-[1200px] mx-auto h-full">
           {children}
         </div>
       </main>
@@ -185,7 +185,7 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
         </Link>
         
         {/* FAB for Acquire */}
-        <Link href="/explore" className="relative -top-[15px] flex flex-col items-center gap-[6px]">
+        <Link href="/dashboard/marketplace" className="relative -top-[15px] flex flex-col items-center gap-[6px]">
           <div className="w-[60px] h-[60px] bg-[#008b45] rounded-full flex items-center justify-center text-white shadow-[0_10px_20px_rgba(0,139,69,0.3)] border-[4px] border-[#f7f9f7]">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </div>
