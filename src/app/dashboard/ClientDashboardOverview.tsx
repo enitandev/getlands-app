@@ -140,6 +140,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
           <span className="w-[6px] h-[6px] bg-[#008b45] rounded-full animate-pulse"></span>
           FEATURED NOW <span className="text-[#68736d] ml-[5px] font-normal">{carouselOpps.length > 0 ? featuredIndex + 1 : 0} OF {carouselOpps.length}</span>
         </div>
+        <Link href="/dashboard/marketplace" className="text-[#008b45] text-[12px] font-bold hover:underline">See all</Link>
       </div>
 
       {/* Main Content Grid */}
@@ -162,15 +163,15 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
                   </div>
                 </div>
                 
-                <h3 className="font-manrope text-[24px] lg:text-[48px] font-bold leading-none mb-[5px] tracking-tight">{currentOpp.title}</h3>
+                <h3 className="font-manrope text-[24px] lg:text-[38px] font-bold leading-none mb-[5px] tracking-tight">{currentOpp.title}</h3>
                 
                 <div className="flex items-end gap-[8px] mb-[15px] lg:mb-[30px]">
-                  <div className="font-manrope text-[36px] lg:text-[64px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{currentOpp.projectedReturn || 'Variable'}</div>
+                  <div className="font-manrope text-[36px] lg:text-[56px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{currentOpp.projectedReturn || 'Variable'}</div>
                   {currentOpp.projectedReturn && <div className="text-[13px] text-[#a6baa9] pb-[8px] leading-tight">projected /<br/>month</div>}
                 </div>
               </div>
 
-              <div className="flex flex-row gap-[10px] lg:gap-[15px] mb-[15px] lg:mb-[30px]">
+              <div className="flex flex-col gap-[10px] lg:gap-[15px] mb-[15px] lg:mb-[30px]">
                 {cohort?.closesAt ? (
                   <div className="bg-white/5 border border-white/10 rounded-[10px] lg:rounded-[12px] p-[10px] lg:p-[15px] flex-1">
                     <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[5px]">CLOSES IN</div>
@@ -304,7 +305,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-[20px] lg:gap-[30px] shrink-0">
         
         {/* Also open Carousel */}
-        <div className="lg:col-span-8 min-w-0 bg-white rounded-[24px] border border-black/5 p-[20px] lg:p-[30px] shadow-sm mb-[20px] lg:mb-[40px]">
+        <div className="hidden lg:block lg:col-span-8 min-w-0 bg-white rounded-[24px] border border-black/5 p-[20px] lg:p-[30px] shadow-sm mb-[20px] lg:mb-[40px]">
           <div className="flex items-center justify-between mb-[20px]">
             <h2 className="font-manrope text-[20px] lg:text-[24px] tracking-[-0.03em] font-bold text-ink">Also open</h2>
             
