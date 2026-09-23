@@ -5,37 +5,45 @@ import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency } from '@/lib/mockData';
 
 export default function ClientDashboardOverview({ user, opportunities = [] }: any) {
-  // Find a featured opportunity
-  const featuredOpp = opportunities?.find((o: any) => o.status === 'available' && o.featured) 
-    || opportunities?.find((o: any) => o.status === 'available') 
-    || opportunities?.[0];
-    
-  const cohort = featuredOpp?.cohorts?.[0];
+  const openOpps = opportunities?.filter((o: any) => o.status === 'available') || [];
+  
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Carousel logic
+  const handlePrev = () => setCurrentIndex(prev => (prev === 0 ? openOpps.length - 1 : prev - 1));
+  const handleNext = () => setCurrentIndex(prev => (prev === openOpps.length - 1 ? 0 : prev + 1));
+  
+  const currentOpp = openOpps[currentIndex] || opportunities?.[0];
+  const cohort = currentOpp?.cohorts?.[0];
   
   const getMinAmount = (opp: any) => {
     if (!opp) return 50000;
     return opp.slotPrice || opp.price || opp.acquisitionPrice || 50000;
   };
   
-  const minAmount = getMinAmount(featuredOpp);
+  const minAmount = getMinAmount(currentOpp);
   const amounts = [1, 2, 5, 10].map(multiplier => minAmount * multiplier);
   
+  // When currentOpp changes, ensure selectedAmount is valid for the new opp
   const [selectedAmount, setSelectedAmount] = useState(amounts[1] || amounts[0] || 100000);
+  
+  // Sync selected amount when changing carousel
+  React.useEffect(() => {
+    setSelectedAmount(amounts[1] || amounts[0] || 100000);
+  }, [currentIndex]);
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
 
   const totalValue = user.holdings?.reduce((sum: number, h: any) => sum + (h.totalAmount || 0), 0) || 0;
-  const activeHoldingsCount = user.holdings?.filter((h: any) => h.status === 'active').length || 0;
-  
   const farmCount = user.holdings?.filter((h: any) => h.opportunity?.category === 'farm').length || 0;
   const landCount = user.holdings?.filter((h: any) => h.opportunity?.category === 'land').length || 0;
   const landBankingCount = user.holdings?.filter((h: any) => h.opportunity?.category === 'land_banking').length || 0;
-
   const canUseWallet = user.walletBalance >= selectedAmount;
 
-  const openFarms = opportunities.filter((o: any) => o.category === 'farm' && o.status === 'available' && o.id !== featuredOpp?.id);
-  const openLands = opportunities.filter((o: any) => o.category === 'land' && o.status === 'available' && o.id !== featuredOpp?.id);
-  const openLandBanking = opportunities.filter((o: any) => o.category === 'land_banking' && o.status === 'available' && o.id !== featuredOpp?.id);
+  const openFarms = opportunities.filter((o: any) => o.category === 'farm' && o.status === 'available' && o.id !== currentOpp?.id);
+  const openLands = opportunities.filter((o: any) => o.category === 'land' && o.status === 'available' && o.id !== currentOpp?.id);
+  const openLandBanking = opportunities.filter((o: any) => o.category === 'land_banking' && o.status === 'available' && o.id !== currentOpp?.id);
 
   const parsePercent = (opp: any) => {
     if (!opp) return null;
@@ -93,7 +101,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
       <header className="hidden lg:flex items-center justify-between mb-[30px]">
         <div>
           <h1 className="font-manrope text-[32px] font-bold text-ink leading-tight">Good evening, {user.firstName}</h1>
-          <p className="text-[14px] text-[#68736d]">{opportunities.filter((o:any)=>o.status==='available').length} opportunities are open. {featuredOpp?.title ? `${featuredOpp.title} closes first.` : ''}</p>
+          <p className="text-[14px] text-[#68736d]">{opportunities.filter((o:any)=>o.status==='available').length} opportunities are open. {currentOpp?.title ? `${openOpps.length} available.` : ''}</p>
         </div>
         <div className="flex items-center gap-[15px]">
           <Link href="/dashboard/wallet" className="flex items-center gap-[6px] bg-white px-[16px] py-[10px] rounded-full border border-black/5 shadow-sm font-bold text-[13px] hover:text-[#008b45] transition-colors">
@@ -127,16 +135,16 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
       <div className="lg:hidden flex items-center justify-between mb-[8px]">
         <div className="flex items-center gap-[5px] text-[10px] font-bold uppercase tracking-wider text-[#008b45]">
           <span className="w-[6px] h-[6px] bg-[#008b45] rounded-full animate-pulse"></span>
-          OPEN NOW <span className="text-[#68736d] ml-[5px] font-normal">1 of {opportunities.filter((o:any)=>o.status==='available').length}</span>
+          OPEN NOW <span className="text-[#68736d] ml-[5px] font-normal">{openOpps.length > 0 ? currentIndex + 1 : 0} OF {openOpps.length}</span>
         </div>
-        <Link href="/explore" className="text-[#008b45] text-[12px] font-bold hover:underline">See all</Link>
+        
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-[20px] lg:gap-[30px] mb-[30px] lg:mb-[40px]">
         
         {/* Featured Opportunity Block */}
-        {featuredOpp && (
+        {currentOpp && (
           <div className="lg:col-span-8 bg-[#182a20] rounded-[20px] lg:rounded-[24px] p-[15px] lg:p-[30px] text-white flex flex-col lg:flex-row gap-[20px] lg:gap-[30px] relative overflow-hidden shadow-lg border border-black/5">
             <div className="absolute top-0 left-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-10 pointer-events-none -translate-y-1/2 -translate-x-1/3"></div>
 
@@ -144,19 +152,19 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               <div>
                 <div className="flex justify-between items-center mb-[10px] lg:mb-[20px]">
                   <div className="bg-white/10 px-[10px] py-[4px] rounded-full text-[10px] font-bold uppercase tracking-wider text-[#a6baa9]">
-                    FEATURED · {featuredOpp.category.toUpperCase()} · {featuredOpp.location.toUpperCase()}
+                    FEATURED · {currentOpp.category.toUpperCase()} · {currentOpp.location.toUpperCase()}
                   </div>
-                  <div className="lg:hidden flex gap-[10px]">
-                    <div className="w-[30px] h-[30px] rounded-full border border-white/20 flex items-center justify-center text-white/50"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg></div>
-                    <div className="w-[30px] h-[30px] rounded-full border border-white/20 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                  <div className="flex gap-[10px]">
+                    <button onClick={handlePrev} className="w-[30px] h-[30px] rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button onClick={handleNext} className="w-[30px] h-[30px] rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                   </div>
                 </div>
                 
-                <h3 className="font-manrope text-[24px] lg:text-[48px] font-bold leading-none mb-[5px] tracking-tight">{featuredOpp.title}</h3>
+                <h3 className="font-manrope text-[24px] lg:text-[48px] font-bold leading-none mb-[5px] tracking-tight">{currentOpp.title}</h3>
                 
                 <div className="flex items-end gap-[8px] mb-[15px] lg:mb-[30px]">
-                  <div className="font-manrope text-[36px] lg:text-[64px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{featuredOpp.projectedReturn || 'Variable'}</div>
-                  {featuredOpp.projectedReturn && <div className="text-[13px] text-[#a6baa9] pb-[8px] leading-tight">projected /<br/>month</div>}
+                  <div className="font-manrope text-[36px] lg:text-[64px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{currentOpp.projectedReturn || 'Variable'}</div>
+                  {currentOpp.projectedReturn && <div className="text-[13px] text-[#a6baa9] pb-[8px] leading-tight">projected /<br/>month</div>}
                 </div>
               </div>
 
@@ -184,14 +192,14 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
 
               <div className="hidden lg:flex items-center gap-[15px] text-[13px] text-[#a6baa9]">
                 <span>Min [{formatCurrency(minAmount)}]</span>
-                {featuredOpp.duration && (
+                {currentOpp.duration && (
                   <>
                     <span>·</span>
-                    <span>Tenor [{featuredOpp.duration} months]</span>
+                    <span>Tenor [{currentOpp.duration} months]</span>
                   </>
                 )}
                 <span>·</span>
-                <Link href={`/explore/${featuredOpp.slug}`} className="underline hover:text-white">Terms & risks</Link>
+                <Link href={`/explore/${currentOpp.slug}`} className="underline hover:text-white">Terms & risks</Link>
               </div>
             </div>
 
@@ -199,7 +207,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               <div className="flex justify-between items-center mb-[10px] lg:mb-[15px]">
                 <div className="lg:hidden text-[13px] text-[#68736d]">Choose amount</div>
                 <div className="hidden lg:block text-[14px] font-bold">How much?</div>
-                <div className="lg:hidden text-[11px] text-[#68736d]">Min [{formatCurrency(minAmount)}] {featuredOpp.duration ? `· [${featuredOpp.duration}] months` : ''}</div>
+                <div className="lg:hidden text-[11px] text-[#68736d]">Min [{formatCurrency(minAmount)}] {currentOpp.duration ? `· [${currentOpp.duration}] months` : ''}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-[8px] lg:gap-[10px] mb-[15px] lg:mb-[20px]">
@@ -219,10 +227,10 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
                   <span>You invest</span>
                   <strong className="text-ink">{formatCurrency(selectedAmount)}</strong>
                 </div>
-                {getProjectedMonthly(selectedAmount, featuredOpp) !== null && (
+                {getProjectedMonthly(selectedAmount, currentOpp) !== null && (
                   <div className="flex justify-between text-[#68736d]">
                     <span>Projected monthly</span>
-                    <strong className="text-[#008b45]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, featuredOpp)!)}</strong>
+                    <strong className="text-[#008b45]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, currentOpp)!)}</strong>
                   </div>
                 )}
                 <div className="flex justify-between text-[#68736d]">
@@ -240,12 +248,12 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               </button>
 
               <div className="lg:hidden flex justify-between items-center mt-[10px] text-[11px]">
-                {getProjectedMonthly(selectedAmount, featuredOpp) !== null ? (
-                  <span className="text-[#68736d]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, featuredOpp)!)}/mo projected</span>
+                {getProjectedMonthly(selectedAmount, currentOpp) !== null ? (
+                  <span className="text-[#68736d]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, currentOpp)!)}/mo projected</span>
                 ) : (
                   <span className="text-[#68736d]">Returns vary per cycle</span>
                 )}
-                <Link href={`/explore/${featuredOpp.slug}`} className="text-[#008b45] underline font-bold">Terms & risks</Link>
+                <Link href={`/explore/${currentOpp.slug}`} className="text-[#008b45] underline font-bold">Terms & risks</Link>
               </div>
               <div className="hidden lg:block text-center mt-[10px] text-[10px] text-[#7a847f]">
                 Projected, not guaranteed. Capital at risk.
@@ -291,19 +299,19 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
       </div>
 
       {/* Bottom Lists Area (Desktop) */}
-      <div className="hidden lg:grid grid-cols-12 gap-[30px]">
-        <div className="col-span-8 min-w-0 overflow-hidden">
+      <div className="hidden lg:grid grid-cols-12 gap-[30px] mb-[40px]">
+        <div className="col-span-8 min-w-0 overflow-hidden bg-white rounded-[24px] border border-black/5 p-[30px] shadow-sm">
           <div className="flex items-center justify-between mb-[20px]">
             <h2 className="font-manrope text-[24px] tracking-[-0.03em] font-bold text-ink">Also open</h2>
-            <Link href="/explore" className="text-[14px] font-bold text-[#008b45] hover:underline">Browse marketplace</Link>
+            
           </div>
-          <div className="flex gap-[20px] overflow-x-auto pb-[20px] scrollbar-hide">
+          <div className="grid grid-cols-2 xl:grid-cols-2 gap-[20px]">
             
             {openFarms.map((opp: any) => {
               const owned = user.holdings?.find((h:any) => h.opportunityId === opp.id);
               const oppCohort = opp.cohorts?.[0];
               return (
-                <div key={opp.id} className="w-[280px] shrink-0 bg-[#182a20] border border-white/5 rounded-[20px] p-[20px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+                <div key={opp.id} className="w-full bg-[#182a20] border border-white/5 rounded-[20px] p-[20px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[#008b45] rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
                   <div className="z-10 relative">
                     <div className="flex justify-between items-start mb-[15px]">
@@ -332,7 +340,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
             })}
 
             {openLands.length === 0 ? (
-              <div className="w-[280px] shrink-0 bg-[#f7f9f7] border border-black/5 border-dashed rounded-[20px] p-[20px] flex flex-col justify-between">
+              <div className="w-full bg-[#f7f9f7] border border-black/5 border-dashed rounded-[20px] p-[20px] flex flex-col justify-between">
                 <div>
                   <div className="text-[10px] text-[#68736d] font-bold uppercase tracking-wider mb-[15px]">LAND</div>
                   <h3 className="font-manrope font-bold text-[20px] text-ink mb-[10px] leading-tight">No open listings</h3>
@@ -344,7 +352,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               </div>
             ) : (
               openLands.map((opp: any) => (
-                <div key={opp.id} className="w-[280px] shrink-0 bg-[#182a20] border border-white/5 rounded-[20px] p-[20px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+                <div key={opp.id} className="w-full bg-[#182a20] border border-white/5 rounded-[20px] p-[20px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[#008b45] rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
                   <div className="z-10 relative">
                     <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[15px]">LAND · {opp.location.toUpperCase()}</div>
@@ -359,7 +367,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
             )}
 
             {openLandBanking.length === 0 ? (
-              <div className="w-[280px] shrink-0 bg-[#f7f9f7] border border-black/5 border-dashed rounded-[20px] p-[20px] flex flex-col justify-between">
+              <div className="w-full bg-[#f7f9f7] border border-black/5 border-dashed rounded-[20px] p-[20px] flex flex-col justify-between">
                 <div>
                   <div className="text-[10px] text-[#68736d] font-bold uppercase tracking-wider mb-[15px]">LAND BANKING</div>
                   <h3 className="font-manrope font-bold text-[20px] text-ink mb-[10px] leading-tight">No open listings</h3>
@@ -371,7 +379,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               </div>
             ) : (
               openLandBanking.map((opp: any) => (
-                <div key={opp.id} className="w-[280px] shrink-0 bg-[#182a20] border border-white/5 rounded-[20px] p-[20px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+                <div key={opp.id} className="w-full bg-[#182a20] border border-white/5 rounded-[20px] p-[20px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[#008b45] rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
                   <div className="z-10 relative">
                     <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[15px]">LAND BANKING</div>
@@ -440,22 +448,22 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               <div className="bg-white rounded-[16px] p-[20px] border border-black/5 mb-[20px] space-y-[15px] text-[14px]">
                 <div className="flex justify-between">
                   <span className="text-[#68736d]">Opportunity</span>
-                  <strong className="text-ink">{featuredOpp?.title}</strong>
+                  <strong className="text-ink">{currentOpp?.title}</strong>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#68736d]">You invest</span>
                   <strong className="text-ink">{formatCurrency(selectedAmount)}</strong>
                 </div>
-                {getProjectedMonthly(selectedAmount, featuredOpp) !== null && (
+                {getProjectedMonthly(selectedAmount, currentOpp) !== null && (
                   <div className="flex justify-between">
                     <span className="text-[#68736d]">Projected monthly</span>
-                    <strong className="text-[#008b45]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, featuredOpp)!)}</strong>
+                    <strong className="text-[#008b45]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, currentOpp)!)}</strong>
                   </div>
                 )}
-                {featuredOpp?.duration && (
+                {currentOpp?.duration && (
                   <div className="flex justify-between">
                     <span className="text-[#68736d]">Tenor</span>
-                    <strong className="text-ink">[{featuredOpp.duration} months]</strong>
+                    <strong className="text-ink">[{currentOpp.duration} months]</strong>
                   </div>
                 )}
               </div>
@@ -487,7 +495,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               </div>
 
               <form action="/dashboard/checkout" method="POST">
-                <input type="hidden" name="opportunityId" value={featuredOpp?.id} />
+                <input type="hidden" name="opportunityId" value={currentOpp?.id} />
                 <input type="hidden" name="amount" value={selectedAmount} />
                 <input type="hidden" name="paymentMethod" value={paymentMethod} />
                 
