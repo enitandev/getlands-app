@@ -151,7 +151,7 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 pb-[100px] lg:pb-0 min-w-0">
+      <main className="flex-1 pb-0 min-w-0">
         <header className="lg:hidden flex items-center justify-between px-[22px] h-[70px] bg-white border-b border-black/5 sticky top-0 z-40">
           <Link href="/" className="brand block w-[110px]">
             <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />
@@ -167,7 +167,7 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
           </div>
         </header>
         
-        <div className="px-[22px] lg:px-[60px] py-[30px] lg:py-[50px] max-w-[1200px] mx-auto">
+        <div className="px-[15px] lg:px-[60px] pt-[15px] lg:py-[50px] max-w-[1200px] mx-auto">
           {children}
         </div>
       </main>

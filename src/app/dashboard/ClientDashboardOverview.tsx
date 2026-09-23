@@ -70,20 +70,20 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
   const nextPayout = getNextPayout();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] lg:h-auto overflow-y-auto lg:overflow-visible scrollbar-hide pb-[20px] lg:pb-0 relative">
+    <div className="flex flex-col h-[calc(100vh-165px)] lg:h-auto overflow-y-auto lg:overflow-visible scrollbar-hide pb-[5px] lg:pb-0 relative">
       
       {/* Mobile Header */}
-      <header className="lg:hidden flex items-center justify-between mb-[20px]">
+      <header className="lg:hidden flex items-center justify-between mb-[10px]">
         <div>
           <h1 className="text-[13px] text-[#68736d]">Good evening</h1>
-          <h2 className="font-manrope text-[24px] font-bold text-ink leading-tight">{user.firstName}</h2>
+          <h2 className="font-manrope text-[20px] font-bold text-ink leading-tight">{user.firstName}</h2>
         </div>
         <div className="flex items-center gap-[15px]">
-          <div className="flex items-center gap-[6px] bg-[#f7f9f7] px-[12px] py-[6px] rounded-full border border-black/5">
+          <div className="flex items-center gap-[6px] bg-[#f7f9f7] px-[10px] py-[4px] rounded-full border border-black/5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
             <span className="text-[11px] font-bold text-ink">Earn 10%</span>
           </div>
-          <Link href="/dashboard/settings" className="relative w-[36px] h-[36px] bg-[#eef3ef] text-[#008b45] font-bold rounded-full flex items-center justify-center border border-black/5 shadow-sm text-[12px] tracking-wider uppercase">
+          <Link href="/dashboard/settings" className="relative w-[32px] h-[32px] bg-[#eef3ef] text-[#008b45] font-bold rounded-full flex items-center justify-center border border-black/5 shadow-sm text-[12px] tracking-wider uppercase">
             {user.firstName.charAt(0)}{user.lastName.charAt(0)}
           </Link>
         </div>
@@ -108,23 +108,23 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
       </header>
 
       {/* Mobile Portfolio & Wallet Bar */}
-      <div className="lg:hidden flex bg-white border border-black/5 rounded-[20px] p-[20px] mb-[20px] shadow-sm">
+      <div className="lg:hidden flex bg-white border border-black/5 rounded-[16px] p-[12px] mb-[10px] shadow-sm">
         <div className="flex-1 border-r border-black/5 pr-[15px]">
           <div className="text-[11px] text-[#68736d] font-bold mb-[2px]">Portfolio</div>
-          <div className="font-manrope font-bold text-[22px] tracking-tight">{formatCurrency(totalValue)}</div>
+          <div className="font-manrope font-bold text-[18px] tracking-tight">{formatCurrency(totalValue)}</div>
         </div>
         <div className="flex-1 pl-[15px] flex items-center justify-between">
           <div>
             <div className="text-[11px] text-[#68736d] font-bold mb-[2px]">Wallet</div>
-            <div className="font-manrope font-bold text-[22px] tracking-tight">{formatCurrency(user.walletBalance)}</div>
+            <div className="font-manrope font-bold text-[18px] tracking-tight">{formatCurrency(user.walletBalance)}</div>
           </div>
-          <Link href="/dashboard/wallet" className="bg-[#eef3ef] text-[#008b45] px-[12px] py-[6px] rounded-full text-[11px] font-bold">
+          <Link href="/dashboard/wallet" className="bg-[#eef3ef] text-[#008b45] px-[10px] py-[4px] rounded-full text-[10px] font-bold">
             Fund
           </Link>
         </div>
       </div>
 
-      <div className="lg:hidden flex items-center justify-between mb-[10px]">
+      <div className="lg:hidden flex items-center justify-between mb-[8px]">
         <div className="flex items-center gap-[5px] text-[10px] font-bold uppercase tracking-wider text-[#008b45]">
           <span className="w-[6px] h-[6px] bg-[#008b45] rounded-full animate-pulse"></span>
           OPEN NOW <span className="text-[#68736d] ml-[5px] font-normal">1 of {opportunities.filter((o:any)=>o.status==='available').length}</span>
@@ -137,12 +137,12 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
         
         {/* Featured Opportunity Block */}
         {featuredOpp && (
-          <div className="lg:col-span-8 bg-[#182a20] rounded-[24px] p-[20px] lg:p-[30px] text-white flex flex-col lg:flex-row gap-[20px] lg:gap-[30px] relative overflow-hidden shadow-lg border border-black/5">
+          <div className="lg:col-span-8 bg-[#182a20] rounded-[20px] lg:rounded-[24px] p-[15px] lg:p-[30px] text-white flex flex-col lg:flex-row gap-[20px] lg:gap-[30px] relative overflow-hidden shadow-lg border border-black/5">
             <div className="absolute top-0 left-0 w-[200px] h-[200px] bg-[#008b45] rounded-full blur-[80px] opacity-10 pointer-events-none -translate-y-1/2 -translate-x-1/3"></div>
 
             <div className="flex-1 z-10 flex flex-col justify-between">
               <div>
-                <div className="flex justify-between items-center mb-[20px]">
+                <div className="flex justify-between items-center mb-[10px] lg:mb-[20px]">
                   <div className="bg-white/10 px-[10px] py-[4px] rounded-full text-[10px] font-bold uppercase tracking-wider text-[#a6baa9]">
                     FEATURED · {featuredOpp.category.toUpperCase()} · {featuredOpp.location.toUpperCase()}
                   </div>
@@ -152,29 +152,29 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
                   </div>
                 </div>
                 
-                <h3 className="font-manrope text-[32px] lg:text-[48px] font-bold leading-none mb-[5px] tracking-tight">{featuredOpp.title}</h3>
+                <h3 className="font-manrope text-[24px] lg:text-[48px] font-bold leading-none mb-[5px] tracking-tight">{featuredOpp.title}</h3>
                 
-                <div className="flex items-end gap-[10px] mb-[30px]">
-                  <div className="font-manrope text-[56px] lg:text-[64px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{featuredOpp.projectedReturn || 'Variable'}</div>
+                <div className="flex items-end gap-[8px] mb-[15px] lg:mb-[30px]">
+                  <div className="font-manrope text-[36px] lg:text-[64px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{featuredOpp.projectedReturn || 'Variable'}</div>
                   {featuredOpp.projectedReturn && <div className="text-[13px] text-[#a6baa9] pb-[8px] leading-tight">projected /<br/>month</div>}
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-[15px] mb-[20px] lg:mb-[30px]">
+              <div className="flex flex-row gap-[10px] lg:gap-[15px] mb-[15px] lg:mb-[30px]">
                 {cohort?.closesAt ? (
-                  <div className="bg-white/5 border border-white/10 rounded-[12px] p-[15px] flex-1">
+                  <div className="bg-white/5 border border-white/10 rounded-[10px] lg:rounded-[12px] p-[10px] lg:p-[15px] flex-1">
                     <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[5px]">CLOSES IN</div>
-                    <div className="font-mono text-[18px] font-bold text-white">
+                    <div className="font-mono text-[14px] lg:text-[18px] font-bold text-white">
                       <CountdownTimer targetDate={cohort.closesAt} label="" />
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white/5 border border-white/10 rounded-[12px] p-[15px] flex-1">
+                  <div className="bg-white/5 border border-white/10 rounded-[10px] lg:rounded-[12px] p-[10px] lg:p-[15px] flex-1">
                     <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[5px]">STATUS</div>
                     <div className="font-mono text-[18px] font-bold text-white uppercase">{cohort?.status || 'OPEN NOW'}</div>
                   </div>
                 )}
-                <div className="bg-white/5 border border-white/10 rounded-[12px] p-[15px] flex-1">
+                <div className="bg-white/5 border border-white/10 rounded-[10px] lg:rounded-[12px] p-[10px] lg:p-[15px] flex-1">
                   <div className="text-[10px] text-[#a6baa9] font-bold uppercase tracking-wider mb-[5px]">[{getFundedPercentage(cohort)}]% FUNDED</div>
                   <div className="w-full h-[6px] bg-white/10 rounded-full overflow-hidden mt-[10px]">
                     <div className={`h-full bg-[#a9e7bd] rounded-full`} style={{ width: `${getFundedPercentage(cohort)}%` }}></div>
@@ -195,19 +195,19 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
               </div>
             </div>
 
-            <div className="lg:w-[320px] shrink-0 bg-white rounded-[20px] p-[20px] lg:p-[25px] text-ink z-10">
-              <div className="flex justify-between items-center mb-[15px]">
+            <div className="lg:w-[320px] shrink-0 bg-white rounded-[16px] lg:rounded-[20px] p-[15px] lg:p-[25px] text-ink z-10">
+              <div className="flex justify-between items-center mb-[10px] lg:mb-[15px]">
                 <div className="lg:hidden text-[13px] text-[#68736d]">Choose amount</div>
                 <div className="hidden lg:block text-[14px] font-bold">How much?</div>
                 <div className="lg:hidden text-[11px] text-[#68736d]">Min [{formatCurrency(minAmount)}] {featuredOpp.duration ? `· [${featuredOpp.duration}] months` : ''}</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-[10px] mb-[20px]">
+              <div className="grid grid-cols-2 gap-[8px] lg:gap-[10px] mb-[15px] lg:mb-[20px]">
                 {amounts.map((amt) => (
                   <button 
                     key={amt}
                     onClick={() => setSelectedAmount(amt)}
-                    className={`h-[45px] rounded-[10px] font-bold text-[14px] transition-all ${selectedAmount === amt ? 'bg-[#182a20] text-white' : 'border border-black/10 hover:border-[#008b45] text-ink'}`}
+                    className={`h-[36px] lg:h-[45px] rounded-[10px] font-bold text-[14px] transition-all ${selectedAmount === amt ? 'bg-[#182a20] text-white' : 'border border-black/10 hover:border-[#008b45] text-ink'}`}
                   >
                     {formatCurrency(amt).replace('.00', '').replace('NGN', '₦')}
                   </button>
@@ -233,13 +233,13 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
 
               <button 
                 onClick={() => setIsDrawerOpen(true)}
-                className="w-full h-[55px] bg-[#a9e7bd] hover:bg-[#86e2a6] text-[#182a20] font-bold text-[16px] rounded-[12px] flex items-center justify-center gap-[10px] transition-colors"
+                className="w-full h-[45px] lg:h-[55px] bg-[#a9e7bd] hover:bg-[#86e2a6] text-[#182a20] font-bold text-[16px] rounded-[12px] flex items-center justify-center gap-[10px] transition-colors"
               >
                 Acquire {formatCurrency(selectedAmount).replace('.00', '').replace('NGN', '₦')}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </button>
 
-              <div className="lg:hidden flex justify-between items-center mt-[15px] text-[12px]">
+              <div className="lg:hidden flex justify-between items-center mt-[10px] text-[11px]">
                 {getProjectedMonthly(selectedAmount, featuredOpp) !== null ? (
                   <span className="text-[#68736d]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, featuredOpp)!)}/mo projected</span>
                 ) : (
@@ -292,7 +292,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
 
       {/* Bottom Lists Area (Desktop) */}
       <div className="hidden lg:grid grid-cols-12 gap-[30px]">
-        <div className="col-span-8">
+        <div className="col-span-8 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between mb-[20px]">
             <h2 className="font-manrope text-[24px] tracking-[-0.03em] font-bold text-ink">Also open</h2>
             <Link href="/explore" className="text-[14px] font-bold text-[#008b45] hover:underline">Browse marketplace</Link>
