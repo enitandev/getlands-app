@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { logoutAction } from '@/app/actions/auth';
 import { usePathname } from 'next/navigation';
+import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 
 const Icons = {
   Referrals: (
@@ -59,7 +60,7 @@ const Icons = {
   )
 };
 
-export default function ClientDashboardLayout({ children, initials, fullName }: { children: React.ReactNode; initials: string; fullName: string; }) {
+export default function ClientDashboardLayout({ children, initials, fullName, notifications = [] }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   
@@ -157,10 +158,7 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
             <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />
           </Link>
           <div className="flex items-center gap-[15px]">
-            <button className="relative text-[#68736d]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-              <span className="absolute 0 right-0 w-2 h-2 bg-[#e53935] rounded-full"></span>
-            </button>
+            <NotificationDropdown notifications={notifications} />
             <Link href="/dashboard/settings" className="w-[32px] h-[32px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#18201c] text-[12px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
               EA
             </Link>

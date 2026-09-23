@@ -1,36 +1,34 @@
+import re
+
 with open('prisma/schema.prisma', 'r') as f:
-    content = f.read()
+    schema = f.read()
 
-# Add BankAccount relation to User model
-# We can insert it right after the bank details block
-old_bank_details = """  // Bank Details
-  bankName              String?
-  accountNumber         String?
-  accountName           String?
-"""
-new_bank_details = """  // Bank Details (Legacy flat fields - moving towards BankAccount model)
-  bankName              String?
-  accountNumber         String?
-  accountName           String?
-  bankAccounts          BankAccount[]
-"""
-content = content.replace(old_bank_details, new_bank_details)
+old_notif = """model Notification {
+  id            String    @id @default(uuid())
+  userId        String?   // null if global/admin notification
+  title         String
+  message       String
+  unread        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
 
-# Add BankAccount model to the end of the file
-bank_account_model = """
+  user          User?     @relation(fields: [userId], references: [id])
+}"""
 
-model BankAccount {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  bankName      String
-  accountNumber String
-  accountName   String
-  status        String   @default("active") // "active" or "retired"
-  createdAt     DateTime @default(now())
-}
-"""
-content += bank_account_model
+new_notif = """model Notification {
+  id            String    @id @default(uuid())
+  userId        String?   // null if global/admin notification
+  type          String    @default("SYSTEM") // TRANSACTION, UPDATE, SYSTEM, MARKETING
+  title         String
+  message       String
+  linkUrl       String?
+  actionText    String?
+  unread        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  user          User?     @relation(fields: [userId], references: [id])
+}"""
+
+schema = schema.replace(old_notif, new_notif)
 
 with open('prisma/schema.prisma', 'w') as f:
-    f.write(content)
+    f.write(schema)

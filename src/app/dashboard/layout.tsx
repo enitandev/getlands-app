@@ -9,7 +9,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.userId) redirect('/login');
 
   const user = await prisma.user.findUnique({
-    where: { id: session.userId as string }
+    where: { id: session.userId as string },
+    include: {
+      notifications: {
+        orderBy: { createdAt: 'desc' },
+        take: 20
+      }
+    }
   });
 
   if (!user) {
@@ -20,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const fullName = `${user.firstName} ${user.lastName[0]}.`;
 
   return (
-    <ClientDashboardLayout initials={initials} fullName={fullName}>
+    <ClientDashboardLayout initials={initials} fullName={fullName} notifications={user.notifications}>
       {children}
     </ClientDashboardLayout>
   );

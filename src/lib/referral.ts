@@ -42,6 +42,16 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
       prisma.user.update({
         where: { id: user.id },
         data: { hasTriggeredReferralReward: true }
+      }),
+      prisma.notification.create({
+        data: {
+          userId: referrer.id,
+          title: "Referral Bonus Received!",
+          message: `You earned ₦${bonusAmount.toLocaleString()} because your friend made their first investment.`,
+          type: "TRANSACTION",
+          linkUrl: "/dashboard/wallet",
+          actionText: "View Wallet"
+        }
       })
     ]);
 

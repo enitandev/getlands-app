@@ -1,22 +1,30 @@
 import re
 
-# Fix layout.tsx
-with open('src/app/layout.tsx', 'r') as f:
+# Fix ClientDashboardLayout
+with open('src/app/dashboard/ClientDashboardLayout.tsx', 'r') as f:
     layout = f.read()
-layout = layout.replace('import "./globals.css";', 'import "./globals.css";\nimport { ToastContainer } from "@/components/ui/Toast";')
-with open('src/app/layout.tsx', 'w') as f:
+
+layout = layout.replace(
+    'import { usePathname } from \'next/navigation\';',
+    'import { usePathname } from \'next/navigation\';\nimport { NotificationDropdown } from "@/components/ui/NotificationDropdown";'
+)
+
+old_sig = 'export default function ClientDashboardLayout({ children, initials, fullName }: { children: React.ReactNode; initials: string; fullName: string; }) {'
+new_sig = 'export default function ClientDashboardLayout({ children, initials, fullName, notifications = [] }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; }) {'
+layout = layout.replace(old_sig, new_sig)
+
+with open('src/app/dashboard/ClientDashboardLayout.tsx', 'w') as f:
     f.write(layout)
 
-# Fix user.ts
-with open('src/app/actions/user.ts', 'r') as f:
-    user_ts = f.read()
-user_ts = user_ts.replace('where: { id: session.userId },', 'where: { id: session.userId as string },')
-with open('src/app/actions/user.ts', 'w') as f:
-    f.write(user_ts)
+# Export checkAdmin from admin.ts
+with open('src/app/actions/admin.ts', 'r') as f:
+    admin = f.read()
 
-# Fix dashboard/settings/page.tsx
-with open('src/app/dashboard/settings/page.tsx', 'r') as f:
-    settings_page = f.read()
-settings_page = settings_page.replace('where: { id: session.userId }', 'where: { id: session.userId as string }')
-with open('src/app/dashboard/settings/page.tsx', 'w') as f:
-    f.write(settings_page)
+admin = admin.replace(
+    'async function checkAdmin() {',
+    'export async function checkAdmin() {'
+)
+
+with open('src/app/actions/admin.ts', 'w') as f:
+    f.write(admin)
+

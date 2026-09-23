@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency } from '@/lib/mockData';
+import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 
 export default function ClientDashboardOverview({ user, opportunities = [] }: any) {
   const openOpps = opportunities?.filter((o: any) => o.status === 'available') || [];
@@ -111,10 +112,7 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Fund wallet
           </Link>
-          <button className="relative w-[40px] h-[40px] bg-white rounded-full flex items-center justify-center border border-black/5 shadow-sm text-ink">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            {user.notifications?.length > 0 && <span className="absolute top-[10px] right-[12px] w-2 h-2 bg-[#e53935] rounded-full"></span>}
-          </button>
+          <NotificationDropdown notifications={user.notifications || []} />
         </div>
       </header>
 

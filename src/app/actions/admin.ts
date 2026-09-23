@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import fs from 'fs';
 import path from 'path';
 
-async function checkAdmin() {
+export async function checkAdmin() {
   const session = await getSession();
   if (!session || session.role !== 'admin') {
     throw new Error('Unauthorized');
@@ -202,6 +202,16 @@ export async function approveTransaction(transactionId: string) {
       where: { id: tx.userId },
       data: { walletBalance: { increment: tx.amount } }
     });
+    await prisma.notification.create({
+      data: {
+        userId: tx.userId,
+        title: "Deposit Confirmed",
+        message: `Your deposit of ₦${tx.amount.toLocaleString()} has been confirmed and credited to your wallet.`,
+        type: "TRANSACTION",
+        linkUrl: "/dashboard/wallet",
+        actionText: "View Wallet"
+      }
+    });
   } else if (tx.type === 'investment') {
     // If it's a direct bank transfer investment, find the pending holding and activate it
     const holding = await prisma.holding.findFirst({
@@ -213,6 +223,16 @@ export async function approveTransaction(transactionId: string) {
       await prisma.holding.update({
         where: { id: holding.id },
         data: { status: 'active' }
+      });
+      await prisma.notification.create({
+        data: {
+          userId: tx.userId,
+          title: "Investment Active",
+          message: `Your payment was confirmed and your investment is now active.`,
+          type: "TRANSACTION",
+          linkUrl: "/dashboard/holdings",
+          actionText: "View Holdings"
+        }
       });
 
       // Check referral bonus
@@ -241,6 +261,18 @@ export async function rejectTransaction(transactionId: string) {
     where: { id: transactionId },
     data: { status: 'failed' }
   });
+  
+  const tx = await prisma.transaction.findUnique({ where: { id: transactionId }});
+  if (tx) {
+    await prisma.notification.create({
+      data: {
+        userId: tx.userId,
+        title: "Transaction Rejected",
+        message: `Your recent transaction of ₦${tx.amount.toLocaleString()} was rejected. Please contact support.`,
+        type: "SYSTEM"
+      }
+    });
+  }
 }
 
 export async function deleteOpportunity(id: string) {
