@@ -89,14 +89,14 @@ export default function ClientMarketplace({ user, opportunities = [] }: any) {
   return (
     <div className="flex flex-col h-[calc(100dvh-165px)] lg:h-[calc(100vh-100px)] overflow-y-auto scrollbar-hide pb-[20px] lg:pb-[50px] relative">
       
-      <header className="mb-[30px]">
+      <header className="mb-[30px] shrink-0">
         <h1 className="font-manrope text-[32px] font-bold text-ink leading-tight">Marketplace</h1>
         <p className="text-[14px] text-[#68736d]">Explore all {opportunities.length} open opportunities.</p>
       </header>
 
       {/* Featured Section */}
       {featuredOpps.length > 0 && (
-        <div className="mb-[40px]">
+        <div className="mb-[40px] shrink-0">
           <h2 className="font-manrope text-[20px] lg:text-[24px] tracking-[-0.03em] font-bold text-ink mb-[20px]">Featured</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[20px]">
             {featuredOpps.map(renderCard)}
@@ -105,7 +105,7 @@ export default function ClientMarketplace({ user, opportunities = [] }: any) {
       )}
 
       {/* Filters */}
-      <div className="flex gap-[10px] overflow-x-auto scrollbar-hide mb-[20px] pb-[5px]">
+      <div className="flex gap-[10px] overflow-x-auto scrollbar-hide mb-[30px] pb-[5px] shrink-0">
         {['all', 'farm', 'land', 'land_banking'].map(cat => (
           <button 
             key={cat}

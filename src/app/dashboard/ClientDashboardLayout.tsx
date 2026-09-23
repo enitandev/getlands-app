@@ -65,7 +65,7 @@ export default function ClientDashboardLayout({ children, initials, fullName }: 
   
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: Icons.Overview },
-    { name: 'Marketplace', path: '/explore', icon: Icons.Marketplace, badge: 2 },
+    { name: 'Marketplace', path: '/dashboard/marketplace', icon: Icons.Marketplace, badge: 2 },
     { name: 'Holdings', path: '/dashboard/holdings', icon: Icons.Holdings },
     { name: 'Wallet & transactions', path: '/dashboard/wallet', icon: Icons.Wallet },
     { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages },
