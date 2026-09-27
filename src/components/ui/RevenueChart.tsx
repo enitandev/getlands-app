@@ -12,7 +12,7 @@ export default function RevenueChart({ data }: { data: any[] }) {
           <Tooltip 
             cursor={{ fill: '#eef3ef' }}
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-            formatter={(value: number) => [`₦${value.toLocaleString()}`, 'Revenue']}
+            formatter={(value: any) => [`₦${Number(value).toLocaleString()}`, 'Revenue']}
           />
           <Bar dataKey="revenue" fill="#008b45" radius={[4, 4, 0, 0]} barSize={40} />
         </BarChart>
