@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { logoutAction } from '@/app/actions/auth';
 import { usePathname } from 'next/navigation';
