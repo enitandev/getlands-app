@@ -38,15 +38,20 @@ export default function ClientAdminMessages({ admin, conversations, agents }: { 
     const fetchLatestMessages = async () => {
       const { getLatestMessages } = await import('@/app/actions/polling');
       
-      // Update all conversations in the background
       const updatedConversations = [...localConversations];
       let hasChanges = false;
       
       for (const conv of updatedConversations) {
         const latest = await getLatestMessages(conv.id);
-        if (latest && latest.length > conv.messages.length) {
-          conv.messages = latest;
-          hasChanges = true;
+        if (latest) {
+          const isDifferent = 
+            latest.length !== conv.messages.length || 
+            (latest.length > 0 && conv.messages.length > 0 && latest[latest.length - 1].id !== conv.messages[conv.messages.length - 1].id);
+            
+          if (isDifferent) {
+            conv.messages = latest;
+            hasChanges = true;
+          }
         }
       }
       

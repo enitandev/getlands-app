@@ -100,7 +100,10 @@ export async function assignAgentAction(conversationId: string, agentId: string)
   }
 }
 
+import { unstable_noStore as noStore } from 'next/cache';
+
 export async function getUnreadMessageCount() {
+  noStore();
   const session = await getSession();
   if (!session?.userId) return 0;
 

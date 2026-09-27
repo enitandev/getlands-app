@@ -36,9 +36,13 @@ export default function ClientMessages({ user, initialConversation }: { user: an
     const fetchLatestMessages = async () => {
       const { getLatestMessages } = await import('@/app/actions/polling');
       const latest = await getLatestMessages(conversation.id);
-      if (latest && latest.length > 0) {
+      if (latest) {
         setMessages(prev => {
-          if (latest.length > prev.length) return latest;
+          const isDifferent = 
+            latest.length !== prev.length || 
+            (latest.length > 0 && prev.length > 0 && latest[latest.length - 1].id !== prev[prev.length - 1].id);
+          
+          if (isDifferent) return latest;
           return prev;
         });
       }
