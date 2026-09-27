@@ -34,34 +34,41 @@ export default function ClientAdminMessages({ admin, conversations, agents }: { 
   }, [activeConv?.messages, activeConv?.id]);
 
   useEffect(() => {
-    // Polling mechanism
-    const fetchLatestMessages = async () => {
+    let isMounted = true;
+
+    const doPoll = async () => {
       const { getLatestMessages } = await import('@/app/actions/polling');
       
-      const updatedConversations = [...localConversations];
+      const newConvs = [];
       let hasChanges = false;
       
-      for (const conv of updatedConversations) {
+      for (const conv of localConversations) {
         const latest = await getLatestMessages(conv.id);
         if (latest) {
-          const isDifferent = 
-            latest.length !== conv.messages.length || 
+          const isDifferent = latest.length !== conv.messages.length || 
             (latest.length > 0 && conv.messages.length > 0 && latest[latest.length - 1].id !== conv.messages[conv.messages.length - 1].id);
-            
+          
           if (isDifferent) {
-            conv.messages = latest;
+            newConvs.push({ ...conv, messages: latest });
             hasChanges = true;
+          } else {
+            newConvs.push(conv);
           }
+        } else {
+          newConvs.push(conv);
         }
       }
       
-      if (hasChanges) {
-        setLocalConversations(updatedConversations);
+      if (hasChanges && isMounted) {
+        setLocalConversations(newConvs);
       }
     };
 
-    const intervalId = setInterval(fetchLatestMessages, 5000);
-    return () => clearInterval(intervalId);
+    const intervalId = setInterval(doPoll, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, [localConversations]);
 
   const handleSend = async (e: React.FormEvent) => {

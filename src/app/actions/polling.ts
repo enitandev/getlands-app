@@ -33,8 +33,14 @@ export async function getLatestNotifications(userId: string) {
   if (session.userId !== userId) return null;
 
   try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    
+    const whereClause = user?.role === 'admin' 
+      ? { OR: [{ userId }, { userId: null }] } 
+      : { userId };
+
     const notifications = await prisma.notification.findMany({
-      where: { userId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: 20
     });

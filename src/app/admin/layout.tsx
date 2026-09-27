@@ -16,6 +16,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/login');
   }
 
+  // Fetch admin notifications manually to include global ones
+  const notifications = await prisma.notification.findMany({
+    where: { OR: [{ userId: user.id }, { userId: null }] },
+    orderBy: { createdAt: 'desc' },
+    take: 20
+  });
+
   const initials = `${user.firstName[0]}${user.lastName[0]}`;
   const fullName = `${user.firstName} ${user.lastName}`;
 
@@ -23,7 +30,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const unreadMessageCount = await getUnreadMessageCount();
 
   return (
-    <ClientAdminLayout initials={initials} fullName={fullName} unreadMessageCount={unreadMessageCount}>
+    <ClientAdminLayout 
+      initials={initials} 
+      fullName={fullName} 
+      unreadMessageCount={unreadMessageCount}
+      notifications={notifications}
+      userId={user.id}
+    >
       {children}
     </ClientAdminLayout>
   );
