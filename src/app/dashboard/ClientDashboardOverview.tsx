@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency } from '@/lib/mockData';
 import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
+import DistributionChart from '@/components/ui/DistributionChart';
 
-export default function ClientDashboardOverview({ user, opportunities = [] }: any) {
+export default function ClientDashboardOverview({ user, opportunities = [], reports }: any) {
   const openOpps = opportunities?.filter((o: any) => o.status === 'available') || [];
   
   const featuredOpps = openOpps.filter((o: any) => o.featured);
@@ -274,6 +275,13 @@ export default function ClientDashboardOverview({ user, opportunities = [] }: an
             <div className="bg-[#f7f9f7] px-[12px] py-[6px] rounded-full text-[12px] font-bold text-ink border border-black/5">{landCount} Land</div>
             <div className="bg-[#f7f9f7] px-[12px] py-[6px] rounded-full text-[12px] font-bold text-ink border border-black/5">{landBankingCount} Land banking</div>
           </div>
+          
+          {reports?.distributionChart && reports.distributionChart.length > 0 && (
+            <div className="mb-[30px] border-t border-black/5 pt-[20px]">
+              <div className="text-[11px] font-bold text-[#68736d] uppercase tracking-wider mb-[15px]">Asset Distribution</div>
+              <DistributionChart data={reports.distributionChart} />
+            </div>
+          )}
 
           {nextPayout ? (
             <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] mb-[40px]">

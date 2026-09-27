@@ -2,8 +2,15 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { formatCurrency } from '@/lib/mockData';
+import { getAdminReports } from '@/app/actions/reports';
+import RevenueChart from '@/components/ui/RevenueChart';
+import DistributionChart from '@/components/ui/DistributionChart';
 
 export default async function AdminDashboard() {
+  const reports = await getAdminReports();
+  const revenueChart = reports?.revenueChart || [];
+  const distributionChart = reports?.distributionChart || [];
+
   // Fetch aggregations
   const successTx = await prisma.transaction.aggregate({
     where: { type: 'investment', status: 'success' },
@@ -52,6 +59,28 @@ export default async function AdminDashboard() {
             <Link href="/admin/finance" className="block text-[13px] font-bold text-ink hover:text-[#008b45]">
               {pendingActions} Manual Payment Verifications
             </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-[30px]">
+        {/* Revenue Chart */}
+        <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
+          <div className="p-[20px_24px] border-b border-black/5 flex justify-between items-center">
+            <h3 className="font-manrope text-[16px] font-bold text-ink">Revenue (Last 6 Months)</h3>
+          </div>
+          <div className="p-[24px]">
+            <RevenueChart data={revenueChart} />
+          </div>
+        </div>
+
+        {/* Distribution Chart */}
+        <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
+          <div className="p-[20px_24px] border-b border-black/5 flex justify-between items-center">
+            <h3 className="font-manrope text-[16px] font-bold text-ink">Asset Distribution</h3>
+          </div>
+          <div className="p-[24px]">
+            <DistributionChart data={distributionChart} />
           </div>
         </div>
       </div>

@@ -37,5 +37,8 @@ export default async function DashboardOverviewPage() {
   const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
   const referralBonusPercentage = settings?.referralBonusPercentage || 10;
 
-  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} opportunities={opportunities} referralBonusPercentage={referralBonusPercentage} />;
+  const { getCustomerReports } = await import('@/app/actions/reports');
+  const reports = await getCustomerReports(user.id);
+
+  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} opportunities={opportunities} referralBonusPercentage={referralBonusPercentage} reports={reports} />;
 }
