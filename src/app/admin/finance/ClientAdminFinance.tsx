@@ -134,13 +134,39 @@ export default function ClientAdminFinance({ transactions }: { transactions: any
                   <strong className="block text-[15px] text-ink">{selectedTx.user.firstName} {selectedTx.user.lastName}</strong>
                 </div>
                 <div>
+                  <span className="block text-[12px] text-[#7a847f] mb-[2px]">Type</span>
+                  <strong className="block text-[15px] text-ink capitalize">{selectedTx.type}</strong>
+                </div>
+                <div>
                   <span className="block text-[12px] text-[#7a847f] mb-[2px]">Expected Amount</span>
                   <strong className="block text-[24px] font-manrope text-[#008b45]">{formatCurrency(selectedTx.amount)}</strong>
                 </div>
+                
+                {selectedTx.type === 'withdrawal' && selectedTx.user.bankAccounts?.[0] && (
+                  <div className="pt-[10px] border-t border-black/5 mt-[10px]">
+                    <span className="block text-[12px] text-[#7a847f] mb-[8px] uppercase tracking-wider font-bold">Transfer To</span>
+                    <div className="bg-[#eef3ef]/50 p-[15px] rounded-[12px] space-y-[8px]">
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-[#68736d]">Bank:</span>
+                        <strong className="text-ink">{selectedTx.user.bankAccounts[0].bankName}</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-[#68736d]">Name:</span>
+                        <strong className="text-ink">{selectedTx.user.bankAccounts[0].accountName}</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-[#68736d]">Account:</span>
+                        <strong className="font-mono text-ink text-[15px] tracking-wider">{selectedTx.user.bankAccounts[0].accountNumber}</strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex gap-[15px]">
                 <button onClick={() => handleReject(selectedTx.id)} className="flex-1 py-[14px] bg-[#fdeeee] text-[#e53935] font-bold rounded-full">Reject</button>
-                <button onClick={() => handleApprove(selectedTx.id)} className="flex-[2] py-[14px] bg-[#008b45] text-white font-bold rounded-full shadow-[0_8px_20px_rgba(0,139,69,0.25)]">Approve & Verify</button>
+                <button onClick={() => handleApprove(selectedTx.id)} className="flex-[2] py-[14px] bg-[#008b45] text-white font-bold rounded-full shadow-[0_8px_20px_rgba(0,139,69,0.25)]">
+                  {selectedTx.type === 'withdrawal' ? 'Mark as Transferred' : 'Approve & Verify'}
+                </button>
               </div>
             </div>
           </div>

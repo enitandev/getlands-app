@@ -1,10 +1,32 @@
 "use client";
 import React, { useState } from 'react';
-import { mockWallet, formatCurrency } from '@/lib/mockData';
-
+import { formatCurrency } from '@/lib/mockData';
 import { fundWalletAction } from '@/app/actions/checkout';
-export default function ClientWallet({ balance, transactions }: { balance: number, transactions: any[] }) {
+import { requestWithdrawalAction } from '@/app/actions/wallet';
+import Link from 'next/link';
+
+export default function ClientWallet({ balance, transactions, bankAccounts }: { balance: number, transactions: any[], bankAccounts: any[] }) {
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawError, setWithdrawError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const activeBank = bankAccounts[0];
+
+  const handleWithdrawal = async (formData: FormData) => {
+    setIsSubmitting(true);
+    setWithdrawError('');
+    
+    const res = await requestWithdrawalAction(formData);
+    
+    if (res.error) {
+      setWithdrawError(res.error);
+    } else {
+      setIsWithdrawModalOpen(false);
+      alert('Withdrawal request submitted successfully! It will be processed shortly.');
+    }
+    setIsSubmitting(false);
+  };
 
   return (
     <div className="space-y-[40px] max-w-[1000px] mx-auto">
@@ -32,7 +54,7 @@ export default function ClientWallet({ balance, transactions }: { balance: numbe
           <button onClick={() => setIsFundModalOpen(true)} className="px-[30px] py-[16px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.3)] whitespace-nowrap">
             Fund Wallet
           </button>
-          <button className="px-[30px] py-[16px] bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors whitespace-nowrap" onClick={() => alert('Withdrawals are processed to your saved bank account.')}>
+          <button onClick={() => setIsWithdrawModalOpen(true)} className="px-[30px] py-[16px] bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors whitespace-nowrap">
             Withdraw
           </button>
         </div>
@@ -44,38 +66,44 @@ export default function ClientWallet({ balance, transactions }: { balance: numbe
         </div>
         
         <div className="divide-y divide-black/5">
-          {transactions.map(tx => (
-            <div key={tx.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_100px] gap-[15px] p-[20px] lg:p-[20px_30px] items-center hover:bg-[#fcfdfc] transition-colors">
-              <div className="flex gap-[15px] items-center">
-                <div className={`w-[40px] h-[40px] rounded-full flex items-center justify-center shrink-0 ${
-                  tx.type === 'deposit' ? 'bg-[#eef3ef] text-[#008b45]' : 'bg-[#fdeeee] text-[#e53935]'
-                }`}>
-                  {tx.type === 'deposit' ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                  )}
+          {transactions.length === 0 ? (
+            <div className="p-8 text-center text-[#68736d] text-[14px]">No transactions yet.</div>
+          ) : (
+            transactions.map(tx => (
+              <div key={tx.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_100px] gap-[15px] p-[20px] lg:p-[20px_30px] items-center hover:bg-[#fcfdfc] transition-colors">
+                <div className="flex gap-[15px] items-center">
+                  <div className={`w-[40px] h-[40px] rounded-full flex items-center justify-center shrink-0 ${
+                    tx.type === 'deposit' ? 'bg-[#eef3ef] text-[#008b45]' : 
+                    tx.status === 'pending' ? 'bg-[#fff8e1] text-[#f5a623]' : 'bg-[#fdeeee] text-[#e53935]'
+                  }`}>
+                    {tx.type === 'deposit' ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    )}
+                  </div>
+                  <div>
+                    <strong className="block text-[15px] text-ink capitalize">{tx.type} {tx.status === 'pending' ? '(Pending)' : ''}</strong>
+                    <span className="text-[12px] text-[#7a847f] font-mono">{tx.reference || tx.id.slice(0, 8)}</span>
+                  </div>
                 </div>
-                <div>
-                  <strong className="block text-[15px] text-ink capitalize">{tx.type}</strong>
-                  <span className="text-[12px] text-[#7a847f] font-mono">{tx.ref}</span>
+                
+                <div className="text-[13px] text-[#68736d]">
+                  {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+                
+                <div className="text-right">
+                  <strong className={`block text-[16px] ${tx.type === 'deposit' ? 'text-[#008b45]' : 'text-ink'}`}>
+                    {tx.type === 'deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
+                  </strong>
                 </div>
               </div>
-              
-              <div className="text-[13px] text-[#68736d]">
-                {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </div>
-              
-              <div className="text-right">
-                <strong className={`block text-[16px] ${tx.type === 'deposit' ? 'text-[#008b45]' : 'text-ink'}`}>
-                  {tx.type === 'deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
-                </strong>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
+      {/* Fund Modal */}
       {isFundModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in">
           <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden">
@@ -86,7 +114,7 @@ export default function ClientWallet({ balance, transactions }: { balance: numbe
               </button>
             </div>
             
-            <form className="p-[20px] lg:p-[30px] space-y-[20px]" action={async (formData) => { await fundWalletAction(formData);  }}>
+            <form className="p-[20px] lg:p-[30px] space-y-[20px]" action={async (formData) => { await fundWalletAction(formData); setIsFundModalOpen(false); }}>
               <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#7a847f] mb-[15px]">Bank Transfer Details</h3>
                 <div className="space-y-[15px]">
@@ -100,7 +128,7 @@ export default function ClientWallet({ balance, transactions }: { balance: numbe
                   </div>
                   <div className="flex justify-between items-center bg-white p-[10px] rounded-[8px] border border-black/5">
                     <strong className="text-[20px] font-mono text-ink tracking-widest">9133485636</strong>
-                    <button className="text-[12px] font-bold text-[#008b45] hover:underline" onClick={() => alert('Account number copied!')}>Copy</button>
+                    <button type="button" className="text-[12px] font-bold text-[#008b45] hover:underline" onClick={() => alert('Account number copied!')}>Copy</button>
                   </div>
                 </div>
               </div>
@@ -123,8 +151,94 @@ export default function ClientWallet({ balance, transactions }: { balance: numbe
               </div>
 
               <div className="pt-[10px]">
-                <button  className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)]">
+                <button type="submit" className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)]">
                   Submit Receipt
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Withdraw Modal */}
+      {isWithdrawModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in">
+          <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden">
+            <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
+              <h2 className="font-manrope text-[18px] lg:text-[20px] font-bold text-ink">Withdraw Funds</h2>
+              <button onClick={() => setIsWithdrawModalOpen(false)} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+            
+            <form className="p-[20px] lg:p-[30px] space-y-[20px]" action={handleWithdrawal}>
+              {withdrawError && (
+                <div className="p-3 bg-red-50 text-red-600 text-[13px] font-bold rounded-xl border border-red-100">
+                  {withdrawError}
+                </div>
+              )}
+
+              <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#7a847f] mb-[15px]">Withdraw To</h3>
+                {activeBank ? (
+                  <div className="space-y-[10px]">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] text-[#68736d]">Bank</span>
+                      <strong className="text-[14px] text-ink">{activeBank.bankName}</strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] text-[#68736d]">Account Name</span>
+                      <strong className="text-[14px] text-ink">{activeBank.accountName}</strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] text-[#68736d]">Account Number</span>
+                      <strong className="text-[16px] font-mono text-ink tracking-widest">{activeBank.accountNumber}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 space-y-3">
+                    <p className="text-[13px] text-[#68736d]">You have no verified bank accounts.</p>
+                    <Link href="/dashboard/settings" className="inline-block px-4 py-2 bg-white border border-black/10 rounded-full text-[13px] font-bold text-ink hover:bg-[#f7f9f7]">
+                      Add Bank Account in Settings
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-bold text-ink mb-[8px]">Amount to Withdraw</label>
+                <div className="relative">
+                  <span className="absolute left-[15px] top-1/2 -translate-y-1/2 font-manrope font-bold text-[#68736d]">₦</span>
+                  <input 
+                    type="number" 
+                    name="amount" 
+                    placeholder="0.00" 
+                    required 
+                    max={balance}
+                    disabled={!activeBank}
+                    className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] pl-[35px] pr-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors font-manrope font-bold text-[16px] disabled:opacity-50" 
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-[12px] text-[#68736d]">Available Balance:</span>
+                  <strong className="text-[12px] text-[#008b45]">{formatCurrency(balance)}</strong>
+                </div>
+              </div>
+
+              <div className="pt-[10px]">
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || !activeBank}
+                  className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-[18px] h-[18px] border-[2px] border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    "Request Withdrawal"
+                  )}
                 </button>
               </div>
             </form>

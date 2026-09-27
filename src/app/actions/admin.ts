@@ -251,28 +251,50 @@ export async function approveTransaction(transactionId: string) {
         });
       }
     }
-
+  } else if (tx.type === 'withdrawal') {
+    // Wallet was already deducted. Just notify user of success.
+    await prisma.notification.create({
+      data: {
+        userId: tx.userId,
+        title: "Withdrawal Successful",
+        message: `Your withdrawal of ₦${tx.amount.toLocaleString()} has been processed and sent to your bank.`,
+        type: "TRANSACTION",
+        linkUrl: "/dashboard/wallet",
+        actionText: "View Wallet"
+      }
+    });
   }
 }
 
 export async function rejectTransaction(transactionId: string) {
   await checkAdmin();
+  
+  const tx = await prisma.transaction.findUnique({ where: { id: transactionId }});
+  if (!tx || tx.status !== 'pending') return;
+
   await prisma.transaction.update({
     where: { id: transactionId },
     data: { status: 'failed' }
   });
   
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId }});
-  if (tx) {
-    await prisma.notification.create({
-      data: {
-        userId: tx.userId,
-        title: "Transaction Rejected",
-        message: `Your recent transaction of ₦${tx.amount.toLocaleString()} was rejected. Please contact support.`,
-        type: "SYSTEM"
-      }
+  if (tx.type === 'withdrawal') {
+    // Refund the wallet
+    await prisma.user.update({
+      where: { id: tx.userId },
+      data: { walletBalance: { increment: tx.amount } }
     });
   }
+
+  await prisma.notification.create({
+    data: {
+      userId: tx.userId,
+      title: "Transaction Rejected",
+      message: tx.type === 'withdrawal' 
+        ? `Your withdrawal request of ₦${tx.amount.toLocaleString()} was rejected and the funds were returned to your wallet. Please contact support.`
+        : `Your recent transaction of ₦${tx.amount.toLocaleString()} was rejected. Please contact support.`,
+      type: "SYSTEM"
+    }
+  });
 }
 
 export async function deleteOpportunity(id: string) {

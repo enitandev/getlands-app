@@ -13,11 +13,14 @@ export default async function WalletPage() {
     include: {
       transactions: {
         orderBy: { date: 'desc' }
+      },
+      bankAccounts: {
+        where: { status: 'active' }
       }
     }
   });
 
   if (!user) redirect('/login');
 
-  return <ClientWallet balance={user.walletBalance} transactions={user.transactions} />;
+  return <ClientWallet balance={user.walletBalance} transactions={user.transactions} bankAccounts={user.bankAccounts} />;
 }
