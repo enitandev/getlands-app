@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { LegacyReferralModal } from '../LegacyReferralModal';
+import { RecordReferralModal } from '../LegacyReferralModal';
 
 export default async function CustomerProfile({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -43,7 +43,7 @@ export default async function CustomerProfile({ params }: { params: Promise<{ id
         </div>
         
         <div className="flex gap-[10px]">
-          {!user.referredById && <LegacyReferralModal referredUserId={user.id} />}
+          <RecordReferralModal referrerUserId={user.id} />
         </div>
       </div>
 

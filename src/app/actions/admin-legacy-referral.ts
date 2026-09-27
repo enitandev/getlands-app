@@ -2,53 +2,95 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function recordLegacyReferralAction(formData: FormData) {
+export async function searchCustomersForReferralAction(query: string) {
+  if (!query || query.length < 2) return [];
+  
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        { firstName: { contains: query } },
+        { lastName: { contains: query } },
+        { email: { contains: query } }
+      ],
+      role: 'customer'
+    },
+    select: { id: true, firstName: true, lastName: true, email: true, referredById: true },
+    take: 10
+  });
+  
+  return users;
+}
+
+export async function fetchCustomerHoldingsAction(userId: string) {
+  const holdings = await prisma.holding.findMany({
+    where: { userId },
+    include: { opportunity: true },
+    orderBy: { dateAcquired: 'desc' }
+  });
+  return holdings;
+}
+
+export async function recordReferralRobustAction(formData: FormData) {
+  const referrerId = formData.get('referrerId') as string;
   const referredUserId = formData.get('referredUserId') as string;
-  const referrerCode = formData.get('referrerCode') as string;
-  const amountPaidOffline = parseFloat(formData.get('amountPaidOffline') as string || '0');
+  const holdingId = formData.get('holdingId') as string;
+  const paymentStatus = formData.get('paymentStatus') as string; // 'offline' or 'wallet'
 
-  if (!referredUserId || !referrerCode) return { error: 'Missing fields' };
-
-  const referrer = await prisma.user.findUnique({ where: { referralCode: referrerCode } });
-  if (!referrer) return { error: 'Referrer code not found' };
-
-  if (referrer.id === referredUserId) return { error: 'User cannot refer themselves' };
+  if (!referrerId || !referredUserId || !holdingId) return { error: 'Missing fields' };
+  if (referrerId === referredUserId) return { error: 'User cannot refer themselves' };
 
   const referredUser = await prisma.user.findUnique({ where: { id: referredUserId } });
   if (!referredUser) return { error: 'Referred user not found' };
-
   if (referredUser.referredById) return { error: 'User already has a referrer' };
 
+  const holding = await prisma.holding.findUnique({ where: { id: holdingId } });
+  if (!holding) return { error: 'Holding not found' };
+
+  // Calculate 10% bonus
+  const platformSettings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
+  const bonusPercentage = platformSettings?.referralBonusPercentage ?? 10;
+  const bonusAmount = holding.totalAmount * (bonusPercentage / 100);
+
   await prisma.$transaction(async (tx) => {
-    // 1. Link them and mark as paid
+    // 1. Link them and mark as triggered
     await tx.user.update({
       where: { id: referredUserId },
       data: { 
-        referredById: referrer.id,
+        referredById: referrerId,
         hasTriggeredReferralReward: true
       }
     });
 
-    if (amountPaidOffline > 0) {
-      // 2. Log the bonus so it shows in earnings
-      await tx.transaction.create({
+    // 2. Log the bonus transaction
+    await tx.transaction.create({
+      data: {
+        userId: referrerId,
+        type: paymentStatus === 'offline' ? 'legacy_referral_bonus' : 'referral_bonus',
+        amount: bonusAmount,
+        status: 'success',
+        reference: `REF-BONUS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+      }
+    });
+
+    // 3. Credit wallet if requested
+    if (paymentStatus === 'wallet') {
+      await tx.user.update({
+        where: { id: referrerId },
+        data: { walletBalance: { increment: bonusAmount } }
+      });
+      
+      // Notify them
+      await tx.notification.create({
         data: {
-          userId: referrer.id,
-          type: 'referral_bonus',
-          amount: amountPaidOffline,
-          status: 'success',
-          reference: `LEGACY-REF-BONUS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+          userId: referrerId,
+          type: 'TRANSACTION',
+          title: 'Referral Bonus Earned!',
+          message: `You earned ₦${bonusAmount.toLocaleString()} for referring ${referredUser.firstName}.`,
         }
       });
-
-      // 3. Offset the wallet balance with a withdrawal if we want to ensure the wallet isn't artificially inflated
-      // Alternatively, we just don't increment the wallet balance in step 2.
-      // Wait, transaction creation does NOT auto-increment wallet. Wallet increment is explicit!
-      // So if we just create the transaction without touching `user.walletBalance`, it acts purely as a ledger record!
-      // This is perfect! The user's total earned will sum this transaction, but their current withdrawable balance remains unchanged!
     }
   });
 
-  revalidatePath(`/admin/customers/${referredUserId}`);
+  revalidatePath(`/admin/customers/${referrerId}`);
   return { success: true };
 }
