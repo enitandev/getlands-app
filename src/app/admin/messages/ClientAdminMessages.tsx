@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { sendMessageAction, assignAgentAction } from '@/app/actions/messages';
+import { sendMessageAction, assignAgentAction, markMessagesAsRead } from '@/app/actions/messages';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -17,31 +17,47 @@ export default function ClientAdminMessages({ admin, conversations, agents }: { 
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConv?.messages]);
+    if (activeConv?.id) {
+      markMessagesAsRead(activeConv.id).then(() => {
+        // Optimistically mark them read in the UI so the badge clears
+        setLocalConversations(prev => prev.map(c => {
+          if (c.id === activeConv.id) {
+            return {
+              ...c,
+              messages: c.messages.map((m: any) => ({ ...m, read: true }))
+            };
+          }
+          return c;
+        }));
+      });
+    }
+  }, [activeConv?.messages, activeConv?.id]);
 
   useEffect(() => {
-    if (!supabaseUrl || !supabaseKey) return;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const channel = supabase
-      .channel('admin-messages')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'Message' },
-        (payload) => {
-          setLocalConversations(prev => prev.map(conv => {
-            if (conv.id === payload.new.conversationId) {
-              if (conv.messages.find((m: any) => m.id === payload.new.id)) return conv;
-              return { ...conv, messages: [...conv.messages, payload.new] };
-            }
-            return conv;
-          }));
+    // Polling mechanism
+    const fetchLatestMessages = async () => {
+      const { getLatestMessages } = await import('@/app/actions/polling');
+      
+      // Update all conversations in the background
+      const updatedConversations = [...localConversations];
+      let hasChanges = false;
+      
+      for (const conv of updatedConversations) {
+        const latest = await getLatestMessages(conv.id);
+        if (latest && latest.length > conv.messages.length) {
+          conv.messages = latest;
+          hasChanges = true;
         }
-      )
-      .subscribe();
+      }
+      
+      if (hasChanges) {
+        setLocalConversations(updatedConversations);
+      }
+    };
 
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+    const intervalId = setInterval(fetchLatestMessages, 5000);
+    return () => clearInterval(intervalId);
+  }, [localConversations]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -15,10 +15,21 @@ const AdminIcons = {
   Settings: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
 };
 
-export default function ClientAdminLayout({ children, initials, fullName }: { children: React.ReactNode; initials: string; fullName: string; }) {
+export default function ClientAdminLayout({ children, initials, fullName, unreadMessageCount = 0 }: { children: React.ReactNode; initials: string; fullName: string; unreadMessageCount?: number }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { getPollingUnreadCount } = await import('@/app/actions/polling');
+      const count = await getPollingUnreadCount();
+      setUnreadMsg(count);
+    };
+    const interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, []);
   
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: AdminIcons.Dashboard },
@@ -26,13 +37,14 @@ export default function ClientAdminLayout({ children, initials, fullName }: { ch
     { name: 'Announcements', path: '/admin/announcements', icon: AdminIcons.Documents },
     { name: 'Finance', path: '/admin/finance', icon: AdminIcons.Finance },
     { name: 'Customers', path: '/admin/customers', icon: AdminIcons.Customers },
-    { name: 'Messages', path: '/admin/messages', icon: AdminIcons.Messages },
+    { name: 'Messages', path: '/admin/messages', icon: AdminIcons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Sales', path: '/admin/sales', icon: AdminIcons.Sales },
     { name: 'Settings', path: '/admin/settings', icon: AdminIcons.Settings }
   ];
 
   // Mobile main nav items (bottom bar)
-  const mobileNavItems = navItems.slice(0, 4);
+  // I will include Messages in the bottom bar
+  const mobileNavItems = navItems.filter(item => ['Dashboard', 'Marketplace', 'Finance', 'Messages'].includes(item.name));
 
   return (
     <div className="min-h-screen bg-[#f3f4f6] flex font-manrope">
@@ -74,8 +86,8 @@ export default function ClientAdminLayout({ children, initials, fullName }: { ch
               >
                 {item.icon}
                 {!isCollapsed && <span>{item.name}</span>}
-                {item.name === 'Messages' && !isCollapsed && (
-                  <span className="ml-auto w-[18px] h-[18px] bg-[#f5a623] text-white rounded-full flex items-center justify-center text-[10px] font-bold">2</span>
+                {item.badge && !isCollapsed && (
+                  <span className="ml-auto w-[18px] h-[18px] bg-[#f5a623] text-white rounded-full flex items-center justify-center text-[10px] font-bold">{item.badge}</span>
                 )}
               </Link>
             );
@@ -136,7 +148,7 @@ export default function ClientAdminLayout({ children, initials, fullName }: { ch
             >
               <div className="scale-90 relative">
                 {item.icon}
-                {item.name === 'Customers' && (
+                {item.badge && (
                   <span className="absolute -top-[2px] -right-[2px] w-[6px] h-[6px] bg-[#f5a623] rounded-full border border-white"></span>
                 )}
               </div>
@@ -171,8 +183,8 @@ export default function ClientAdminLayout({ children, initials, fullName }: { ch
                 >
                   {item.icon}
                   {item.name}
-                  {item.name === 'Messages' && (
-                    <span className="ml-auto w-[20px] h-[20px] bg-[#f5a623] text-white rounded-full flex items-center justify-center text-[11px] font-bold">2</span>
+                  {item.badge && (
+                    <span className="ml-auto w-[20px] h-[20px] bg-[#f5a623] text-white rounded-full flex items-center justify-center text-[11px] font-bold">{item.badge}</span>
                   )}
                 </Link>
               );

@@ -60,16 +60,27 @@ const Icons = {
   )
 };
 
-export default function ClientDashboardLayout({ children, initials, fullName, notifications = [] }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; }) {
+export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0 }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { getPollingUnreadCount } = await import('@/app/actions/polling');
+      const count = await getPollingUnreadCount();
+      setUnreadMsg(count);
+    };
+    const interval = setInterval(fetchUnread, 10000); // Check unread every 10s
+    return () => clearInterval(interval);
+  }, []);
   
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: Icons.Overview },
-    { name: 'Marketplace', path: '/dashboard/marketplace', icon: Icons.Marketplace, badge: 2 },
+    { name: 'Marketplace', path: '/dashboard/marketplace', icon: Icons.Marketplace },
     { name: 'Holdings', path: '/dashboard/holdings', icon: Icons.Holdings },
     { name: 'Wallet & transactions', path: '/dashboard/wallet', icon: Icons.Wallet },
-    { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages },
+    { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Settings', path: '/dashboard/settings', icon: Icons.Settings },
   ];
 
@@ -193,6 +204,14 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
         <Link href="/dashboard/wallet" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard/wallet' ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
           <div className="scale-[0.8]">{Icons.Wallet}</div>
           <span className="text-[10px] font-bold">Wallet</span>
+        </Link>
+        
+        <Link href="/dashboard/messages" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard/messages' ? 'text-[#008b45]' : 'text-[#a1aba6]'} relative`}>
+          <div className="scale-[0.8]">{Icons.Messages}</div>
+          <span className="text-[10px] font-bold">Chat</span>
+          {unreadMsg > 0 && (
+            <span className="absolute top-0 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+          )}
         </Link>
         
         <Link href="/dashboard/settings" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard/settings' ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>

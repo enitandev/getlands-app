@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { sendMessageAction, startConversationAction } from '@/app/actions/messages';
+import { sendMessageAction, startConversationAction, markMessagesAsRead } from '@/app/actions/messages';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -15,7 +15,10 @@ export default function ClientMessages({ user, initialConversation }: { user: an
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (conversation?.id) {
+      markMessagesAsRead(conversation.id);
+    }
+  }, [messages, conversation?.id]);
 
   useEffect(() => {
     // If no conversation exists yet, start one automatically so they can text
@@ -27,25 +30,22 @@ export default function ClientMessages({ user, initialConversation }: { user: an
   }, [conversation]);
 
   useEffect(() => {
-    if (!supabaseUrl || !supabaseKey || !conversation?.id) return;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    if (!conversation?.id) return;
 
-    const channel = supabase
-      .channel(`conversation-${conversation.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'Message', filter: `conversationId=eq.${conversation.id}` },
-        (payload) => {
-          // If the message is not from us, add it. (If it is from us, we already added it optimistically)
-          setMessages((prev) => {
-            if (prev.find(m => m.id === payload.new.id)) return prev;
-            return [...prev, payload.new];
-          });
-        }
-      )
-      .subscribe();
+    // Fallback polling mechanism since Supabase Realtime might not be enabled on the table
+    const fetchLatestMessages = async () => {
+      const { getLatestMessages } = await import('@/app/actions/polling');
+      const latest = await getLatestMessages(conversation.id);
+      if (latest && latest.length > 0) {
+        setMessages(prev => {
+          if (latest.length > prev.length) return latest;
+          return prev;
+        });
+      }
+    };
 
-    return () => { supabase.removeChannel(channel); };
+    const intervalId = setInterval(fetchLatestMessages, 5000);
+    return () => clearInterval(intervalId);
   }, [conversation?.id]);
 
   const handleSend = async (e: React.FormEvent) => {

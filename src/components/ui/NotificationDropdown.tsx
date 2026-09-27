@@ -19,25 +19,19 @@ export function NotificationDropdown({ notifications = [], userId }: { notificat
   }, [notifications]);
 
   useEffect(() => {
-    if (!supabaseUrl || !supabaseKey || !userId) return;
+    if (!userId) return;
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Fallback polling mechanism for notifications
+    const fetchNotifs = async () => {
+      const { getLatestNotifications } = await import('@/app/actions/polling');
+      const latest = await getLatestNotifications(userId);
+      if (latest) {
+        setLocalNotifications(latest);
+      }
+    };
 
-    const channel = supabase
-      .channel('realtime-notifications')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'Notification', filter: `userId=eq.${userId}` },
-        (payload) => setLocalNotifications((prev) => [payload.new, ...prev])
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'Notification', filter: `userId=eq.${userId}` },
-        (payload) => setLocalNotifications((prev) => prev.map(n => n.id === payload.new.id ? payload.new : n))
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    const interval = setInterval(fetchNotifs, 10000); // Check every 10s
+    return () => clearInterval(interval);
   }, [userId]);
 
   const unreadCount = localNotifications.filter(n => n.unread).length;

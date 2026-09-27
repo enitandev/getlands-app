@@ -25,8 +25,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const initials = `${user.firstName[0]}${user.lastName[0]}`;
   const fullName = `${user.firstName} ${user.lastName[0]}.`;
 
+  const { getUnreadMessageCount } = await import('@/app/actions/messages');
+  const unreadMessageCount = await getUnreadMessageCount();
+
   return (
-    <ClientDashboardLayout initials={initials} fullName={fullName} notifications={user.notifications}>
+    <ClientDashboardLayout initials={initials} fullName={fullName} notifications={user.notifications} unreadMessageCount={unreadMessageCount}>
       {children}
     </ClientDashboardLayout>
   );
