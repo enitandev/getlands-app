@@ -2,11 +2,45 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { markNotificationAsRead, markAllNotificationsAsRead } from '@/app/actions/notifications';
+import { createClient } from '@supabase/supabase-js';
 
-export function NotificationDropdown({ notifications = [] }: { notifications: any[] }) {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+export function NotificationDropdown({ notifications = [], userId }: { notifications: any[], userId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const unreadCount = notifications.filter(n => n.unread).length;
+  
+  const [localNotifications, setLocalNotifications] = useState(notifications);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLocalNotifications(notifications);
+  }, [notifications]);
+
+  useEffect(() => {
+    if (!supabaseUrl || !supabaseKey || !userId) return;
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const channel = supabase
+      .channel('realtime-notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'Notification', filter: `userId=eq.${userId}` },
+        (payload) => setLocalNotifications((prev) => [payload.new, ...prev])
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'Notification', filter: `userId=eq.${userId}` },
+        (payload) => setLocalNotifications((prev) => prev.map(n => n.id === payload.new.id ? payload.new : n))
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
+
+  const unreadCount = localNotifications.filter(n => n.unread).length;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -18,12 +52,13 @@ export function NotificationDropdown({ notifications = [] }: { notifications: an
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [ref]);
 
-
   const markAsRead = async (id: string) => {
+    setLocalNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
     await markNotificationAsRead(id);
   };
   
   const markAllAsRead = async () => {
+    setLocalNotifications(prev => prev.map(n => ({ ...n, unread: false })));
     await markAllNotificationsAsRead();
   };
 
@@ -54,13 +89,13 @@ export function NotificationDropdown({ notifications = [] }: { notifications: an
           </div>
           
           <div className="max-h-[400px] overflow-y-auto">
-            {notifications.length === 0 ? (
+            {localNotifications.length === 0 ? (
               <div className="p-[40px] text-center text-[#68736d] text-[13px]">
-                You're all caught up!
+                You&apos;re all caught up!
               </div>
             ) : (
               <div className="divide-y divide-black/5">
-                {notifications.map((notif: any) => (
+                {localNotifications.map((notif: any) => (
                   <div key={notif.id} className={`p-[15px] flex gap-[15px] transition-colors ${notif.unread ? 'bg-white' : 'bg-gray-50/50'}`}>
                     {getIconForType(notif.type)}
                     <div className="flex-1">

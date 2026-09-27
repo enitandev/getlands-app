@@ -59,6 +59,11 @@ model User {
   shopOrders            ShopOrder[]
   shippingAddresses     ShippingAddress[]
   cart                  Cart?
+
+  // Messaging System
+  conversationsAsCustomer Conversation[] @relation("CustomerConversations")
+  conversationsAsAgent    Conversation[] @relation("AgentConversations")
+  messages              Message[]
 }
 
 model Opportunity {
@@ -343,4 +348,29 @@ model BankAccount {
   accountName   String
   status        String   @default("active") // "active" or "retired"
   createdAt     DateTime @default(now())
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  customerId  String    @unique
+  agentId     String?
+  status      String    @default("open") // open, closed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  customer    User      @relation("CustomerConversations", fields: [customerId], references: [id])
+  agent       User?     @relation("AgentConversations", fields: [agentId], references: [id])
+  messages    Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  senderId       String
+  text           String       @db.Text
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id])
 }

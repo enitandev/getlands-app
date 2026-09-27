@@ -1,4 +1,24 @@
-export default function MessagesPage() {
+import React from 'react';
+import { getSession } from '@/lib/session';
+import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
+import ClientMessages from './ClientMessages';
+
+export default async function MessagesPage() {
+  const session = await getSession();
+  if (!session) redirect('/login');
+
+  const user = await prisma.user.findUnique({ where: { id: session.userId as string } });
+  
+  // Fetch their conversation if it exists
+  const conversation = await prisma.conversation.findUnique({
+    where: { customerId: user!.id },
+    include: {
+      messages: { orderBy: { createdAt: 'asc' } },
+      agent: true
+    }
+  });
+
   return (
     <div className="space-y-[30px] h-full flex flex-col">
       <div>
@@ -6,14 +26,8 @@ export default function MessagesPage() {
         <p className="text-[13px] lg:text-[14px] text-[#68736d]">Secure communication with your account manager.</p>
       </div>
 
-      <div className="bg-white rounded-[24px] border border-black/5 shadow-sm flex-1 flex flex-col items-center justify-center p-12 min-h-[400px]">
-        <div className="w-[80px] h-[80px] bg-[#eef3ef] rounded-full flex items-center justify-center mb-6">
-          <svg className="text-[#008b45]" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        </div>
-        <h2 className="text-[20px] font-bold text-ink mb-2">No Messages Yet</h2>
-        <p className="text-[#68736d] text-[14px] max-w-[300px] text-center">
-          When you have an active investment, your dedicated account manager will reach out to you here with updates.
-        </p>
+      <div className="flex-1 min-h-[500px]">
+        <ClientMessages user={user} initialConversation={conversation} />
       </div>
     </div>
   );
