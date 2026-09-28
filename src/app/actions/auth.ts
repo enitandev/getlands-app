@@ -23,7 +23,6 @@ export async function loginAction(formData: FormData) {
   }
 
   await createSession(user.id, user.role);
-  await sendWelcomeEmail(user.email, user.firstName);
 
   if (user.role === 'admin') {
     redirect('/admin');
