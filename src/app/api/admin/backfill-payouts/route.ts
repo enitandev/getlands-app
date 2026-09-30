@@ -17,35 +17,29 @@ export async function GET(req: Request) {
       include: { opportunity: true }
     });
 
+    // Delete existing payouts to ensure a clean slate
+    await prisma.payoutSchedule.deleteMany();
+
     let createdCount = 0;
 
     for (const holding of activeHoldings) {
-      // Check if payouts already exist to avoid duplicates
-      const existingPayouts = await prisma.payoutSchedule.count({
-        where: { holdingId: holding.id }
-      });
-
-      if (existingPayouts > 0) continue;
-
       const opportunity = holding.opportunity;
       
       // We only schedule payouts for Farms (ROI/Dividends) and Land Banking (Principal + Exit Value)
       if (opportunity.category === 'land') continue;
 
       if (opportunity.category === 'farm') {
-        // Example logic for farms (assuming duration is in months, e.g., "6 months")
-        // and returnsFrequency is e.g. "monthly" or "end of cycle"
         const durationStr = opportunity.duration || "6"; 
         const durationMonths = parseInt(durationStr) || 6;
         
-        // Calculate total ROI based on projectedReturn (e.g. "30%")
         const returnStr = opportunity.projectedReturn || "0";
         const returnPerc = parseFloat(returnStr) || 0;
-        const totalReturnAmount = holding.totalAmount * (returnPerc / 100);
+        
+        // If it's monthly, the percentage is the *monthly* percentage (e.g. 15% per month).
+        // If it's end of cycle, it's the *total* percentage.
+        const amountPerPayout = holding.totalAmount * (returnPerc / 100);
 
         if (opportunity.returnsFrequency?.toLowerCase().includes('month')) {
-          // Monthly payouts
-          const monthlyAmount = totalReturnAmount / durationMonths;
           const startDate = new Date(holding.dateAcquired);
 
           for (let i = 1; i <= durationMonths; i++) {
@@ -57,10 +51,10 @@ export async function GET(req: Request) {
               data: {
                 holdingId: holding.id,
                 userId: holding.userId,
-                amount: monthlyAmount,
+                amount: amountPerPayout,
                 type: 'ROI',
                 dueDate: dueDate,
-                status: dueDate < new Date() ? 'PENDING' : 'PENDING' // Keep it pending so admin can manually pay overdue ones
+                status: dueDate < new Date() ? 'PENDING' : 'PENDING'
               }
             });
             createdCount++;
@@ -91,7 +85,7 @@ export async function GET(req: Request) {
             data: {
               holdingId: holding.id,
               userId: holding.userId,
-              amount: totalReturnAmount,
+              amount: amountPerPayout,
               type: 'ROI',
               dueDate: dueDate,
               status: 'PENDING'
