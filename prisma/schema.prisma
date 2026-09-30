@@ -64,6 +64,9 @@ model User {
   conversationsAsCustomer Conversation[] @relation("CustomerConversations")
   conversationsAsAgent    Conversation[] @relation("AgentConversations")
   messages              Message[]
+  
+  // Accounting
+  payouts               PayoutSchedule[]
 }
 
 model Opportunity {
@@ -110,6 +113,24 @@ model Holding {
   user          User         @relation(fields: [userId], references: [id])
   opportunity   Opportunity  @relation(fields: [opportunityId], references: [id])
   cohort        Cohort?      @relation(fields: [cohortId], references: [id])
+  payouts       PayoutSchedule[]
+}
+
+model PayoutSchedule {
+  id              String   @id @default(uuid())
+  holdingId       String   
+  userId          String   
+  amount          Float    
+  type            String   // 'DIVIDEND', 'ROI', 'PRINCIPAL_RETURN'
+  dueDate         DateTime 
+  status          String   @default("PENDING") // 'PENDING', 'PROCESSING', 'PAID', 'CANCELLED'
+  paidAt          DateTime?
+  transactionId   String?  // If it's paid to wallet, link to the transaction
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  holding         Holding  @relation(fields: [holdingId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
 }
 
 model Transaction {

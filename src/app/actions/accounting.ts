@@ -1,0 +1,173 @@
+"use server";
+import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
+import { getSession } from '@/lib/session';
+
+export async function getMasterLedger() {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  // AUM: Sum of active holdings
+  const activeHoldings = await prisma.holding.aggregate({
+    where: { status: 'active' },
+    _sum: { totalAmount: true }
+  });
+
+  // Total Wallet Liabilities: Sum of all customers' walletBalance
+  const wallets = await prisma.user.aggregate({
+    where: { role: 'customer' },
+    _sum: { walletBalance: true }
+  });
+
+  // Total Incoming: Successful deposits + investments (from offline? usually just deposits count as inflow)
+  const incoming = await prisma.transaction.aggregate({
+    where: { status: 'success', type: { in: ['deposit'] } },
+    _sum: { amount: true }
+  });
+
+  // Total Outgoing: Successful withdrawals
+  const outgoing = await prisma.transaction.aggregate({
+    where: { status: 'success', type: 'withdrawal' },
+    _sum: { amount: true }
+  });
+
+  // Payouts Due Soon (this month)
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  
+  const endOfMonth = new Date();
+  endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+  endOfMonth.setDate(0);
+  endOfMonth.setHours(23, 59, 59, 999);
+
+  const upcomingPayouts = await prisma.payoutSchedule.findMany({
+    where: { 
+      status: 'PENDING',
+      dueDate: { lte: endOfMonth }
+    },
+    include: {
+      user: { select: { firstName: true, lastName: true, email: true } },
+      holding: { include: { opportunity: true } }
+    },
+    orderBy: { dueDate: 'asc' }
+  });
+
+  const totalUpcomingPayouts = upcomingPayouts.reduce((sum, p) => sum + p.amount, 0);
+
+  return {
+    aum: activeHoldings._sum.totalAmount || 0,
+    walletLiabilities: wallets._sum.walletBalance || 0,
+    totalIncoming: incoming._sum.amount || 0,
+    totalOutgoing: outgoing._sum.amount || 0,
+    upcomingPayouts,
+    totalUpcomingPayouts
+  };
+}
+
+export async function getCustomerLedger(userId: string) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { walletBalance: true, firstName: true, lastName: true, email: true }
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const incoming = await prisma.transaction.aggregate({
+    where: { userId, status: 'success', type: { in: ['deposit', 'legacy_referral_bonus'] } },
+    _sum: { amount: true }
+  });
+
+  const outgoing = await prisma.transaction.aggregate({
+    where: { userId, status: 'success', type: 'withdrawal' },
+    _sum: { amount: true }
+  });
+
+  const activeHoldings = await prisma.holding.aggregate({
+    where: { userId, status: 'active' },
+    _sum: { totalAmount: true }
+  });
+
+  const totalReturns = await prisma.transaction.aggregate({
+    where: { userId, status: 'success', type: { in: ['roi', 'dividend', 'referral_bonus'] } },
+    _sum: { amount: true }
+  });
+
+  const payouts = await prisma.payoutSchedule.findMany({
+    where: { userId },
+    include: { holding: { include: { opportunity: true } } },
+    orderBy: { dueDate: 'asc' }
+  });
+
+  return {
+    walletBalance: user.walletBalance,
+    totalDeposited: incoming._sum.amount || 0,
+    totalWithdrawn: outgoing._sum.amount || 0,
+    activePrincipal: activeHoldings._sum.totalAmount || 0,
+    totalReturnsEarned: totalReturns._sum.amount || 0,
+    payouts
+  };
+}
+
+export async function executePayoutAction(payoutId: string) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const payout = await prisma.payoutSchedule.findUnique({
+    where: { id: payoutId },
+    include: { holding: { include: { opportunity: true } } }
+  });
+
+  if (!payout || payout.status !== 'PENDING') {
+    return { error: 'Invalid payout or already processed' };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Create wallet transaction
+      const txn = await tx.transaction.create({
+        data: {
+          userId: payout.userId,
+          type: payout.type.toLowerCase(),
+          amount: payout.amount,
+          status: 'success',
+          reference: `PAYOUT-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+        }
+      });
+
+      // Update payout schedule
+      await tx.payoutSchedule.update({
+        where: { id: payoutId },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+          transactionId: txn.id
+        }
+      });
+
+      // Credit user wallet
+      await tx.user.update({
+        where: { id: payout.userId },
+        data: { walletBalance: { increment: payout.amount } }
+      });
+
+      // Notify User
+      await tx.notification.create({
+        data: {
+          userId: payout.userId,
+          type: 'TRANSACTION',
+          title: 'Payout Received!',
+          message: `Your wallet has been credited with ₦${payout.amount.toLocaleString()} for your ${payout.holding.opportunity.title} investment.`,
+        }
+      });
+    });
+
+    revalidatePath('/admin/finance');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to execute payout' };
+  }
+}

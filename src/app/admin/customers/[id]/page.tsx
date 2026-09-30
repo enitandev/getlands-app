@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { RecordReferralModal } from '../LegacyReferralModal';
+import CustomerLedger from './CustomerLedger';
 
 export default async function CustomerProfile({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -168,6 +169,9 @@ export default async function CustomerProfile({ params }: { params: Promise<{ id
             )}
           </div>
         </div>
+        
+        {/* Accounting Ledger */}
+        <CustomerLedger userId={user.id} />
       </div>
     </div>
   );
