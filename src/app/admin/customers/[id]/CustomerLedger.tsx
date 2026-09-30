@@ -12,7 +12,7 @@ export default async function CustomerLedger({ userId }: { userId: string }) {
       </div>
       
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-[15px] p-[20px] border-b border-black/5 bg-gray-50/50">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-[15px] p-[20px] border-b border-black/5 bg-gray-50/50">
         <div>
           <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Total Deposited</div>
           <strong className="text-[15px] text-ink">{formatCurrency(ledger.totalDeposited)}</strong>
@@ -30,14 +30,21 @@ export default async function CustomerLedger({ userId }: { userId: string }) {
           <strong className="text-[15px] text-[#008b45]">{formatCurrency(ledger.totalReturnsEarned)}</strong>
         </div>
         <div>
+          <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Expected Total ROI</div>
+          <strong className="text-[15px] text-[#008b45]">{formatCurrency(ledger.totalExpectedROI)}</strong>
+        </div>
+        <div>
           <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Current Wallet</div>
-          <strong className="text-[15px] text-[#008b45]">{formatCurrency(ledger.walletBalance)}</strong>
+          <strong className="text-[15px] text-ink">{formatCurrency(ledger.walletBalance)}</strong>
         </div>
       </div>
 
       {/* Payouts Table */}
       <div className="p-[20px]">
-        <h4 className="text-[14px] font-bold text-ink mb-[15px]">Scheduled Payouts</h4>
+        <div className="flex justify-between items-center mb-[15px]">
+          <h4 className="text-[14px] font-bold text-ink">Scheduled Payouts Breakdown</h4>
+          <span className="text-[12px] text-[#68736d]">Shows individual installments for your Expected Total ROI</span>
+        </div>
         {ledger.payouts.length === 0 ? (
           <div className="text-center p-[20px] text-[#68736d] text-[13px] bg-gray-50 rounded-[12px]">
             No scheduled payouts found for this customer.

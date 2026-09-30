@@ -19,11 +19,16 @@ export async function getMasterLedger() {
     _sum: { walletBalance: true }
   });
 
-  // Total Incoming: Successful deposits + investments (from offline? usually just deposits count as inflow)
-  const incoming = await prisma.transaction.aggregate({
-    where: { status: 'success', type: { in: ['deposit'] } },
+  // Total Incoming: Successful deposits + direct investments (not from wallet)
+  const deposits = await prisma.transaction.aggregate({
+    where: { status: 'success', type: 'deposit' },
     _sum: { amount: true }
   });
+  const directInvestments = await prisma.transaction.aggregate({
+    where: { status: 'success', type: 'investment', NOT: { reference: { startsWith: 'INV-W-' } } },
+    _sum: { amount: true }
+  });
+  const totalIncoming = (deposits._sum.amount || 0) + (directInvestments._sum.amount || 0);
 
   // Total Outgoing: Successful withdrawals
   const outgoing = await prisma.transaction.aggregate({
@@ -58,7 +63,7 @@ export async function getMasterLedger() {
   return {
     aum: activeHoldings._sum.totalAmount || 0,
     walletLiabilities: wallets._sum.walletBalance || 0,
-    totalIncoming: incoming._sum.amount || 0,
+    totalIncoming,
     totalOutgoing: outgoing._sum.amount || 0,
     upcomingPayouts,
     totalUpcomingPayouts
@@ -76,10 +81,15 @@ export async function getCustomerLedger(userId: string) {
 
   if (!user) throw new Error("User not found");
 
-  const incoming = await prisma.transaction.aggregate({
-    where: { userId, status: 'success', type: { in: ['deposit', 'legacy_referral_bonus'] } },
+  const deposits = await prisma.transaction.aggregate({
+    where: { userId, status: 'success', type: 'deposit' },
     _sum: { amount: true }
   });
+  const directInvestments = await prisma.transaction.aggregate({
+    where: { userId, status: 'success', type: 'investment', NOT: { reference: { startsWith: 'INV-W-' } } },
+    _sum: { amount: true }
+  });
+  const totalDeposited = (deposits._sum.amount || 0) + (directInvestments._sum.amount || 0);
 
   const outgoing = await prisma.transaction.aggregate({
     where: { userId, status: 'success', type: 'withdrawal' },
@@ -102,13 +112,18 @@ export async function getCustomerLedger(userId: string) {
     orderBy: { dueDate: 'asc' }
   });
 
+  const totalExpectedROI = payouts.filter(p => ['ROI', 'DIVIDEND'].includes(p.type)).reduce((sum, p) => sum + p.amount, 0);
+  const totalExpectedPrincipal = payouts.filter(p => ['PRINCIPAL_RETURN', 'MATURITY_PAYOUT'].includes(p.type)).reduce((sum, p) => sum + p.amount, 0);
+
   return {
     walletBalance: user.walletBalance,
-    totalDeposited: incoming._sum.amount || 0,
+    totalDeposited,
     totalWithdrawn: outgoing._sum.amount || 0,
     activePrincipal: activeHoldings._sum.totalAmount || 0,
     totalReturnsEarned: totalReturns._sum.amount || 0,
-    payouts
+    payouts,
+    totalExpectedROI,
+    totalExpectedPrincipal
   };
 }
 
