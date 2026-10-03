@@ -117,7 +117,7 @@ export async function checkoutAction(formData: FormData) {
   } else {
     // Bank Transfer Route
     // Create pending transaction
-    await prisma.transaction.create({
+    const tx = await prisma.transaction.create({
       data: {
         userId,
         type: 'investment',
