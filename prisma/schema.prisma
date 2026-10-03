@@ -115,6 +115,7 @@ model Holding {
   planName        String?
   ratePercent     Float?
   intervalMonths  Int?
+  tenorMonths     Int?
   maturityDate    DateTime?
   transactionId   String?
 

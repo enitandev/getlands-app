@@ -55,7 +55,7 @@ export async function generatePayoutSchedule(holdingId: string) {
   let createdCount = 0;
 
   // Generate interval ROI payouts
-  if (intervalMonths > 0) {
+  if (intervalMonths != null && intervalMonths > 0) {
     const amountPerPayout = holding.totalAmount * (ratePercent / 100);
     
     for (let i = intervalMonths; i <= durationMonths; i += intervalMonths) {
