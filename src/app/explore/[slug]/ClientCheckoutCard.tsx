@@ -124,10 +124,10 @@ export default function ClientCheckoutCard({ opp, plans }: { opp: any, plans?: a
 
       {isFarm && selectedPlan && opp.status === 'available' && (
         <div className="mb-8 p-5 bg-[#f4f7f5] rounded-[16px] border border-[#008b45]/10">
-          <h4 className="font-bold text-[14px] text-[#1a1a1a] mb-4">Investment Projection</h4>
+          <h4 className="font-bold text-[14px] text-[#1a1a1a] mb-4">Projected Returns</h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center text-[14px]">
-              <span className="text-gray-600">You invest ({qty} slot{qty > 1 ? 's' : ''})</span>
+              <span className="text-gray-600">You acquire ({qty} slot{qty > 1 ? 's' : ''})</span>
               <span className="font-bold text-[#1a1a1a]">{formatCurrency(unitPrice * qty)}</span>
             </div>
             <div className="flex justify-between items-center text-[14px]">
