@@ -19,5 +19,9 @@ export default async function ExplorePage() {
     orderBy: { createdAt: 'desc' }
   });
 
-  return <ClientExplore opportunities={opportunities} isLoggedIn={!!session?.userId} role={session?.role as string | undefined} />;
+  const plans = await prisma.returnPlan.findMany({
+    orderBy: { sortOrder: 'asc' }
+  });
+
+  return <ClientExplore opportunities={opportunities} plans={plans} isLoggedIn={!!session?.userId} role={session?.role as string | undefined} />;
 }

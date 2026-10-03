@@ -1,6 +1,7 @@
 "use server";
 import { prisma } from '@/lib/prisma';
 import { triggerReferralBonus } from '@/lib/referral';
+import { generatePayoutSchedule } from '@/lib/payouts';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import fs from 'fs';
@@ -224,6 +225,9 @@ export async function approveTransaction(transactionId: string) {
         where: { id: holding.id },
         data: { status: 'active' }
       });
+      
+      await generatePayoutSchedule(holding.id);
+
       await prisma.notification.create({
         data: {
           userId: tx.userId,

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { triggerReferralBonus } from '@/lib/referral';
+import { generatePayoutSchedule } from '@/lib/payouts';
 
 async function checkCustomer() {
   const session = await getSession();
@@ -66,18 +67,21 @@ export async function checkoutAction(formData: FormData) {
     });
 
     // 3. Create active holding
-    await prisma.holding.create({
+    const holding = await prisma.holding.create({
       data: {
         userId,
         opportunityId,
         cohortId,
         totalAmount,
         units,
-        status: 'active'
+        status: 'active',
+        // Optional plan fields for backward compatibility, we will extract them later
       }
     });
 
-    
+    // Generate schedule
+    await generatePayoutSchedule(holding.id);
+
     // 4. Update cohort committed amount if applicable
     if (cohortId) {
       await prisma.cohort.update({

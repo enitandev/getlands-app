@@ -19,9 +19,10 @@ interface FarmCardProps {
   cohortLabel?: string;
   cohortOpensAt?: Date | null;
   cohortClosesAt?: Date | null;
+  plans?: any[];
 }
 
-export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFrequency, price, photoClass = '', imageUrl, className = '', cohortStatus, cohortProgress, cohortLabel, cohortOpensAt, cohortClosesAt }: FarmCardProps) {
+export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFrequency, price, photoClass = '', imageUrl, className = '', cohortStatus, cohortProgress, cohortLabel, cohortOpensAt, cohortClosesAt, plans }: FarmCardProps) {
   const formatDuration = (val: string) => {
     if (!val) return '';
     const isNumeric = /^\d+$/.test(val.trim());
@@ -53,7 +54,6 @@ export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFr
         )}
       </div>
 
-
       <div className="absolute left-[23px] right-[23px] bottom-[23px] z-10">
         <small className="text-[9px] tracking-[0.14em] text-[#86e2a6] font-extrabold uppercase">{crop}</small>
         <h3 className="font-manrope text-[28px] tracking-[-0.05em] my-[6px]">{title}</h3>
@@ -69,7 +69,6 @@ export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFr
             </div>
           </div>
         )}
-
         
         {cohortStatus === 'OPEN' && cohortClosesAt && (
           <CountdownTimer targetDate={cohortClosesAt} label="CLOSES IN" />
@@ -78,15 +77,33 @@ export function FarmCard({ crop, cycle, title, location, targetReturn, returnsFr
           <CountdownTimer targetDate={cohortOpensAt} label="OPENS IN" />
         )}
 
-        <div className="border-t border-white/15 pt-[16px] grid grid-cols-[auto_1fr_auto] items-end gap-[10px]">
-          <div>
-            <strong className="font-manrope text-[39px] tracking-[-0.06em] text-[#a9e7bd] leading-none">{targetReturn}</strong>
-            {returnsFrequency && <span className="block text-[#a9e7bd] text-[11px] mt-[2px]">{returnsFrequency}</span>}
+        <div className="border-t border-white/15 pt-[16px] grid grid-cols-[1fr_auto] items-end gap-[10px]">
+          <div className="flex gap-2">
+            {plans && plans.length > 0 ? (
+              plans.map((p: any) => (
+                <div key={p.id} className="relative group/plan bg-white/5 rounded-lg px-2 py-1 border border-white/10 hover:border-[#a9e7bd]/50 hover:bg-white/10 transition-colors flex flex-col justify-center min-w-[70px]">
+                  {p.badge && (
+                    <div className="absolute -top-[7px] left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase tracking-wider text-[#008b45] bg-[#a9e7bd] px-1 rounded-sm whitespace-nowrap">
+                      {p.badge}
+                    </div>
+                  )}
+                  <strong className="font-manrope text-[18px] tracking-tight text-[#a9e7bd] text-center">{p.ratePercent}%</strong>
+                  <span className="block text-[#85928b] text-[8px] uppercase text-center">{p.name.replace('-',' ')}</span>
+                </div>
+              ))
+            ) : (
+              <div>
+                <strong className="font-manrope text-[39px] tracking-[-0.06em] text-[#a9e7bd] leading-none">{targetReturn}</strong>
+                {returnsFrequency && <span className="block text-[#a9e7bd] text-[11px] mt-[2px]">{returnsFrequency}</span>}
+              </div>
+            )}
           </div>
-          <span className="text-[9px] text-[#85928b] pb-[6px]">target return</span>
-          <b className="text-[12px] pb-[6px]">
-            {price} <em className="block text-[#7e8b84] not-italic text-[9px] font-normal">per slot</em>
-          </b>
+          <div className="text-right flex flex-col justify-end">
+            <span className="text-[9px] text-[#85928b] pb-[2px]">price per slot</span>
+            <b className="text-[14px] text-white">
+              {price}
+            </b>
+          </div>
         </div>
       </div>
     </article>

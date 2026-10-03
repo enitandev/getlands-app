@@ -6,7 +6,7 @@ import { MarketCard } from '@/components/ui/MarketCard';
 import { FarmCard } from '@/components/ui/FarmCard';
 import { LandBankingCard } from '@/components/ui/LandBankingCard';
 
-export default function ClientExplore({ opportunities, isLoggedIn, role }: { opportunities: any[], isLoggedIn?: boolean, role?: string }) {
+export default function ClientExplore({ opportunities, plans, isLoggedIn, role }: { opportunities: any[], plans?: any[], isLoggedIn?: boolean, role?: string }) {
   const [activeCategory, setActiveCategory] = useState<OpportunityCategory | 'all'>('all');
   
   const filtered = opportunities.filter(opp => activeCategory === 'all' || opp.category === activeCategory);
@@ -58,6 +58,7 @@ export default function ClientExplore({ opportunities, isLoggedIn, role }: { opp
             cohortProgress={cohortProgress}
             cohortOpensAt={cohort?.publicOpensAt || cohort?.preorderOpensAt}
             cohortClosesAt={cohort?.closesAt}
+            plans={plans}
           />
         </Link>
       );

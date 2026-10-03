@@ -101,19 +101,37 @@ model Opportunity {
 }
 
 model Holding {
-  id            String       @id @default(uuid())
-  userId        String
-  opportunityId String
-  cohortId      String?
-  totalAmount   Float
-  units         Float        @default(1)
-  dateAcquired  DateTime     @default(now())
-  status        String       @default("active") // active, completed, matured
+  id              String       @id @default(uuid())
+  userId          String
+  opportunityId   String
+  cohortId        String?
+  totalAmount     Float
+  units           Float        @default(1)
+  dateAcquired    DateTime     @default(now())
+  status          String       @default("active") // active, completed, matured
+
+  // Return Plan Terms Snapshot
+  planId          String?
+  planName        String?
+  ratePercent     Float?
+  intervalMonths  Int?
+  maturityDate    DateTime?
+  transactionId   String?
 
   user          User         @relation(fields: [userId], references: [id])
   opportunity   Opportunity  @relation(fields: [opportunityId], references: [id])
   cohort        Cohort?      @relation(fields: [cohortId], references: [id])
   payouts       PayoutSchedule[]
+}
+
+model ReturnPlan {
+  id               String  @id @default(uuid())
+  name             String
+  ratePercent      Float
+  intervalMonths   Int
+  isActive         Boolean @default(true)
+  badge            String?
+  sortOrder        Int     @default(0)
 }
 
 model PayoutSchedule {
@@ -176,6 +194,7 @@ model PlatformSetting {
   processingFee         Float    @default(1.5)
   agentCommission       Float    @default(5.0)
   referralBonusPercentage Float    @default(10.0)
+  tradingFeePercentage  Float    @default(2.0)
   
   corporateBankName     String   @default("Moniepoint Microfinance Bank")
   corporateAccountName  String   @default("GETLANDS")

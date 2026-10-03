@@ -2,6 +2,7 @@
 import { prisma } from '@/lib/prisma';
 import { sendClaimAccountEmail, sendNewInvestmentEmail } from '@/lib/email';
 import { triggerReferralBonus } from '@/lib/referral';
+import { generatePayoutSchedule } from '@/lib/payouts';
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
 
@@ -99,6 +100,9 @@ export async function assignOpportunityAction(formData: FormData) {
       status: 'active'
     }
   });
+
+  // Generate schedule
+  await generatePayoutSchedule(holding.id);
 
   // 3. Update Cohort funding progress if it exists
   if (activeCohort) {
