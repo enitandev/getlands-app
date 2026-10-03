@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { formatCurrency } from '@/lib/mockData';
 import { useRouter } from 'next/navigation';
 
-export default function ClientCheckoutCard({ opp }: { opp: any }) {
+export default function ClientCheckoutCard({ opp, plans }: { opp: any, plans?: any[] }) {
   const router = useRouter();
   const [qty, setQty] = useState(1);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plans?.[0]?.id || null);
 
   const getPrice = () => {
     if (opp.category === 'land') return opp.price || 0;
@@ -19,8 +20,24 @@ export default function ClientCheckoutCard({ opp }: { opp: any }) {
   const isLand = opp.category === 'land';
 
   const handleAcquire = () => {
-    router.push(`/checkout?opp=${opp.slug}&qty=${qty}`);
+    const planParam = selectedPlanId ? `&plan=${selectedPlanId}` : '';
+    router.push(`/checkout?opp=${opp.slug}&qty=${qty}${planParam}`);
   };
+
+  const selectedPlan = plans?.find(p => p.id === selectedPlanId);
+  
+  // Calculate projections if it's a farm
+  let totalProfit = 0;
+  let numPayments = 0;
+  let paymentAmount = 0;
+  
+  if (isFarm && selectedPlan) {
+    const totalPrincipal = unitPrice * qty;
+    const durationMonths = parseInt(opp.duration) || 6;
+    numPayments = Math.floor(durationMonths / selectedPlan.intervalMonths);
+    paymentAmount = totalPrincipal * (selectedPlan.ratePercent / 100);
+    totalProfit = paymentAmount * numPayments;
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-[24px] p-[30px] shadow-sm">
@@ -44,14 +61,48 @@ export default function ClientCheckoutCard({ opp }: { opp: any }) {
           </div>
         )}
       </div>
+
+      {isFarm && plans && plans.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[14px] font-bold text-[#1a1a1a] mb-3">Select Return Plan</div>
+          <div className="grid grid-cols-3 gap-2">
+            {plans.map(plan => {
+              const isSelected = selectedPlanId === plan.id;
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => setSelectedPlanId(plan.id)}
+                  className={`relative flex flex-col items-center justify-center p-3 rounded-[16px] border-2 transition-all ${
+                    isSelected 
+                      ? 'border-[#008b45] bg-[#008b45]/5' 
+                      : 'border-gray-100 hover:border-gray-200 bg-white'
+                  }`}
+                >
+                  {plan.badge && (
+                    <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 text-[9px] font-extrabold uppercase tracking-wider text-white bg-[#008b45] px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm">
+                      {plan.badge}
+                    </div>
+                  )}
+                  <strong className={`font-manrope text-[24px] tracking-[-0.04em] leading-none mb-1 ${isSelected ? 'text-[#008b45]' : 'text-[#1a1a1a]'}`}>
+                    {plan.ratePercent}%
+                  </strong>
+                  <span className={`text-[10px] font-bold uppercase ${isSelected ? 'text-[#008b45]' : 'text-gray-500'}`}>
+                    {plan.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       
-      {/* Quantity Selector - Show for farms and land, maybe not for single land banking units unless they want it. Let's show it for all for consistency, or mainly farms. */}
+      {/* Quantity Selector */}
       {opp.status === 'available' && (
         <div className="mb-6">
           <div className="flex items-center justify-between p-2 border border-gray-200 rounded-[16px] bg-gray-50">
             <button 
               onClick={() => setQty(Math.max(1, qty - 1))}
-              className="w-12 h-12 rounded-[12px] bg-white border border-gray-200 flex items-center justify-center text-[20px] hover:bg-gray-50 transition-colors"
+              className="w-12 h-12 rounded-[12px] bg-white border border-gray-200 flex items-center justify-center text-[20px] hover:bg-gray-50 transition-colors text-ink"
             >
               -
             </button>
@@ -63,10 +114,33 @@ export default function ClientCheckoutCard({ opp }: { opp: any }) {
             </div>
             <button 
               onClick={() => setQty(qty + 1)}
-              className="w-12 h-12 rounded-[12px] bg-white border border-gray-200 flex items-center justify-center text-[20px] hover:bg-gray-50 transition-colors"
+              className="w-12 h-12 rounded-[12px] bg-white border border-gray-200 flex items-center justify-center text-[20px] hover:bg-gray-50 transition-colors text-ink"
             >
               +
             </button>
+          </div>
+        </div>
+      )}
+
+      {isFarm && selectedPlan && opp.status === 'available' && (
+        <div className="mb-8 p-5 bg-[#f4f7f5] rounded-[16px] border border-[#008b45]/10">
+          <h4 className="font-bold text-[14px] text-[#1a1a1a] mb-4">Investment Projection</h4>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-[14px]">
+              <span className="text-gray-600">You invest ({qty} slot{qty > 1 ? 's' : ''})</span>
+              <span className="font-bold text-[#1a1a1a]">{formatCurrency(unitPrice * qty)}</span>
+            </div>
+            <div className="flex justify-between items-center text-[14px]">
+              <span className="text-gray-600">You receive</span>
+              <span className="font-bold text-[#008b45]">{formatCurrency(paymentAmount)} × {numPayments}</span>
+            </div>
+            <div className="flex justify-between items-center text-[14px] pt-3 border-t border-black/5">
+              <span className="text-gray-600 font-bold">Total Profit</span>
+              <span className="font-bold text-[#008b45] text-[16px]">{formatCurrency(totalProfit)}</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-black/5 text-[12px] text-gray-500 leading-[1.5]">
+            <strong className="text-gray-700">Principal Return:</strong> Your initial {formatCurrency(unitPrice * qty)} will be returned at the end of the {opp.duration || '6'}-month cycle (subject to a standard platform trading fee).
           </div>
         </div>
       )}

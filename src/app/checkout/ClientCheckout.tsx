@@ -4,7 +4,7 @@ import { formatCurrency } from '@/lib/mockData';
 import { checkoutAction } from '@/app/actions/checkout';
 import { toast } from '@/components/ui/Toast';
 
-export default function ClientCheckout({ opportunity: opp, walletBalance, user, quantity = 1, settings }: { opportunity: any, walletBalance: number, user?: any, quantity?: number, settings?: any }) {
+export default function ClientCheckout({ opportunity: opp, walletBalance, user, quantity = 1, settings, selectedPlan }: { opportunity: any, walletBalance: number, user?: any, quantity?: number, settings?: any, selectedPlan?: any }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
   const [file, setFile] = useState<File | null>(null);
@@ -50,6 +50,9 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
     fd.append("paymentMethod", paymentMethod);
     fd.append("totalAmount", total.toString());
     fd.append("units", quantity.toString());
+    if (selectedPlan) {
+      fd.append("planId", selectedPlan.id);
+    }
     
     // In a real app we would upload the receipt to Supabase Storage here
     // if (file) { ... upload logic ... fd.append("receiptUrl", url) }
@@ -205,8 +208,15 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
             <div>
               <h4 className="font-bold text-[15px] text-[#1a1a1a] line-clamp-1">{opp.title} {quantity > 1 && <span className="text-[#008b45] ml-1">x{quantity}</span>}</h4>
               <p className="text-[13px] text-gray-500 line-clamp-1">{opp.location}</p>
-              <div className="mt-1 inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-bold uppercase tracking-wider rounded-md">
-                {opp.category.replace('_', ' ')}
+              <div className="flex gap-2 mt-1">
+                <div className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-bold uppercase tracking-wider rounded-md">
+                  {opp.category.replace('_', ' ')}
+                </div>
+                {selectedPlan && (
+                  <div className="inline-block px-2 py-0.5 bg-[#008b45]/10 text-[#008b45] text-[11px] font-bold uppercase tracking-wider rounded-md">
+                    {selectedPlan.name}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -216,6 +226,14 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
               <span className="text-gray-500">Subtotal</span>
               <span className="font-bold text-[#1a1a1a]">{formatCurrency(total)}</span>
             </div>
+            {selectedPlan && (
+              <div className="flex justify-between text-[14px]">
+                <span className="text-gray-500">Expected Profit</span>
+                <span className="font-bold text-[#008b45]">
+                  {formatCurrency((total * (selectedPlan.ratePercent / 100)) * Math.floor((parseInt(opp.duration) || 6) / selectedPlan.intervalMonths))}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-[14px]">
               <span className="text-gray-500">Processing Fee</span>
               <span className="font-bold text-[#008b45]">Free</span>

@@ -4,13 +4,14 @@ import { getSession } from '@/lib/session';
 import ClientCheckout from './ClientCheckout';
 import { redirect } from 'next/navigation';
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ opp?: string, qty?: string }> }) {
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ opp?: string, qty?: string, plan?: string }> }) {
   const resolvedSearchParams = await searchParams;
   const session = await getSession();
   if (!session?.userId) redirect('/login');
 
   const slug = resolvedSearchParams.opp;
   const qty = parseInt(resolvedSearchParams.qty || '1', 10);
+  const planId = resolvedSearchParams.plan;
   if (!slug) redirect('/explore');
 
   const opp = await prisma.opportunity.findUnique({
@@ -27,5 +28,10 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
 
-  return <ClientCheckout opportunity={opp} walletBalance={user.walletBalance} user={user} quantity={qty} settings={settings} />;
+  let plan = null;
+  if (planId) {
+    plan = await prisma.returnPlan.findUnique({ where: { id: planId } });
+  }
+
+  return <ClientCheckout opportunity={opp} walletBalance={user.walletBalance} user={user} quantity={qty} settings={settings} selectedPlan={plan} />;
 }

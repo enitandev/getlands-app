@@ -40,9 +40,23 @@ export async function checkoutAction(formData: FormData) {
   const totalAmount = parseFloat(formData.get('totalAmount') as string);
   const units = parseFloat(formData.get('units') as string || '1');
   const cohortId = formData.get('cohortId') as string | null;
+  const planId = formData.get('planId') as string | null;
   
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found');
+
+  let planData = {};
+  if (planId) {
+    const plan = await prisma.returnPlan.findUnique({ where: { id: planId } });
+    if (plan) {
+      planData = {
+        planId: plan.id,
+        planName: plan.name,
+        ratePercent: plan.ratePercent,
+        intervalMonths: plan.intervalMonths
+      };
+    }
+  }
 
   if (paymentMethod === 'wallet') {
     if (user.walletBalance < totalAmount) {
@@ -75,7 +89,7 @@ export async function checkoutAction(formData: FormData) {
         totalAmount,
         units,
         status: 'active',
-        // Optional plan fields for backward compatibility, we will extract them later
+        ...planData
       }
     });
 
@@ -121,7 +135,9 @@ export async function checkoutAction(formData: FormData) {
         cohortId,
         totalAmount,
         units,
-        status: 'pending' // Note: 'pending' might not be in schema enum, but it's string so it's fine. Wait, schema defaults to 'active', but string is fine.
+        status: 'pending',
+        transactionId: tx.id,
+        ...planData
       }
     });
 

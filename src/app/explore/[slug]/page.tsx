@@ -16,6 +16,10 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
     where: { slug: resolvedParams.slug }
   });
 
+  const plans = await prisma.returnPlan.findMany({
+    orderBy: { sortOrder: 'asc' }
+  });
+
   if (!opp) {
     return <div className="min-h-screen grid place-items-center text-ink text-[18px]">Opportunity not found.</div>;
   }
@@ -77,8 +81,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
               )}
             </ul>
 
-            {/* Interactive Checkout Card */}
-            <ClientCheckoutCard opp={opp} />
+            <ClientCheckoutCard opp={opp} plans={plans} />
           </div>
 
         </div>
