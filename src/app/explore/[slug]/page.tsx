@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import ClientCheckoutCard from './ClientCheckoutCard';
 
+export const dynamic = 'force-dynamic';
+
 export default async function OpportunityDetail({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
   

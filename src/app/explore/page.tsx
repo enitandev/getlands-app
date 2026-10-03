@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import ClientExplore from './ClientExplore';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ExplorePage() {
   const session = await getSession();
   

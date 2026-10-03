@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session';
 import ClientCheckout from './ClientCheckout';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ opp?: string, qty?: string, plan?: string }> }) {
   const resolvedSearchParams = await searchParams;
   const session = await getSession();
