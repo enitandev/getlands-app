@@ -16,8 +16,8 @@ export async function GET(req: Request) {
   // Create the 3 plans
   const plans = [
     { name: 'Monthly', ratePercent: 5.0, intervalMonths: 1, badge: null, sortOrder: 1 },
-    { name: 'Bi-Monthly', ratePercent: 15.0, intervalMonths: 2, badge: 'Most Popular', sortOrder: 2 },
-    { name: 'Quarterly', ratePercent: 25.0, intervalMonths: 3, badge: 'Best Value', sortOrder: 3 },
+    { name: 'Bi-Monthly', ratePercent: 12.0, intervalMonths: 2, badge: 'Most Popular', sortOrder: 2 },
+    { name: 'Quarterly', ratePercent: 20.0, intervalMonths: 3, badge: 'Best Value', sortOrder: 3 },
   ];
 
   for (const p of plans) {

@@ -10,14 +10,20 @@ import { Future } from "@/components/Future";
 import { Closing } from "@/components/Closing";
 import { Footer } from "@/components/Footer";
 
-export default function Home() {
+import { prisma } from "@/lib/prisma";
+
+export default async function Home() {
+  const plans = await prisma.returnPlan.findMany({
+    orderBy: { sortOrder: 'asc' }
+  });
+
   return (
     <main id="top">
       <Hero />
       <Shift />
       <Marketplace />
       <Ways />
-      <Farms />
+      <Farms plans={plans} />
       <LandBanking />
       <Portfolio />
       <Trust />

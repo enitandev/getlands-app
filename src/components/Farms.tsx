@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export function Farms() {
+export function Farms({ plans }: { plans?: any[] }) {
   const container = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
@@ -46,20 +46,20 @@ export function Farms() {
         <FarmCard 
           className="h-[470px] lg:h-[520px]"
           photoClass="bg-[url('https://images.unsplash.com/photo-1608737637507-9aaeb9f4bf30?auto=format&fit=crop&fm=jpg&q=90&w=1400')]"
-          cycle="4 MONTHS" crop="PEPPER" title="Pepper Farm" location="Ogun State"
-          targetReturn="25%" price="₦100,000"
+          cycle="6 MONTHS" crop="PEPPER" title="Pepper Farm" location="Ogun State"
+          plans={plans} price="₦100,000"
         />
         <FarmCard 
           className="h-[470px] lg:h-[520px]"
           photoClass="bg-[url('https://images.unsplash.com/photo-1723234870945-c4c4a9e2c683?auto=format&fit=crop&fm=jpg&q=90&w=1400')]"
-          cycle="5 MONTHS" crop="TOMATO" title="Tomato Farm" location="Kaduna State"
-          targetReturn="30%" price="₦100,000"
+          cycle="6 MONTHS" crop="TOMATO" title="Tomato Farm" location="Kaduna State"
+          plans={plans} price="₦100,000"
         />
         <FarmCard 
           className="h-[470px] lg:h-[520px]"
           photoClass="bg-[url('https://images.unsplash.com/photo-1757283961570-682154747d9c?auto=format&fit=crop&fm=jpg&q=90&w=1400')]"
           cycle="6 MONTHS" crop="CASSAVA" title="Cassava Farm" location="Ogun State"
-          targetReturn="35%" price="₦100,000"
+          plans={plans} price="₦100,000"
         />
       </div>
       
