@@ -72,7 +72,6 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
               {opp.category === 'farm' && (
                 <>
                   <li className="flex gap-[20px]"><span className="w-[140px] text-[#7a847f]">Duration:</span> <b className="text-[#1a1a1a]">{formatDuration(opp.duration)}</b></li>
-                  <li className="flex gap-[20px]"><span className="w-[140px] text-[#7a847f]">Target Return:</span> <b className="text-[#008b45]">{opp.projectedReturn} {opp.returnsFrequency ? `(${opp.returnsFrequency})` : ""}</b></li>
                 </>
               )}
 
