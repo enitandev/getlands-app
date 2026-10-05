@@ -178,10 +178,14 @@ export async function sendInviteAction(userId: string) {
 }
 
 export async function appointSalesAgentAction(userId: string) {
-  await prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: userId },
     data: { role: 'sales' }
   });
+  
+  const { sendAgentPromotionEmail } = await import('@/lib/email');
+  await sendAgentPromotionEmail(user.email, user.firstName);
+  
   revalidatePath('/admin/customers');
   revalidatePath('/admin/sales');
   return { success: true };

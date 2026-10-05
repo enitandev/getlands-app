@@ -151,3 +151,31 @@ export async function sendNewInvestmentEmail(email: string, firstName: string, o
 
   await sendResendEmail(email, 'New Getlands Investment Assigned', html);
 }
+
+export async function sendAgentPromotionEmail(email: string, firstName: string) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-w-xl mx-auto p-6 bg-white border border-gray-200 rounded-xl">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #008b45; font-size: 24px; margin: 0;">You are now a Getlands Sales Agent!</h1>
+      </div>
+      <p style="color: #333; font-size: 16px;">Hello ${firstName},</p>
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        Congratulations! Your account has been upgraded to a <strong>Getlands Sales Agent</strong>.
+      </p>
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        You now have exclusive access to the Agent Portal, where you can find your unique referral links, build your network, draft offline portfolios for your clients, and earn commissions on every successful acquisition.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="https://getlands.shop/agent" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
+          Access Agent Portal
+        </a>
+      </div>
+      <p style="color: #666; font-size: 14px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+        Log in to your account and navigate to the Agent Portal to review and sign your Agent Agreement and get started.<br><br>
+        <strong>The Getlands Team</strong>
+      </p>
+    </div>
+  `;
+
+  await sendResendEmail(email, 'Welcome to the Getlands Agent Network', html);
+}
