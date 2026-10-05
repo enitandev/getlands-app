@@ -60,7 +60,7 @@ const Icons = {
   )
 };
 
-export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0 }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number }) {
+export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, referralBonusPercentage = 10 }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; referralBonusPercentage?: number }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
@@ -140,9 +140,9 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
         <div className={`mt-auto w-full ${isCollapsed ? 'px-[15px]' : ''} flex flex-col gap-[20px]`}>
           {!isCollapsed && (
             <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5">
-              <h4 className="font-bold text-ink text-[14px] mb-[5px]">Earn 10% per referral</h4>
+              <h4 className="font-bold text-ink text-[14px] mb-[5px]">Earn {referralBonusPercentage}% per referral</h4>
               <p className="text-[#68736d] text-[12px] leading-relaxed mb-[15px]">
-                Credited to your wallet when a friend makes their first investment.
+                Credited to your wallet when a friend makes their first acquisition.
               </p>
               <button className="w-full h-[40px] bg-white border border-[#008b45]/20 text-[#008b45] text-[13px] font-bold rounded-full hover:bg-[#eef3ef] transition-colors">
                 Copy invite link

@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/mockData';
 import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 import DistributionChart from '@/components/ui/DistributionChart';
 
-export default function ClientDashboardOverview({ user, opportunities = [], returnPlans = [], reports }: any) {
+export default function ClientDashboardOverview({ user, opportunities = [], returnPlans = [], referralBonusPercentage = 10, reports }: any) {
   const router = useRouter();
   const openOpps = opportunities?.filter((o: any) => o.status === 'available') || [];
   
@@ -97,7 +97,7 @@ export default function ClientDashboardOverview({ user, opportunities = [], retu
         <div className="flex items-center gap-[15px]">
           <div className="flex items-center gap-[6px] bg-[#f7f9f7] px-[10px] py-[4px] rounded-full border border-black/5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
-            <span className="text-[11px] font-bold text-ink">Earn 10%</span>
+            <span className="text-[11px] font-bold text-ink">Earn {referralBonusPercentage}%</span>
           </div>
           <Link href="/dashboard/settings" className="relative w-[32px] h-[32px] bg-[#eef3ef] text-[#008b45] font-bold rounded-full flex items-center justify-center border border-black/5 shadow-sm text-[12px] tracking-wider uppercase">
             {user.firstName.charAt(0)}{user.lastName.charAt(0)}

@@ -28,8 +28,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { getUnreadMessageCount } = await import('@/app/actions/messages');
   const unreadMessageCount = await getUnreadMessageCount();
 
+  const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
+  const referralBonusPercentage = settings?.referralBonusPercentage || 10;
+
   return (
-    <ClientDashboardLayout initials={initials} fullName={fullName} notifications={user.notifications} unreadMessageCount={unreadMessageCount}>
+    <ClientDashboardLayout initials={initials} fullName={fullName} notifications={user.notifications} unreadMessageCount={unreadMessageCount} referralBonusPercentage={referralBonusPercentage}>
       {children}
     </ClientDashboardLayout>
   );
