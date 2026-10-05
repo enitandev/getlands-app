@@ -139,7 +139,9 @@ export const AgreementTemplate = ({ holding }: { holding: any }) => {
         <View style={{ marginBottom: 15 }}>
           <Text style={{ marginBottom: 5 }}><Text style={styles.bold}>2.1 Subscription Units:</Text> The Subscriber has purchased {holding.units || 1} slot(s).</Text>
           <Text style={{ marginBottom: 5 }}><Text style={styles.bold}>2.2 Total Principal Amount:</Text> NGN {holding.totalAmount.toLocaleString()} (the "Principal").</Text>
-          <Text style={{ marginBottom: 5 }}><Text style={styles.bold}>2.3 Projected Return:</Text> {opportunity.projectedReturn || 'As stipulated in the programme details'}.</Text>
+          <Text style={{ marginBottom: 5 }}>
+            <Text style={styles.bold}>2.3 Return Plan:</Text> {holding.ratePercent ? `${holding.ratePercent}% (every ${holding.intervalMonths === 1 ? 'month' : holding.intervalMonths + ' months'})` : (opportunity.projectedReturn || 'As stipulated')}
+          </Text>
           <Text style={{ marginBottom: 5 }}><Text style={styles.bold}>2.4 Maturity Date:</Text> The investment lifecycle spans {opportunity.duration || 'the designated period'} and shall mature on or before <Text style={styles.bold}>{formattedMaturity}</Text>.</Text>
         </View>
 

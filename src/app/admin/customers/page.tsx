@@ -30,5 +30,10 @@ export default async function AdminCustomersPage() {
     location: opp.location
   }));
 
-  return <ClientCustomers users={users} opportunities={opportunities} />;
+  const returnPlans = await prisma.returnPlan.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: 'asc' }
+  });
+
+  return <ClientCustomers users={users} opportunities={opportunities} returnPlans={returnPlans} />;
 }

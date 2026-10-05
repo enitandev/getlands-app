@@ -6,9 +6,10 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { formatCurrency } from '@/lib/mockData';
 import { addLegacyCustomerAction, assignOpportunityAction, deleteCustomerAction, sendInviteAction } from '@/app/actions/admin-customers';
 
-export default function ClientCustomers({ users, opportunities }: { users: any[], opportunities: any[] }) {
+export default function ClientCustomers({ users, opportunities, returnPlans = [] }: { users: any[], opportunities: any[], returnPlans?: any[] }) {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedOppId, setSelectedOppId] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<{isOpen: boolean, title: string, message: string, action: (() => void) | null, isDestructive?: boolean}>({
     isOpen: false, title: '', message: '', action: null
@@ -226,11 +227,21 @@ export default function ClientCustomers({ users, opportunities }: { users: any[]
                 
                 <div>
                   <label className="block text-[13px] font-bold text-ink mb-[8px]">Select Opportunity</label>
-                  <select name="opportunityId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required>
+                  <select name="opportunityId" value={selectedOppId} onChange={(e) => setSelectedOppId(e.target.value)} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required>
                     <option value="">-- Choose an opportunity --</option>
                     {opportunities.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
                   </select>
                 </div>
+
+                {opportunities.find(o => o.id === selectedOppId)?.type === 'farm' && (
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Select Return Plan</label>
+                    <select name="planId" className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-black/10 transition-colors" required>
+                      <option value="">-- Choose a return plan --</option>
+                      {returnPlans.map(p => <option key={p.id} value={p.id}>{p.name} ({p.ratePercent}%)</option>)}
+                    </select>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-[15px]">
                   <div>

@@ -56,6 +56,7 @@ export async function assignOpportunityAction(formData: FormData) {
   const amountPaid = parseFloat(formData.get('amountPaid') as string);
   const units = parseFloat(formData.get('units') as string);
   const dateAcquiredStr = formData.get('dateAcquired') as string;
+  const planId = formData.get('planId') as string | null;
   
   if (!userId || !opportunityId || isNaN(amountPaid) || isNaN(units)) {
     return { error: 'Invalid input data' };
@@ -70,6 +71,19 @@ export async function assignOpportunityAction(formData: FormData) {
   });
 
   if (!user || !opportunity) return { error: 'User or Opportunity not found' };
+
+  let planData = {};
+  if (opportunity.category === 'farm' && planId) {
+    const plan = await prisma.returnPlan.findUnique({ where: { id: planId } });
+    if (plan) {
+      planData = {
+        planId: plan.id,
+        ratePercent: plan.ratePercent,
+        intervalMonths: plan.intervalMonths,
+        tenorMonths: parseInt(opportunity.duration || '6', 10)
+      };
+    }
+  }
 
   const activeCohort = opportunity.cohorts.length > 0 ? opportunity.cohorts[0] : null;
 
@@ -97,7 +111,8 @@ export async function assignOpportunityAction(formData: FormData) {
       totalAmount: amountPaid,
       units,
       dateAcquired,
-      status: 'active'
+      status: 'active',
+      ...planData
     }
   });
 
