@@ -137,17 +137,42 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[20px]">
           {agents.map(agent => (
             <div key={agent.id} className="bg-white rounded-[20px] p-[24px] shadow-sm border border-black/5 flex flex-col justify-between">
-              <div className="flex items-center gap-[15px] mb-[20px]">
+              <div className="flex items-center gap-[15px] mb-[20px] pb-[15px] border-b border-black/5">
                 <div className="w-[48px] h-[48px] rounded-full bg-[#008b45] flex items-center justify-center text-white font-bold text-[16px]">
                   {agent.firstName.charAt(0)}
                 </div>
-                <div>
+                <div className="flex-1">
                   <strong className="block text-[16px] text-ink">{agent.firstName} {agent.lastName}</strong>
                   <span className="text-[12px] text-[#68736d]">{agent.email}</span>
                 </div>
+                <button 
+                  onClick={async () => {
+                    if(confirm("Demote this agent to a regular customer?")) {
+                      const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
+                      await removeSalesAgentAction(agent.id);
+                    }
+                  }}
+                  className="text-[11px] font-bold text-[#e53935] bg-[#e53935]/10 px-[10px] py-[4px] rounded-full hover:bg-[#e53935]/20 transition-colors"
+                >
+                  Demote
+                </button>
               </div>
-              <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Commissions Earned</div>
-              <strong className="text-[18px] font-manrope text-[#008b45]">{formatCurrency(agent.commissions?.reduce((acc: number, cur: any) => acc + cur.amount, 0) || 0)}</strong>
+              <div className="grid grid-cols-2 gap-[15px]">
+                <div>
+                  <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Paid Comms</div>
+                  <strong className="text-[16px] font-manrope text-[#008b45]">{formatCurrency(agent.commissions?.filter((c:any) => c.status === 'PAID').reduce((acc: number, cur: any) => acc + cur.amount, 0) || 0).replace('.00', '')}</strong>
+                </div>
+                <div>
+                  <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Pending Escrow</div>
+                  <strong className="text-[16px] font-manrope text-ink">{formatCurrency(agent.commissions?.filter((c:any) => c.status === 'PENDING').reduce((acc: number, cur: any) => acc + cur.amount, 0) || 0).replace('.00', '')}</strong>
+                </div>
+                <div className="col-span-2 pt-[10px] mt-[10px] border-t border-black/5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[12px] text-[#68736d] font-bold">Network Size</span>
+                    <span className="text-[13px] text-ink font-bold">{agent.networkCount} Clients</span>
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
           {agents.length === 0 && (

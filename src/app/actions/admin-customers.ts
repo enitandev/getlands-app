@@ -175,3 +175,23 @@ export async function sendInviteAction(userId: string) {
   await sendClaimAccountEmail(user.email, user.firstName, resetToken);
   return { success: true };
 }
+
+export async function appointSalesAgentAction(userId: string) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role: 'sales' }
+  });
+  revalidatePath('/admin/customers');
+  revalidatePath('/admin/sales');
+  return { success: true };
+}
+
+export async function removeSalesAgentAction(userId: string) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role: 'customer' }
+  });
+  revalidatePath('/admin/customers');
+  revalidatePath('/admin/sales');
+  return { success: true };
+}

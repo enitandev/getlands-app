@@ -131,6 +131,32 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                     Profile
                   </Link>
                   <button 
+                    className="text-[13px] font-bold text-ink hover:underline transition-colors disabled:opacity-50" 
+                    disabled={loading}
+                    onClick={() => {
+                      setConfirmConfig({
+                        isOpen: true,
+                        title: c.role === 'sales' ? 'Remove Agent Status' : 'Appoint as Sales Agent',
+                        message: c.role === 'sales' ? 'Are you sure you want to demote this user to a regular customer?' : 'Are you sure you want to upgrade this user to a Sales Agent? This gives them access to the Agent Portal.',
+                        action: async () => {
+                          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                          setLoading(true);
+                          if (c.role === 'sales') {
+                            const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
+                            await removeSalesAgentAction(c.id);
+                            toast('User removed from sales agents', 'success');
+                          } else {
+                            const { appointSalesAgentAction } = await import('@/app/actions/admin-customers');
+                            await appointSalesAgentAction(c.id);
+                            toast('User appointed as Sales Agent!', 'success');
+                          }
+                          setLoading(false);
+                        }
+                      });
+                    }}>
+                    {c.role === 'sales' ? 'Demote Agent' : 'Make Agent'}
+                  </button>
+                  <button 
                     className="text-[13px] font-bold text-[#e53935] hover:underline transition-colors disabled:opacity-50" 
                     disabled={loading}
                     onClick={() => {

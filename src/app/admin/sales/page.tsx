@@ -7,12 +7,17 @@ export default async function AdminSalesPage() {
     orderBy: { createdAt: 'desc' }
   });
 
-  const agents = await prisma.user.findMany({
+  const agentsData = await prisma.user.findMany({
     where: { role: 'sales' },
     include: {
       commissions: true
     }
   });
+
+  const agents = await Promise.all(agentsData.map(async (agent) => {
+    const networkCount = await prisma.user.count({ where: { referredById: agent.id } });
+    return { ...agent, networkCount };
+  }));
 
   const pendingDrafts = await prisma.holding.findMany({
     where: { status: 'pending' },
