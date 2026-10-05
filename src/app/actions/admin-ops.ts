@@ -7,7 +7,10 @@ export async function updatePlatformSettingsAction(formData: FormData) {
   const companyName = formData.get('companyName') as string;
   const supportEmail = formData.get('supportEmail') as string;
   const processingFee = parseFloat(formData.get('processingFee') as string);
-  const agentCommission = parseFloat(formData.get('agentCommission') as string);
+  
+  const agentDirectCommissionFirst = parseFloat(formData.get('agentDirectCommissionFirst') as string);
+  const agentDirectCommissionFuture = parseFloat(formData.get('agentDirectCommissionFuture') as string);
+  const agentTier2Commission = parseFloat(formData.get('agentTier2Commission') as string);
   
   const corporateBankName = formData.get('corporateBankName') as string;
   const corporateAccountName = formData.get('corporateAccountName') as string;
@@ -16,12 +19,14 @@ export async function updatePlatformSettingsAction(formData: FormData) {
   await prisma.platformSetting.upsert({
     where: { id: 'global' },
     update: {
-      companyName, supportEmail, processingFee, agentCommission,
+      companyName, supportEmail, processingFee, 
+      agentDirectCommissionFirst, agentDirectCommissionFuture, agentTier2Commission,
       corporateBankName, corporateAccountName, corporateAccountNumber
     },
     create: {
       id: 'global',
-      companyName, supportEmail, processingFee, agentCommission,
+      companyName, supportEmail, processingFee, 
+      agentDirectCommissionFirst, agentDirectCommissionFuture, agentTier2Commission,
       corporateBankName, corporateAccountName, corporateAccountNumber
     }
   });

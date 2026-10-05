@@ -68,9 +68,19 @@ export default function ClientSettings({ initialSettings }: { initialSettings: a
                     <p className="text-[11px] text-[#7a847f] mt-[5px]">Applied to automated checkout payments.</p>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Sales Agent Commission (%)</label>
-                    <input type="number" step="0.1" name="agentCommission" defaultValue={initialSettings.agentCommission} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
-                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Default commission for referred conversions.</p>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Agent Commission - First Purchase (%)</label>
+                    <input type="number" step="0.1" name="agentDirectCommissionFirst" defaultValue={initialSettings.agentDirectCommissionFirst} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Paid to direct agent on client's first acquisition.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Agent Commission - Future Purchases (%)</label>
+                    <input type="number" step="0.1" name="agentDirectCommissionFuture" defaultValue={initialSettings.agentDirectCommissionFuture} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Paid to direct agent on repeat acquisitions.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Agent Tier 2 (Recruiter) Commission (%)</label>
+                    <input type="number" step="0.1" name="agentTier2Commission" defaultValue={initialSettings.agentTier2Commission} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Paid to the agent who recruited the direct agent (First purchase only).</p>
                   </div>
                 </div>
               </div>

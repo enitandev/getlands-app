@@ -108,7 +108,8 @@ model Holding {
   totalAmount     Float
   units           Float        @default(1)
   dateAcquired    DateTime     @default(now())
-  status          String       @default("active") // active, completed, matured
+  status          String       @default("active") // active, completed, matured, pending
+  referenceCode   String?      @unique // Used for offline bank transfers
 
   // Return Plan Terms Snapshot
   planId          String?
@@ -123,6 +124,7 @@ model Holding {
   opportunity   Opportunity  @relation(fields: [opportunityId], references: [id])
   cohort        Cohort?      @relation(fields: [cohortId], references: [id])
   payouts       PayoutSchedule[]
+  commissions   Commission[]
 }
 
 model ReturnPlan {
@@ -193,7 +195,11 @@ model PlatformSetting {
   companyName           String   @default("Getlands Real-Asset Marketplace")
   supportEmail          String   @default("support@getlands.shop")
   processingFee         Float    @default(1.5)
-  agentCommission       Float    @default(5.0)
+  
+  agentDirectCommissionFirst  Float    @default(5.0)
+  agentDirectCommissionFuture Float    @default(2.0)
+  agentTier2Commission        Float    @default(1.5)
+  
   referralBonusPercentage Float    @default(10.0)
   tradingFeePercentage  Float    @default(2.0)
   
@@ -217,12 +223,15 @@ model Lead {
 model Commission {
   id          String   @id @default(uuid())
   agentId     String
+  holdingId   String?
   amount      Float
+  tierLevel   Int      @default(1) // 1 (Direct), 2 (Recruiter)
   status      String   @default("PENDING") // PENDING, PAID
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   agent       User     @relation(fields: [agentId], references: [id])
+  holding     Holding? @relation(fields: [holdingId], references: [id])
 }
 
 
