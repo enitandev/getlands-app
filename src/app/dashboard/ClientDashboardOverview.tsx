@@ -1,12 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency } from '@/lib/mockData';
 import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 import DistributionChart from '@/components/ui/DistributionChart';
 
-export default function ClientDashboardOverview({ user, opportunities = [], reports }: any) {
+export default function ClientDashboardOverview({ user, opportunities = [], returnPlans = [], reports }: any) {
+  const router = useRouter();
   const openOpps = opportunities?.filter((o: any) => o.status === 'available') || [];
   
   const featuredOpps = openOpps.filter((o: any) => o.featured);
@@ -29,13 +31,15 @@ export default function ClientDashboardOverview({ user, opportunities = [], repo
   const amounts = [1, 2, 5, 10].map(multiplier => minAmount * multiplier);
   
   const [selectedAmount, setSelectedAmount] = useState(amounts[1] || amounts[0] || 100000);
+  const [selectedPlanId, setSelectedPlanId] = useState(returnPlans[0]?.id || "");
   
   useEffect(() => {
     setSelectedAmount(amounts[1] || amounts[0] || 100000);
-  }, [featuredIndex]);
+    if (returnPlans.length > 0) {
+      setSelectedPlanId(returnPlans[1]?.id || returnPlans[0]?.id); // Default to middle plan
+    }
+  }, [featuredIndex, returnPlans]);
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
 
   const totalValue = user.holdings?.reduce((sum: number, h: any) => sum + (h.totalAmount || 0), 0) || 0;
   const activeHoldingsCount = user.holdings?.filter((h: any) => h.status === 'active').length || 0;
@@ -44,20 +48,19 @@ export default function ClientDashboardOverview({ user, opportunities = [], repo
   const landCount = user.holdings?.filter((h: any) => h.opportunity?.category === 'land').length || 0;
   const landBankingCount = user.holdings?.filter((h: any) => h.opportunity?.category === 'land_banking').length || 0;
 
-  const canUseWallet = user.walletBalance >= selectedAmount;
 
-  const parsePercent = (opp: any) => {
+  const getProjectedMonthly = (amount: number, opp: any) => {
+    if (opp?.category === 'farm' && returnPlans.length > 0) {
+      const plan = returnPlans.find((p: any) => p.id === selectedPlanId) || returnPlans[0];
+      return amount * (plan.ratePercent / 100);
+    }
+    
+    // Legacy fallback
     if (!opp) return null;
     const str = opp.projectedReturn || "";
     const match = str.match(/(\d+(\.\d+)?)/);
-    if (match) return parseFloat(match[1]);
+    if (match) return amount * (parseFloat(match[1]) / 100);
     return null;
-  };
-
-  const getProjectedMonthly = (amount: number, opp: any) => {
-    const percent = parsePercent(opp);
-    if (percent === null) return null;
-    return (amount * (percent / 100));
   };
   
   const getFundedPercentage = (c: any) => {
@@ -165,8 +168,17 @@ export default function ClientDashboardOverview({ user, opportunities = [], repo
                 <h3 className="font-manrope text-[24px] lg:text-[38px] font-bold leading-none mb-[5px] tracking-tight">{currentOpp.title}</h3>
                 
                 <div className="flex items-end gap-[8px] mb-[15px] lg:mb-[30px]">
-                  <div className="font-manrope text-[36px] lg:text-[56px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{currentOpp.projectedReturn || 'Variable'}</div>
-                  {currentOpp.projectedReturn && <div className="text-[13px] text-[#a6baa9] pb-[8px] leading-tight">projected /<br/>month</div>}
+                  {currentOpp.category === 'farm' && returnPlans.length > 0 ? (
+                    <>
+                      <div className="font-manrope text-[36px] lg:text-[48px] font-bold text-[#a9e7bd] leading-none tracking-tighter">Up to {Math.max(...returnPlans.map((p: any) => p.ratePercent))}%</div>
+                      <div className="text-[13px] text-[#a6baa9] pb-[8px] leading-tight">Flexible<br/>Returns</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="font-manrope text-[36px] lg:text-[48px] font-bold text-[#a9e7bd] leading-none tracking-tighter">{currentOpp.projectedReturn || 'Variable'}</div>
+                      {currentOpp.projectedReturn && <div className="text-[13px] text-[#a6baa9] pb-[8px] leading-tight">projected /<br/>month</div>}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -224,25 +236,46 @@ export default function ClientDashboardOverview({ user, opportunities = [], repo
                 ))}
               </div>
 
+              {currentOpp?.category === 'farm' && returnPlans.length > 0 && (
+                <div className="mb-[15px] lg:mb-[20px] pt-[15px] border-t border-black/5">
+                  <div className="text-[11px] font-bold text-[#68736d] uppercase tracking-wider mb-[10px]">Return Plan</div>
+                  <div className="flex gap-[8px] overflow-x-auto scrollbar-hide pb-[5px]">
+                    {returnPlans.map((p: any) => (
+                      <button 
+                        key={p.id}
+                        onClick={() => setSelectedPlanId(p.id)}
+                        className={`px-[12px] py-[6px] rounded-[8px] font-bold text-[12px] shrink-0 transition-colors border ${selectedPlanId === p.id ? 'bg-[#008b45] text-white border-[#008b45]' : 'bg-white text-ink border-black/10 hover:border-[#008b45]'}`}
+                      >
+                        {p.ratePercent}% ({p.name})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="hidden lg:block space-y-[10px] mb-[20px] text-[13px] border-t border-black/5 pt-[15px]">
                 <div className="flex justify-between text-[#68736d]">
-                  <span>You invest</span>
+                  <span>Total value</span>
                   <strong className="text-ink">{formatCurrency(selectedAmount)}</strong>
                 </div>
                 {getProjectedMonthly(selectedAmount, currentOpp) !== null && (
                   <div className="flex justify-between text-[#68736d]">
-                    <span>Projected monthly</span>
+                    <span>Projected return</span>
                     <strong className="text-[#008b45]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, currentOpp)!)}</strong>
                   </div>
                 )}
                 <div className="flex justify-between text-[#68736d]">
                   <span>Pay with</span>
-                  <strong className="text-ink">Transfer or card</strong>
+                  <strong className="text-ink">Wallet, transfer or card</strong>
                 </div>
               </div>
 
               <button 
-                onClick={() => setIsDrawerOpen(true)}
+                onClick={() => {
+                  let url = `/checkout?slug=${currentOpp.slug}&amount=${selectedAmount}`;
+                  if (currentOpp.category === 'farm' && selectedPlanId) url += `&planId=${selectedPlanId}`;
+                  router.push(url);
+                }}
                 className="w-full h-[45px] lg:h-[55px] bg-[#a9e7bd] hover:bg-[#86e2a6] text-[#182a20] font-bold text-[16px] rounded-[12px] flex items-center justify-center gap-[10px] transition-colors"
               >
                 Acquire {formatCurrency(selectedAmount).replace('.00', '').replace('NGN', '₦')}
@@ -415,88 +448,6 @@ export default function ClientDashboardOverview({ user, opportunities = [], repo
           </div>
         </div>
       </div>
-
-      {/* Drawer Overlay */}
-      {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center lg:items-center p-[15px] sm:p-0">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsDrawerOpen(false)}></div>
-          <div className="bg-[#f7f9f7] w-full max-w-[500px] rounded-t-[30px] lg:rounded-[30px] relative z-10 overflow-hidden shadow-2xl animate-in slide-in-from-bottom-full lg:slide-in-from-bottom-10 fade-in duration-300">
-            <div className="p-[20px] lg:p-[30px]">
-              <div className="w-[40px] h-[4px] bg-black/10 rounded-full mx-auto mb-[20px] lg:hidden"></div>
-              
-              <div className="flex justify-between items-start mb-[20px]">
-                <h2 className="font-manrope text-[28px] font-bold text-ink leading-tight">Confirm<br/>investment</h2>
-                <button onClick={() => setIsDrawerOpen(false)} className="w-[36px] h-[36px] bg-white rounded-full border border-black/5 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-              </div>
-
-              <div className="bg-white rounded-[16px] p-[20px] border border-black/5 mb-[20px] space-y-[15px] text-[14px]">
-                <div className="flex justify-between">
-                  <span className="text-[#68736d]">Opportunity</span>
-                  <strong className="text-ink">{currentOpp?.title}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#68736d]">You invest</span>
-                  <strong className="text-ink">{formatCurrency(selectedAmount)}</strong>
-                </div>
-                {getProjectedMonthly(selectedAmount, currentOpp) !== null && (
-                  <div className="flex justify-between">
-                    <span className="text-[#68736d]">Projected monthly</span>
-                    <strong className="text-[#008b45]">≈ {formatCurrency(getProjectedMonthly(selectedAmount, currentOpp)!)}</strong>
-                  </div>
-                )}
-                {currentOpp?.duration && (
-                  <div className="flex justify-between">
-                    <span className="text-[#68736d]">Tenor</span>
-                    <strong className="text-ink">[{currentOpp.duration} months]</strong>
-                  </div>
-                )}
-              </div>
-
-              <div className="mb-[15px] text-[13px] font-bold text-[#68736d]">Pay with</div>
-              <div className="space-y-[10px] mb-[20px]">
-                
-                <label className={`flex items-start p-[15px] rounded-[16px] border-[2px] cursor-pointer transition-colors ${paymentMethod === 'transfer' ? 'border-[#008b45] bg-[#eef3ef]/50' : 'border-white bg-white hover:border-black/5 shadow-sm'}`}>
-                  <div className={`mt-[2px] w-[20px] h-[20px] rounded-full border-[2px] flex items-center justify-center shrink-0 mr-[15px] ${paymentMethod === 'transfer' ? 'border-[#008b45]' : 'border-gray-300'}`}>
-                    {paymentMethod === 'transfer' && <div className="w-[10px] h-[10px] bg-[#008b45] rounded-full"></div>}
-                  </div>
-                  <input type="radio" className="hidden" checked={paymentMethod === 'transfer'} onChange={() => setPaymentMethod('transfer')} />
-                  <div>
-                    <div className="font-bold text-[15px] text-ink mb-[2px]">Bank transfer</div>
-                    <div className="text-[13px] text-[#68736d]">Pay from any Nigerian bank via Moniepoint</div>
-                  </div>
-                </label>
-
-                <label className={`flex items-start p-[15px] rounded-[16px] border-[2px] transition-colors ${!canUseWallet ? 'opacity-50 cursor-not-allowed bg-transparent border-black/5 border-dashed' : paymentMethod === 'wallet' ? 'border-[#008b45] bg-[#eef3ef]/50 cursor-pointer' : 'border-white bg-white hover:border-black/5 shadow-sm cursor-pointer'}`}>
-                  <div className={`mt-[2px] w-[20px] h-[20px] rounded-full border-[2px] flex items-center justify-center shrink-0 mr-[15px] ${paymentMethod === 'wallet' ? 'border-[#008b45]' : 'border-gray-300'}`}>
-                    {paymentMethod === 'wallet' && <div className="w-[10px] h-[10px] bg-[#008b45] rounded-full"></div>}
-                  </div>
-                  <input type="radio" className="hidden" disabled={!canUseWallet} checked={paymentMethod === 'wallet'} onChange={() => { if(canUseWallet) setPaymentMethod('wallet'); }} />
-                  <div className="flex-1">
-                    <div className="font-bold text-[15px] text-ink mb-[2px]">Wallet · {formatCurrency(user.walletBalance)} available</div>
-                    {!canUseWallet && <div className="text-[13px] text-[#e53935] font-bold text-right absolute right-[15px] top-[18px]">Not enough</div>}
-                  </div>
-                </label>
-              </div>
-
-              <form action="/dashboard/checkout" method="POST">
-                <input type="hidden" name="opportunityId" value={currentOpp?.id} />
-                <input type="hidden" name="amount" value={selectedAmount} />
-                <input type="hidden" name="paymentMethod" value={paymentMethod} />
-                
-                <button type="submit" className="w-full h-[55px] bg-[#182a20] hover:bg-black text-white font-bold text-[16px] rounded-[12px] flex items-center justify-center gap-[10px] transition-colors shadow-[0_10px_20px_rgba(24,42,32,0.15)]">
-                  Pay {formatCurrency(selectedAmount).replace('.00', '').replace('NGN', '₦')}
-                </button>
-              </form>
-              
-              <div className="text-center mt-[15px] text-[11px] text-[#7a847f]">
-                Returns are projected, not guaranteed. Capital is at risk.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

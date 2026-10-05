@@ -21,5 +21,10 @@ export default async function MarketplacePage() {
     include: { cohorts: { orderBy: { createdAt: 'desc' }, take: 1 } }
   });
 
-  return <ClientMarketplace user={user} opportunities={opportunities} />;
+  const returnPlans = await prisma.returnPlan.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: 'asc' }
+  });
+
+  return <ClientMarketplace user={user} opportunities={opportunities} returnPlans={returnPlans} />;
 }
