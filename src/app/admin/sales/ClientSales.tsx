@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { formatCurrency } from '@/lib/mockData';
 import { createLeadAction, deleteLeadAction, updateLeadStatusAction } from '@/app/actions/admin-ops';
 
-export default function ClientSales({ initialLeads, agents }: { initialLeads: any[], agents: any[] }) {
-  const [activeTab, setActiveTab] = useState('leads');
+export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }: { initialLeads: any[], agents: any[], pendingDrafts?: any[] }) {
+  const [activeTab, setActiveTab] = useState('drafts');
   const [isAddingLead, setIsAddingLead] = useState(false);
 
   const handleCreateLead = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -14,12 +14,21 @@ export default function ClientSales({ initialLeads, agents }: { initialLeads: an
     setIsAddingLead(false);
   };
 
+  const handleApproveDraft = async (holdingId: string) => {
+    if (!confirm("Are you sure you want to approve this draft? This will activate the holding and trigger agent commissions.")) return;
+    const fd = new FormData();
+    fd.append('holdingId', holdingId);
+    const { approveDraftHoldingAction } = await import('@/app/actions/admin-ops');
+    await approveDraftHoldingAction(fd);
+    alert('Draft approved successfully!');
+  };
+
   return (
     <div className="space-y-[30px]">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-[20px]">
         <div>
           <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[10px]">Sales & Operations</h1>
-          <p className="text-[13px] lg:text-[14px] text-[#68736d]">Manage leads, sales agents, and referral commissions.</p>
+          <p className="text-[13px] lg:text-[14px] text-[#68736d]">Manage leads, sales agents, pending drafts, and referral commissions.</p>
         </div>
         {activeTab === 'leads' && (
           <button onClick={() => setIsAddingLead(true)} className="px-[24px] py-[12px] bg-[#008b45] text-white text-[14px] font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
@@ -30,6 +39,15 @@ export default function ClientSales({ initialLeads, agents }: { initialLeads: an
 
       {/* Tabs */}
       <div className="flex gap-[30px] border-b border-black/5">
+        <button onClick={() => setActiveTab('drafts')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative flex items-center gap-[8px] ${activeTab === 'drafts' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
+          Pending Drafts
+          {pendingDrafts.length > 0 && (
+            <span className="bg-[#f5a623] text-white text-[10px] w-[20px] h-[20px] rounded-full flex items-center justify-center">
+              {pendingDrafts.length}
+            </span>
+          )}
+          {activeTab === 'drafts' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
+        </button>
         <button onClick={() => setActiveTab('leads')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'leads' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
           Lead Pipeline
           {activeTab === 'leads' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
@@ -137,6 +155,44 @@ export default function ClientSales({ initialLeads, agents }: { initialLeads: an
               No users have the "sales" role yet. You can assign this role in the database.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Drafts Content */}
+      {activeTab === 'drafts' && (
+        <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
+          <div className="hidden lg:grid grid-cols-[1.5fr_2fr_1fr_1.5fr_120px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
+            <div>Reference</div>
+            <div>Client & Target</div>
+            <div>Amount</div>
+            <div>Draft Date</div>
+            <div className="text-right">Action</div>
+          </div>
+          
+          <div className="divide-y divide-black/5">
+            {pendingDrafts.length === 0 ? (
+              <div className="p-[40px] text-center text-[#68736d] text-[14px]">
+                No pending drafts right now.
+              </div>
+            ) : (
+              pendingDrafts.map((draft: any) => (
+                <div key={draft.id} className="p-[20px_24px] grid grid-cols-1 lg:grid-cols-[1.5fr_2fr_1fr_1.5fr_120px] items-center gap-[15px] hover:bg-[#f7f9f7] transition-colors">
+                  <div className="font-mono font-bold text-[#008b45]">{draft.referenceCode}</div>
+                  <div>
+                    <strong className="block text-[14px] text-ink">{draft.user?.firstName} {draft.user?.lastName}</strong>
+                    <span className="text-[12px] text-[#68736d]">{draft.opportunity?.title}</span>
+                  </div>
+                  <div className="font-bold text-[14px] text-ink">{formatCurrency(draft.totalAmount)}</div>
+                  <div className="text-[12px] text-[#68736d]">{new Date(draft.dateAcquired).toLocaleString()}</div>
+                  <div className="text-right">
+                    <button onClick={() => handleApproveDraft(draft.id)} className="h-[35px] px-[15px] bg-[#182a20] text-white text-[12px] font-bold rounded-full hover:bg-black transition-colors">
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

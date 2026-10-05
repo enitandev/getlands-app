@@ -14,5 +14,14 @@ export default async function AdminSalesPage() {
     }
   });
 
-  return <ClientSales initialLeads={leads} agents={agents} />;
+  const pendingDrafts = await prisma.holding.findMany({
+    where: { status: 'pending' },
+    include: {
+      user: true,
+      opportunity: true
+    },
+    orderBy: { dateAcquired: 'desc' }
+  });
+
+  return <ClientSales initialLeads={leads} agents={agents} pendingDrafts={pendingDrafts} />;
 }
