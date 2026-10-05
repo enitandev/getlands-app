@@ -4,7 +4,9 @@ import ClientCustomers from './ClientCustomers';
 
 export default async function AdminCustomersPage() {
   const dbUsers = await prisma.user.findMany({
-    where: { role: 'customer' },
+    where: { 
+      role: { in: ['customer', 'sales'] } 
+    },
     include: { holdings: true },
     orderBy: { createdAt: 'desc' }
   });
@@ -14,6 +16,7 @@ export default async function AdminCustomersPage() {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    role: user.role,
     joined: new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
     holdings: user.holdings.length,
     totalValue: user.holdings.reduce((sum, h) => sum + h.totalAmount, 0)

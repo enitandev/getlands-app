@@ -6,6 +6,7 @@ import { createLeadAction, deleteLeadAction, updateLeadStatusAction } from '@/ap
 export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }: { initialLeads: any[], agents: any[], pendingDrafts?: any[] }) {
   const [activeTab, setActiveTab] = useState('drafts');
   const [isAddingLead, setIsAddingLead] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const handleCreateLead = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -145,17 +146,45 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }
                   <strong className="block text-[16px] text-ink">{agent.firstName} {agent.lastName}</strong>
                   <span className="text-[12px] text-[#68736d]">{agent.email}</span>
                 </div>
-                <button 
-                  onClick={async () => {
-                    if(confirm("Demote this agent to a regular customer?")) {
-                      const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
-                      await removeSalesAgentAction(agent.id);
-                    }
-                  }}
-                  className="text-[11px] font-bold text-[#e53935] bg-[#e53935]/10 px-[10px] py-[4px] rounded-full hover:bg-[#e53935]/20 transition-colors"
-                >
-                  Demote
-                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => setOpenDropdownId(openDropdownId === agent.id ? null : agent.id)} 
+                    className="w-[32px] h-[32px] rounded-full hover:bg-black/5 flex items-center justify-center transition-colors"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                  </button>
+
+                  {openDropdownId === agent.id && (
+                    <div className="absolute right-0 top-[100%] mt-[5px] w-[180px] bg-white border border-black/10 shadow-xl rounded-[12px] overflow-hidden z-[50] animate-fade-in text-left">
+                      <button 
+                        className="w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5"
+                        onClick={async () => {
+                          setOpenDropdownId(null);
+                          if (!confirm(`Are you sure you want to log in as ${agent.firstName}? You can return to admin later.`)) return;
+                          const { impersonateUserAction } = await import('@/app/actions/admin-customers');
+                          const res = await impersonateUserAction(agent.id);
+                          if (res.success) {
+                            window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
+                          }
+                        }}
+                      >
+                        Login As Agent
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          setOpenDropdownId(null);
+                          if(confirm("Demote this agent to a regular customer?")) {
+                            const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
+                            await removeSalesAgentAction(agent.id);
+                          }
+                        }}
+                        className="w-full text-left px-[15px] py-[10px] text-[13px] text-[#e53935] hover:bg-[#ffebee] font-medium"
+                      >
+                        Demote to Customer
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-[15px]">
                 <div>

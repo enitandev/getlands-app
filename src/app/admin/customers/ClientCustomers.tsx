@@ -11,6 +11,7 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedOppId, setSelectedOppId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [confirmConfig, setConfirmConfig] = useState<{isOpen: boolean, title: string, message: string, action: (() => void) | null, isDestructive?: boolean}>({
     isOpen: false, title: '', message: '', action: null
   });
@@ -84,7 +85,12 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                   {c.firstName.charAt(0) + c.lastName.charAt(0)}
                 </div>
                 <div>
-                  <strong className="block text-[14px] text-ink">{c.firstName + ' ' + c.lastName}</strong>
+                  <div className="flex items-center gap-[8px]">
+                    <strong className="block text-[14px] text-ink">{c.firstName + ' ' + c.lastName}</strong>
+                    {c.role === 'sales' && (
+                      <span className="bg-[#f5a623]/20 text-[#d89018] text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wider">Agent</span>
+                    )}
+                  </div>
                   <span className="text-[12px] text-[#68736d] truncate">{c.email}</span>
                 </div>
               </div>
@@ -104,93 +110,106 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                 <strong className="text-[14px] text-[#008b45]">{formatCurrency(c.totalValue)}</strong>
               </div>
               
-              <div className="mt-[10px] lg:mt-0 text-right">
-                <div className="flex justify-end items-center gap-[15px]">
-                  <button 
-                    className="text-[13px] font-bold text-ink hover:text-[#008b45] transition-colors disabled:opacity-50" 
-                    disabled={loading}
-                    onClick={() => {
-                      setConfirmConfig({
-                        isOpen: true,
-                        title: 'Send Invite',
-                        message: `This will send a 'Claim Account' email to ${c.firstName} with a secure link to set their password. Proceed?`,
-                        isDestructive: false,
-                        action: async () => {
-                          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                          setLoading(true);
-                          const res = await sendInviteAction(c.id);
-                          setLoading(false);
-                          if(res.error) toast(res.error, 'error');
-                          else toast("Invite sent successfully!", 'success');
+              <div className="mt-[10px] lg:mt-0 text-right relative">
+                <button 
+                  onClick={() => setOpenDropdownId(openDropdownId === c.id ? null : c.id)} 
+                  className="w-[32px] h-[32px] rounded-full hover:bg-black/5 flex items-center justify-center transition-colors ml-auto"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                </button>
+
+                {openDropdownId === c.id && (
+                  <div className="absolute right-0 top-[100%] mt-[5px] w-[200px] bg-white border border-black/10 shadow-xl rounded-[12px] overflow-hidden z-[50] animate-fade-in text-left">
+                    <Link href={`/admin/customers/${c.id}`} className="block w-full px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5">
+                      View Profile
+                    </Link>
+                    <button 
+                      className="w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5" 
+                      disabled={loading}
+                      onClick={async () => {
+                        setOpenDropdownId(null);
+                        if (!confirm(`Are you sure you want to log in as ${c.firstName}? You can return to admin later.`)) return;
+                        setLoading(true);
+                        const { impersonateUserAction } = await import('@/app/actions/admin-customers');
+                        const res = await impersonateUserAction(c.id);
+                        if (res.success) {
+                          window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
                         }
-                      });
-                    }}>
-                    Send Invite
-                  </button>
-                  <button 
-                    className="text-[13px] font-bold text-ink hover:underline transition-colors disabled:opacity-50" 
-                    disabled={loading}
-                    onClick={async () => {
-                      if (!confirm(`Are you sure you want to log in as ${c.firstName}? You can return to admin later.`)) return;
-                      setLoading(true);
-                      const { impersonateUserAction } = await import('@/app/actions/admin-customers');
-                      const res = await impersonateUserAction(c.id);
-                      if (res.success) {
-                        window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
-                      }
-                    }}>
-                    Login As
-                  </button>
-                  <Link href={`/admin/customers/${c.id}`} className="text-[13px] font-bold text-[#008b45] hover:underline transition-colors">
-                    Profile
-                  </Link>
-                  <button 
-                    className="text-[13px] font-bold text-ink hover:underline transition-colors disabled:opacity-50" 
-                    disabled={loading}
-                    onClick={() => {
-                      setConfirmConfig({
-                        isOpen: true,
-                        title: c.role === 'sales' ? 'Remove Agent Status' : 'Appoint as Sales Agent',
-                        message: c.role === 'sales' ? 'Are you sure you want to demote this user to a regular customer?' : 'Are you sure you want to upgrade this user to a Sales Agent? This gives them access to the Agent Portal.',
-                        action: async () => {
-                          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                          setLoading(true);
-                          if (c.role === 'sales') {
-                            const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
-                            await removeSalesAgentAction(c.id);
-                            toast('User removed from sales agents', 'success');
-                          } else {
-                            const { appointSalesAgentAction } = await import('@/app/actions/admin-customers');
-                            await appointSalesAgentAction(c.id);
-                            toast('User appointed as Sales Agent!', 'success');
+                      }}>
+                      Login As {c.firstName}
+                    </button>
+                    <button 
+                      className="w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5" 
+                      disabled={loading}
+                      onClick={() => {
+                        setOpenDropdownId(null);
+                        setConfirmConfig({
+                          isOpen: true,
+                          title: 'Send Invite',
+                          message: `This will send a 'Claim Account' email to ${c.firstName} with a secure link to set their password. Proceed?`,
+                          isDestructive: false,
+                          action: async () => {
+                            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                            setLoading(true);
+                            const res = await sendInviteAction(c.id);
+                            setLoading(false);
+                            if(res.error) toast(res.error, 'error');
+                            else toast("Invite sent successfully!", 'success');
                           }
-                          setLoading(false);
-                        }
-                      });
-                    }}>
-                    {c.role === 'sales' ? 'Demote Agent' : 'Make Agent'}
-                  </button>
-                  <button 
-                    className="text-[13px] font-bold text-[#e53935] hover:underline transition-colors disabled:opacity-50" 
-                    disabled={loading}
-                    onClick={() => {
-                      setConfirmConfig({
-                        isOpen: true,
-                        title: 'Delete Customer',
-                        message: 'Are you sure you want to delete this customer? This will also permanently delete their transactions and holdings.',
-                        isDestructive: true,
-                        action: async () => {
-                          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                          setLoading(true);
-                          await deleteCustomerAction(c.id);
-                          setLoading(false);
-                          toast('Customer deleted successfully', 'success');
-                        }
-                      });
-                    }}>
-                    Delete
-                  </button>
-                </div>
+                        });
+                      }}>
+                      Send Invite Email
+                    </button>
+                    <button 
+                      className="w-full text-left px-[15px] py-[10px] text-[13px] font-medium border-b border-black/5 text-[#008b45] hover:bg-[#f7f9f7]" 
+                      disabled={loading}
+                      onClick={() => {
+                        setOpenDropdownId(null);
+                        setConfirmConfig({
+                          isOpen: true,
+                          title: c.role === 'sales' ? 'Remove Agent Status' : 'Appoint as Sales Agent',
+                          message: c.role === 'sales' ? 'Are you sure you want to demote this user to a regular customer?' : 'Are you sure you want to upgrade this user to a Sales Agent? This gives them access to the Agent Portal.',
+                          action: async () => {
+                            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                            setLoading(true);
+                            if (c.role === 'sales') {
+                              const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
+                              await removeSalesAgentAction(c.id);
+                              toast('User removed from sales agents', 'success');
+                            } else {
+                              const { appointSalesAgentAction } = await import('@/app/actions/admin-customers');
+                              await appointSalesAgentAction(c.id);
+                              toast('User appointed as Sales Agent!', 'success');
+                            }
+                            setLoading(false);
+                          }
+                        });
+                      }}>
+                      {c.role === 'sales' ? 'Demote from Sales Agent' : 'Appoint as Sales Agent'}
+                    </button>
+                    <button 
+                      className="w-full text-left px-[15px] py-[10px] text-[13px] text-[#e53935] hover:bg-[#ffebee] font-medium" 
+                      disabled={loading}
+                      onClick={() => {
+                        setOpenDropdownId(null);
+                        setConfirmConfig({
+                          isOpen: true,
+                          title: 'Delete Customer',
+                          message: 'Are you sure you want to delete this customer? This will also permanently delete their transactions and holdings.',
+                          isDestructive: true,
+                          action: async () => {
+                            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                            setLoading(true);
+                            await deleteCustomerAction(c.id);
+                            setLoading(false);
+                            toast('Customer deleted successfully', 'success');
+                          }
+                        });
+                      }}>
+                      Delete Customer
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
