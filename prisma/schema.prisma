@@ -50,6 +50,7 @@ model User {
   referralCode          String?       @unique
   referredById          String?
   hasTriggeredReferralReward Boolean  @default(false)
+  agentContractSignedAt DateTime?
 
   holdings              Holding[]
   transactions          Transaction[]

@@ -60,10 +60,11 @@ const Icons = {
   )
 };
 
-export default function ClientAgentLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, commissionRate = 5 }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; commissionRate?: number }) {
+export default function ClientAgentLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, commissionRate = 5, isImpersonating = false, hasSignedContract = true }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; commissionRate?: number, isImpersonating?: boolean, hasSignedContract?: boolean }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
+  const [isSigning, setIsSigning] = useState(false);
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -85,8 +86,55 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
 
   const mobileNavItems = navItems.slice(0, 5);
 
+  const handleReturnToAdmin = async () => {
+    const { revertImpersonationAction } = await import('@/app/actions/auth');
+    await revertImpersonationAction();
+  };
+
+  const handleSignContract = async () => {
+    setIsSigning(true);
+    const { signAgentContractAction } = await import('@/app/actions/agent');
+    await signAgentContractAction();
+    setIsSigning(false);
+  };
+
+  if (!hasSignedContract) {
+    return (
+      <div className="min-h-screen bg-[#f7f9f7] flex items-center justify-center p-[20px]">
+        {isImpersonating && (
+          <div className="fixed top-0 left-0 right-0 bg-[#e53935] text-white text-center py-[8px] font-bold text-[13px] z-[100] flex justify-center items-center gap-[10px]">
+            <span>You are viewing as {fullName} (Admin Impersonation Mode)</span>
+            <button onClick={handleReturnToAdmin} className="bg-white text-[#e53935] px-[10px] py-[4px] rounded-full text-[11px] hover:bg-black hover:text-white transition-colors">Return to Admin</button>
+          </div>
+        )}
+        <div className="bg-white rounded-[24px] border border-black/5 p-[40px] max-w-[600px] w-full shadow-lg">
+          <h1 className="font-manrope text-[28px] font-bold text-ink mb-[20px]">Sales Agent Agreement</h1>
+          <div className="bg-[#f7f9f7] rounded-[12px] p-[20px] h-[300px] overflow-y-auto text-[13px] text-[#68736d] leading-relaxed mb-[30px] border border-black/5">
+            <p className="mb-[15px]"><strong>1. Independent Contractor Status</strong><br/>You agree that you are acting as an independent contractor, not an employee of Getlands.</p>
+            <p className="mb-[15px]"><strong>2. Commissions</strong><br/>You will earn commissions based on the global rates set by Getlands. Commissions are subject to a 7-day escrow cooling-off period to prevent chargebacks.</p>
+            <p className="mb-[15px]"><strong>3. Prohibited Conduct</strong><br/>You agree not to engage in self-referral fraud, misrepresent Getlands products, or collect cash directly from clients. All transactions must be paid directly to Getlands corporate accounts.</p>
+            <p><strong>4. Termination</strong><br/>Getlands reserves the right to demote or revoke Agent status at any time for violation of these terms.</p>
+          </div>
+          <div className="flex justify-end gap-[15px]">
+            <Link href="/dashboard" className="px-[20px] py-[12px] text-[14px] font-bold text-[#68736d] hover:text-ink transition-colors">Cancel & Exit</Link>
+            <button onClick={handleSignContract} disabled={isSigning} className="px-[24px] py-[12px] bg-[#008b45] text-white text-[14px] font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors shadow-lg">
+              {isSigning ? 'Signing...' : 'I Agree & Sign'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f7f9f7] flex">
+    <div className="min-h-screen bg-[#f7f9f7] flex flex-col">
+      {isImpersonating && (
+        <div className="bg-[#e53935] text-white text-center py-[8px] font-bold text-[13px] z-[100] flex justify-center items-center gap-[10px]">
+          <span>You are viewing as {fullName} (Admin Impersonation Mode)</span>
+          <button onClick={handleReturnToAdmin} className="bg-white text-[#e53935] px-[10px] py-[4px] rounded-full text-[11px] hover:bg-black hover:text-white transition-colors">Return to Admin</button>
+        </div>
+      )}
+      <div className="flex flex-1">
       {/* Desktop Sidebar */}
       <aside 
         className={`hidden lg:flex flex-col bg-white border-r border-black/5 h-screen sticky top-0 transition-all duration-300 ease-custom ${isCollapsed ? 'w-[80px] items-center px-0' : 'w-[280px] px-[25px]'} py-[40px] z-50`}
@@ -219,6 +267,7 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
           <span className="text-[10px] font-bold">Me</span>
         </Link>
       </nav>
+      </div>
     </div>
   );
 }

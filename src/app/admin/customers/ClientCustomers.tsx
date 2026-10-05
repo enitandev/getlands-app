@@ -127,6 +127,20 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                     }}>
                     Send Invite
                   </button>
+                  <button 
+                    className="text-[13px] font-bold text-ink hover:underline transition-colors disabled:opacity-50" 
+                    disabled={loading}
+                    onClick={async () => {
+                      if (!confirm(`Are you sure you want to log in as ${c.firstName}? You can return to admin later.`)) return;
+                      setLoading(true);
+                      const { impersonateUserAction } = await import('@/app/actions/admin-customers');
+                      const res = await impersonateUserAction(c.id);
+                      if (res.success) {
+                        window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
+                      }
+                    }}>
+                    Login As
+                  </button>
                   <Link href={`/admin/customers/${c.id}`} className="text-[13px] font-bold text-[#008b45] hover:underline transition-colors">
                     Profile
                   </Link>

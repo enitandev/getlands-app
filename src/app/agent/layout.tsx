@@ -32,7 +32,15 @@ export default async function AgentLayout({ children }: { children: React.ReactN
   const agentDirectCommissionFirst = settings?.agentDirectCommissionFirst || 5;
 
   return (
-    <ClientAgentLayout initials={initials} fullName={fullName} notifications={user.notifications} unreadMessageCount={unreadMessageCount} commissionRate={agentDirectCommissionFirst}>
+    <ClientAgentLayout 
+      initials={initials} 
+      fullName={fullName} 
+      notifications={user.notifications} 
+      unreadMessageCount={unreadMessageCount} 
+      commissionRate={agentDirectCommissionFirst}
+      isImpersonating={!!session.originalAdminId}
+      hasSignedContract={!!user.agentContractSignedAt}
+    >
       {children}
     </ClientAgentLayout>
   );

@@ -32,7 +32,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const referralBonusPercentage = settings?.referralBonusPercentage || 10;
 
   return (
-    <ClientDashboardLayout initials={initials} fullName={fullName} notifications={user.notifications} unreadMessageCount={unreadMessageCount} referralBonusPercentage={referralBonusPercentage}>
+    <ClientDashboardLayout 
+      initials={initials} 
+      fullName={fullName} 
+      notifications={user.notifications} 
+      unreadMessageCount={unreadMessageCount} 
+      referralBonusPercentage={referralBonusPercentage}
+      isImpersonating={!!session.originalAdminId}
+    >
       {children}
     </ClientDashboardLayout>
   );

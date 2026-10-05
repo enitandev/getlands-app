@@ -55,3 +55,17 @@ export async function draftPortfolioAction(formData: FormData) {
 
   return { success: true, referenceCode, holdingId: holding.id };
 }
+
+export async function signAgentContractAction() {
+  const session = await getSession();
+  if (!session || !session.userId) throw new Error("Unauthorized");
+
+  await prisma.user.update({
+    where: { id: session.userId as string },
+    data: { agentContractSignedAt: new Date() }
+  });
+
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/agent');
+  return { success: true };
+}

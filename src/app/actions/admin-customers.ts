@@ -1,4 +1,5 @@
 "use server";
+import { getSession, createSession } from "@/lib/session";
 import { prisma } from '@/lib/prisma';
 import { sendClaimAccountEmail, sendNewInvestmentEmail } from '@/lib/email';
 import { triggerReferralBonus } from '@/lib/referral';
@@ -194,4 +195,17 @@ export async function removeSalesAgentAction(userId: string) {
   revalidatePath('/admin/customers');
   revalidatePath('/admin/sales');
   return { success: true };
+}
+
+export async function impersonateUserAction(targetUserId: string) {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') throw new Error("Unauthorized");
+
+  const targetUser = await prisma.user.findUnique({ where: { id: targetUserId } });
+  if (!targetUser) throw new Error("User not found");
+
+  const { createSession } = await import('@/lib/session');
+  // Store the original admin ID so they can revert later
+  await createSession(targetUser.id, targetUser.role, session.userId as string);
+  return { success: true, targetRole: targetUser.role };
 }

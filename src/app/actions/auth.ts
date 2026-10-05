@@ -1,7 +1,7 @@
 "use server";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import { prisma } from '@/lib/prisma';
-import { createSession, deleteSession } from '@/lib/session';
+import { createSession, deleteSession, getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
@@ -154,4 +154,12 @@ export async function resetPasswordAction(formData: FormData) {
   });
 
   return { success: true };
+}
+
+export async function revertImpersonationAction() {
+  const session = await getSession();
+  if (!session || !session.originalAdminId) throw new Error("Not impersonating anyone");
+
+  await createSession(session.originalAdminId as string, 'admin');
+  redirect('/admin/customers');
 }

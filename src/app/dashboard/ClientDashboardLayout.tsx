@@ -60,7 +60,7 @@ const Icons = {
   )
 };
 
-export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, referralBonusPercentage = 10 }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; referralBonusPercentage?: number }) {
+export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, referralBonusPercentage = 10, isImpersonating = false }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; referralBonusPercentage?: number, isImpersonating?: boolean }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
@@ -87,9 +87,21 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
   // Limit mobile nav to core features
   const mobileNavItems = navItems.slice(0, 5);
 
+  const handleReturnToAdmin = async () => {
+    const { revertImpersonationAction } = await import('@/app/actions/auth');
+    await revertImpersonationAction();
+  };
+
   return (
-    <div className="min-h-screen bg-[#f7f9f7] flex">
-      {/* Desktop Sidebar */}
+    <div className="min-h-screen bg-[#f7f9f7] flex flex-col">
+      {isImpersonating && (
+        <div className="bg-[#e53935] text-white text-center py-[8px] font-bold text-[13px] z-[100] flex justify-center items-center gap-[10px]">
+          <span>You are viewing as {fullName} (Admin Impersonation Mode)</span>
+          <button onClick={handleReturnToAdmin} className="bg-white text-[#e53935] px-[10px] py-[4px] rounded-full text-[11px] hover:bg-black hover:text-white transition-colors">Return to Admin</button>
+        </div>
+      )}
+      <div className="flex flex-1">
+        {/* Desktop Sidebar */}
       <aside 
         className={`hidden lg:flex flex-col bg-white border-r border-black/5 h-screen sticky top-0 transition-all duration-300 ease-custom ${isCollapsed ? 'w-[80px] items-center px-0' : 'w-[280px] px-[25px]'} py-[40px] z-50`}
       >
@@ -221,6 +233,7 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
           <span className="text-[10px] font-bold">Me</span>
         </Link>
       </nav>
+      </div>
     </div>
   );
 }
