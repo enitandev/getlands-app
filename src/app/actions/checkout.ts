@@ -110,7 +110,7 @@ export async function checkoutAction(formData: FormData) {
     }
 
     // 5. Trigger Referral Bonus if applicable
-    await triggerReferralBonus(user.id, totalAmount);
+    await triggerReferralBonus(user.id, totalAmount, holding.id);
 
     redirect('/dashboard/holdings');
 
