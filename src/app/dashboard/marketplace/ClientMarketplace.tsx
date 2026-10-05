@@ -29,9 +29,9 @@ export default function ClientMarketplace({ user, opportunities = [], returnPlan
   const [selectedPlanId, setSelectedPlanId] = useState(returnPlans[0]?.id || "");
 
   const handleAcquire = (opp: any) => {
-    let url = `/checkout?slug=${opp.slug}&amount=${getMinAmount(opp)}`;
+    let url = `/checkout?opp=${opp.slug}&qty=1`; // It defaults to min amount
     if (opp.category === 'farm' && returnPlans.length > 0) {
-      url += `&planId=${returnPlans[1]?.id || returnPlans[0]?.id}`;
+      url += `&plan=${returnPlans[1]?.id || returnPlans[0]?.id}`;
     }
     router.push(url);
   };

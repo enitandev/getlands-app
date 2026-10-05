@@ -272,8 +272,9 @@ export default function ClientDashboardOverview({ user, opportunities = [], retu
 
               <button 
                 onClick={() => {
-                  let url = `/checkout?slug=${currentOpp.slug}&amount=${selectedAmount}`;
-                  if (currentOpp.category === 'farm' && selectedPlanId) url += `&planId=${selectedPlanId}`;
+                  const qty = Math.max(1, Math.round(selectedAmount / minAmount));
+                  let url = `/checkout?opp=${currentOpp.slug}&qty=${qty}`;
+                  if (currentOpp.category === 'farm' && selectedPlanId) url += `&plan=${selectedPlanId}`;
                   router.push(url);
                 }}
                 className="w-full h-[45px] lg:h-[55px] bg-[#a9e7bd] hover:bg-[#86e2a6] text-[#182a20] font-bold text-[16px] rounded-[12px] flex items-center justify-center gap-[10px] transition-colors"
