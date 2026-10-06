@@ -7,32 +7,30 @@ export const dynamic = 'force-dynamic';
 
 export default async function AgentOverviewPage() {
   const session = await getSession();
+  const userId = session?.userId as string;
   
   const user = await prisma.user.findUnique({
-    where: { id: session?.userId as string },
-    include: {
-      commissions: {
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      }
-    }
+    where: { id: userId }
   });
 
   const myNetwork = await prisma.user.count({
-    where: { referredById: user?.id }
+    where: { referredById: userId }
   });
 
-  // Calculate earnings
-  const pendingCommissions = user?.commissions.filter(c => c.status === 'PENDING').reduce((sum, c) => sum + c.amount, 0) || 0;
-  const availableCommissions = user?.commissions.filter(c => c.status === 'PAID').reduce((sum, c) => sum + c.amount, 0) || 0;
+  // Totals are aggregated over ALL commissions, not just the recent ones displayed
+  const [pendingAgg, paidAgg, recentCommissions] = await Promise.all([
+    prisma.commission.aggregate({ where: { agentId: userId, status: 'PENDING' }, _sum: { amount: true } }),
+    prisma.commission.aggregate({ where: { agentId: userId, status: 'PAID' }, _sum: { amount: true } }),
+    prisma.commission.findMany({ where: { agentId: userId }, orderBy: { createdAt: 'desc' }, take: 10 })
+  ]);
 
   return (
     <ClientAgentOverview 
       user={user} 
       networkCount={myNetwork}
-      pendingCommissions={pendingCommissions}
-      availableCommissions={availableCommissions}
-      recentCommissions={user?.commissions || []}
+      pendingCommissions={pendingAgg._sum.amount || 0}
+      availableCommissions={paidAgg._sum.amount || 0}
+      recentCommissions={recentCommissions}
     />
   );
 }

@@ -78,10 +78,11 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
   
   const navItems = [
     { name: 'Agent Overview', path: '/agent', icon: Icons.Overview },
-    { name: 'My Network', path: '/agent/network', icon: Icons.Referrals },
+    { name: 'My Clients', path: '/agent/network', icon: Icons.Referrals },
     { name: 'Draft Portfolio', path: '/agent/draft', icon: Icons.Holdings },
-    { name: 'Agent Messages', path: '/agent/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
-    { name: 'Exit to Client Dashboard', path: '/dashboard', icon: Icons.Marketplace },
+    { name: 'Wallet', path: '/dashboard/wallet', icon: Icons.Wallet },
+    { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
+    { name: 'Personal Account', path: '/dashboard', icon: Icons.Marketplace },
   ];
 
   const mobileNavItems = navItems.slice(0, 5);
@@ -233,9 +234,13 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
             <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />
           </Link>
           <div className="flex items-center gap-[15px]">
+            <Link href="/dashboard/messages" className="relative text-[#68736d]">
+              <div className="scale-[0.9]">{Icons.Messages}</div>
+              {unreadMsg > 0 && <span className="absolute -top-[2px] -right-[2px] w-[10px] h-[10px] bg-red-500 rounded-full border-2 border-white"></span>}
+            </Link>
             <NotificationDropdown notifications={notifications} />
             <Link href="/dashboard/settings" className="w-[32px] h-[32px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#18201c] text-[12px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
-              EA
+              {initials}
             </Link>
           </div>
         </header>
@@ -247,42 +252,34 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-[80px] bg-white border-t border-black/5 flex items-center justify-around z-50 pb-[10px]">
-        <Link href="/dashboard" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard' ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
+        <Link href="/agent" className={`flex flex-col items-center gap-[4px] ${pathname === '/agent' ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
           <div className="scale-[0.8]">{Icons.Overview}</div>
           <span className="text-[10px] font-bold">Home</span>
         </Link>
         
-        <Link href="/dashboard/holdings" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard/holdings' ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
-          <div className="scale-[0.8]">{Icons.Holdings}</div>
-          <span className="text-[10px] font-bold">Holdings</span>
+        <Link href="/agent/network" className={`flex flex-col items-center gap-[4px] ${pathname.startsWith('/agent/network') ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
+          <div className="scale-[0.8]">{Icons.Referrals}</div>
+          <span className="text-[10px] font-bold">Clients</span>
         </Link>
         
-        {/* FAB for Acquire */}
-        <Link href="/dashboard/marketplace" className="relative -top-[15px] flex flex-col items-center gap-[6px]">
+        {/* FAB for Draft Portfolio */}
+        <Link href="/agent/draft" className="relative -top-[15px] flex flex-col items-center gap-[6px]">
           <div className="w-[60px] h-[60px] bg-[#008b45] rounded-full flex items-center justify-center text-white shadow-[0_10px_20px_rgba(0,139,69,0.3)] border-[4px] border-[#f7f9f7]">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </div>
-          <span className="text-[11px] font-bold text-ink">Acquire</span>
+          <span className="text-[11px] font-bold text-ink">Draft</span>
         </Link>
         
-        <Link href="/dashboard/wallet" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard/wallet' ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
+        <Link href="/dashboard/wallet" className="flex flex-col items-center gap-[4px] text-[#a1aba6]">
           <div className="scale-[0.8]">{Icons.Wallet}</div>
           <span className="text-[10px] font-bold">Wallet</span>
         </Link>
         
-        <Link href="/dashboard/messages" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard/messages' ? 'text-[#008b45]' : 'text-[#a1aba6]'} relative`}>
-          <div className="scale-[0.8]">{Icons.Messages}</div>
-          <span className="text-[10px] font-bold">Chat</span>
-          {unreadMsg > 0 && (
-            <span className="absolute top-0 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-          )}
-        </Link>
-        
-        <Link href="/dashboard/settings" className={`flex flex-col items-center gap-[4px] ${pathname === '/dashboard/settings' ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
+        <Link href="/dashboard" className="flex flex-col items-center gap-[4px] text-[#a1aba6]">
           <div className="scale-[0.8]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </div>
-          <span className="text-[10px] font-bold">Me</span>
+          <span className="text-[10px] font-bold">Personal</span>
         </Link>
       </nav>
       </div>

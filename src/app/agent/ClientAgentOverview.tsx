@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/mockData';
+import ReferralLinkCard from './ReferralLinkCard';
 
 export default function ClientAgentOverview({ user, networkCount, pendingCommissions, availableCommissions, recentCommissions }: any) {
   
@@ -27,10 +28,11 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
               {formatCurrency(availableCommissions).replace('.00', '').replace('NGN', '₦')}
             </div>
             
-            <div className="flex gap-[15px]">
-              <button className="h-[45px] px-[24px] bg-[#008b45] hover:bg-[#007339] text-white font-bold text-[14px] rounded-full transition-colors shadow-lg">
+            <div className="flex flex-col gap-[8px]">
+              <button disabled className="h-[45px] px-[24px] bg-white/10 text-white/50 font-bold text-[14px] rounded-full cursor-not-allowed w-fit">
                 Withdraw
               </button>
+              <p className="text-[12px] text-[#a6baa9]">Commission payouts to your wallet are opening soon.</p>
             </div>
           </div>
         </div>
@@ -59,28 +61,8 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
         
       </div>
 
-      {/* Two Links Section */}
-      <div className="bg-white border border-[#008b45]/20 rounded-[24px] p-[25px] lg:p-[40px] mb-[40px] shrink-0">
-        <h2 className="font-manrope text-[20px] font-bold text-ink mb-[20px]">Your Referral Links</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-[30px]">
-          <div>
-            <h3 className="font-bold text-[15px] text-ink mb-[5px]">Customer Link (Tier 1)</h3>
-            <p className="text-[13px] text-[#68736d] mb-[15px]">Send this to clients. You earn 5% on their first acquisition, and 2% on future renewals.</p>
-            <div className="flex border border-black/10 rounded-[12px] overflow-hidden">
-              <input type="text" readOnly value={`https://getlands.shop/join?ref=${user.referralCode}`} className="flex-1 bg-[#f7f9f7] px-[15px] text-[13px] text-ink outline-none" />
-              <button className="h-[45px] px-[20px] bg-[#182a20] text-white text-[13px] font-bold hover:bg-black transition-colors">Copy</button>
-            </div>
-          </div>
-          <div>
-            <h3 className="font-bold text-[15px] text-ink mb-[5px]">Recruitment Link (Tier 2)</h3>
-            <p className="text-[13px] text-[#68736d] mb-[15px]">Send this to sub-agents. You earn 1.5% finder's fee on their first client sale.</p>
-            <div className="flex border border-black/10 rounded-[12px] overflow-hidden">
-              <input type="text" readOnly value={`https://getlands.shop/partners?ref=${user.referralCode}`} className="flex-1 bg-[#f7f9f7] px-[15px] text-[13px] text-ink outline-none" />
-              <button className="h-[45px] px-[20px] bg-[#182a20] text-white text-[13px] font-bold hover:bg-black transition-colors">Copy</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Referral Link */}
+      <ReferralLinkCard code={user.referralCode} />
 
       {/* Recent Commissions */}
       <div>
