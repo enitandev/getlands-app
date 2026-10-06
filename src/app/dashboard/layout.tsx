@@ -39,6 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       unreadMessageCount={unreadMessageCount} 
       referralBonusPercentage={referralBonusPercentage}
       isImpersonating={!!session.originalAdminId}
+      isSalesAgent={user.role === 'sales'}
     >
       {children}
     </ClientDashboardLayout>

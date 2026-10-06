@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { RecordReferralModal } from '../LegacyReferralModal';
+import { DeleteHoldingButton } from '../DeleteHoldingButton';
 import CustomerLedger from './CustomerLedger';
 
 export default async function CustomerProfile({ params }: { params: Promise<{ id: string }> }) {
@@ -144,6 +145,7 @@ export default async function CustomerProfile({ params }: { params: Promise<{ id
                     <strong className="block text-[15px] text-ink">{h.opportunity.title}</strong>
                     <span className="text-[13px] text-[#68736d]">Acquired: {new Date(h.dateAcquired).toLocaleDateString()} • {h.units} Units</span>
                     <strong className="block text-[14px] text-[#008b45] mt-[5px]">{formatCurrency(h.totalAmount)}</strong>
+                    <DeleteHoldingButton holdingId={h.id} title={h.opportunity.title} />
                   </div>
                   
                   <div className="flex flex-col gap-[10px] lg:items-end">

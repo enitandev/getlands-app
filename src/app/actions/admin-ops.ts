@@ -1,5 +1,6 @@
 "use server";
 import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { generatePayoutSchedule } from '@/lib/payouts';
 import { triggerReferralBonus } from '@/lib/referral';
@@ -103,4 +104,18 @@ export async function approveDraftHoldingAction(formData: FormData) {
   await triggerReferralBonus(holding.userId, holding.totalAmount, holding.id);
 
   revalidatePath('/admin/sales');
+}
+
+export async function deleteHoldingAction(holdingId: string) {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') throw new Error("Unauthorized");
+
+  await prisma.holding.delete({
+    where: { id: holdingId }
+  });
+
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin/customers');
+  revalidatePath('/admin/sales');
+  return { success: true };
 }
