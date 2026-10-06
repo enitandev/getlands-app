@@ -109,11 +109,26 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
         )}
         <div className="bg-white rounded-[24px] border border-black/5 p-[40px] max-w-[600px] w-full shadow-lg">
           <h1 className="font-manrope text-[28px] font-bold text-ink mb-[20px]">Sales Agent Agreement</h1>
-          <div className="bg-[#f7f9f7] rounded-[12px] p-[20px] h-[300px] overflow-y-auto text-[13px] text-[#68736d] leading-relaxed mb-[30px] border border-black/5">
-            <p className="mb-[15px]"><strong>1. Independent Contractor Status</strong><br/>You agree that you are acting as an independent contractor, not an employee of Getlands.</p>
-            <p className="mb-[15px]"><strong>2. Commissions</strong><br/>You will earn commissions based on the global rates set by Getlands. Commissions are subject to a 7-day escrow cooling-off period to prevent chargebacks.</p>
-            <p className="mb-[15px]"><strong>3. Prohibited Conduct</strong><br/>You agree not to engage in self-referral fraud, misrepresent Getlands products, or collect cash directly from clients. All transactions must be paid directly to Getlands corporate accounts.</p>
-            <p><strong>4. Termination</strong><br/>Getlands reserves the right to demote or revoke Agent status at any time for violation of these terms.</p>
+          <div className="bg-[#f7f9f7] rounded-[12px] p-[20px] h-[350px] overflow-y-auto text-[13px] text-[#68736d] leading-relaxed mb-[30px] border border-black/5">
+            <p className="mb-[15px]">This Independent Sales Agent Agreement (the "Agreement") is entered into as of <strong>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong> by and between <strong>GETLANDS</strong> and <strong>{fullName}</strong> (the "Agent").</p>
+            
+            <p className="mb-[15px]"><strong>1. SCOPE OF ENGAGEMENT</strong><br/>The Company hereby appoints the Agent, and the Agent hereby accepts the appointment, to act as an independent marketer and referrer for the Company. The Agent agrees to use their best efforts to promote the Company's real estate and agricultural asset opportunities to prospective clients.</p>
+            
+            <p className="mb-[15px]"><strong>2. INDEPENDENT CONTRACTOR STATUS</strong><br/>The Agent is strictly engaged as an independent contractor. Nothing in this Agreement shall be construed to create an employer-employee relationship, partnership, or joint venture. The Agent shall not be entitled to any employee benefits, statutory pensions, or health insurance.</p>
+            
+            <p className="mb-[15px]"><strong>3. COMMISSION STRUCTURE & ESCROW</strong><br/>
+              <strong>3.1 Direct Sales:</strong> The Agent shall earn a 5% commission on the first transaction made by a directly referred client, and a 2% commission on all subsequent transactions by that client.<br/>
+              <strong>3.2 Escrow Period:</strong> To protect against payment chargebacks, reversals, or immediate refunds, all earned commissions shall be held in a mandatory 7-day escrow cooling-off period before being credited to the Agent's withdrawable wallet balance.
+            </p>
+
+            <p className="mb-[15px]"><strong>4. CODE OF CONDUCT & PROHIBITED ACTIONS</strong><br/>
+              <strong>(a) No Cash Collections:</strong> The Agent shall NEVER accept cash, bank transfers, or any form of direct payment from clients on behalf of the Company. All transactions MUST be processed directly into Getlands' official corporate bank accounts.<br/>
+              <strong>(b) No Fraudulent Referrals:</strong> The Agent shall not engage in self-referral fraud or create dummy accounts to generate illicit commissions.
+            </p>
+
+            <p className="mb-[15px]"><strong>5. CONFIDENTIALITY</strong><br/>The Agent shall keep all trade secrets, client data, and internal marketing strategies of the Company strictly confidential.</p>
+            
+            <p><strong>6. TERMINATION</strong><br/>The Company reserves the right to immediately terminate this Agreement, revoke the Agent's status, and forfeit any pending commissions if the Agent breaches any terms of this Agreement.</p>
           </div>
           <div className="flex justify-end gap-[15px]">
             <Link href="/dashboard" className="px-[20px] py-[12px] text-[14px] font-bold text-[#68736d] hover:text-ink transition-colors">Cancel & Exit</Link>
@@ -185,14 +200,17 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
         
         <div className={`mt-auto w-full ${isCollapsed ? 'px-[15px]' : ''} flex flex-col gap-[20px]`}>
           {!isCollapsed && (
-            <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5">
-              <h4 className="font-bold text-ink text-[14px] mb-[5px]">Earn up to {commissionRate}% commission</h4>
-              <p className="text-[#68736d] text-[12px] leading-relaxed mb-[15px]">
-                Paid directly to your wallet for closing deals.
-              </p>
-              <button className="w-full h-[40px] bg-[#182a20] text-white text-[13px] font-bold rounded-full hover:bg-black transition-colors shadow-md">
-                Get Invites
-              </button>
+            <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5 flex flex-col gap-[10px]">
+              <div>
+                <h4 className="font-bold text-ink text-[14px] mb-[5px]">Earn up to {commissionRate}% commission</h4>
+                <p className="text-[#68736d] text-[12px] leading-relaxed">
+                  Paid directly to your wallet for closing deals.
+                </p>
+              </div>
+              <a href="/api/documents/agent-contract" download className="w-full h-[40px] border border-[#008b45]/30 text-[#008b45] text-[12px] font-bold rounded-full hover:bg-[#008b45]/5 transition-colors flex items-center justify-center gap-[8px]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                My Agent Contract
+              </a>
             </div>
           )}
 
