@@ -121,3 +121,41 @@ export async function deleteHoldingAction(holdingId: string) {
   revalidatePath('/admin/sales');
   return { success: true };
 }
+
+export async function approveWithdrawalAction(transactionId: string) {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') throw new Error("Unauthorized");
+
+  const transaction = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    include: { user: true }
+  });
+
+  if (!transaction || transaction.type !== 'withdrawal' || transaction.status !== 'pending') {
+    return { error: 'Invalid or already processed transaction' };
+  }
+
+  await prisma.$transaction([
+    prisma.transaction.update({
+      where: { id: transactionId },
+      data: { status: 'success' }
+    }),
+    prisma.notification.create({
+      data: {
+        userId: transaction.userId,
+        type: 'TRANSACTION',
+        title: 'Withdrawal Successful',
+        message: `Your withdrawal of ₦${transaction.amount.toLocaleString()} has been processed and sent to your bank.`,
+      }
+    })
+  ]);
+
+  const { sendWithdrawalProcessedEmail } = await import('@/lib/email');
+  await sendWithdrawalProcessedEmail(transaction.user.email, transaction.user.firstName, transaction.amount);
+
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin/finance');
+  revalidatePath('/dashboard/wallet');
+
+  return { success: true };
+}

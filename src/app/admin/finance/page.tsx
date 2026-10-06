@@ -1,6 +1,7 @@
 import React from 'react';
 import { getMasterLedger, executePayoutAction } from '@/app/actions/accounting';
-import ClientPayoutRow from './ClientPayoutRow'; // We'll make this so admin can click "Pay"
+import ClientPayoutRow from './ClientPayoutRow';
+import ClientWithdrawalRow from './ClientWithdrawalRow';
 
 export default async function FinanceDashboard() {
   const ledger = await getMasterLedger();
@@ -94,6 +95,46 @@ export default async function FinanceDashboard() {
             </div>
           )}
         </div>
+      {/* Pending Withdrawals */}
+      <div className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col mt-[40px]">
+        <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex justify-between items-center">
+          <div>
+            <h3 className="font-manrope text-[16px] font-bold text-ink">Pending Withdrawal Requests</h3>
+            <p className="text-[13px] text-[#68736d]">Customers requesting to transfer their wallet balance to their bank account.</p>
+          </div>
+        </div>
+        
+        <div className="p-[20px]">
+          {ledger.pendingWithdrawals.length === 0 ? (
+            <div className="text-center p-[40px] bg-[#f7f9f7] rounded-[16px]">
+              <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-[15px]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <h3 className="font-manrope text-[16px] font-bold text-ink mb-[5px]">No Pending Withdrawals</h3>
+              <p className="text-[13px] text-[#68736d]">There are currently no active withdrawal requests.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-black/5 text-[11px] text-[#7a847f] uppercase tracking-wider">
+                    <th className="p-[10px_0] font-bold w-[120px]">Date</th>
+                    <th className="p-[10px] font-bold">Customer</th>
+                    <th className="p-[10px] font-bold">Bank Details</th>
+                    <th className="p-[10px] font-bold">Amount</th>
+                    <th className="p-[10px] font-bold text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {ledger.pendingWithdrawals.map(withdrawal => (
+                    <ClientWithdrawalRow key={withdrawal.id} withdrawal={withdrawal} formatCurrency={formatCurrency} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );

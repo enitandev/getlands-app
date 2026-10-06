@@ -179,3 +179,40 @@ export async function sendAgentPromotionEmail(email: string, firstName: string) 
 
   await sendResendEmail(email, 'Welcome to the Getlands Agent Network', html);
 }
+
+export async function sendWalletCreditEmail(to: string, userName: string, amount: number, title: string) {
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-w: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #008b45; padding: 20px; text-align: center; color: white;">
+        <h2 style="margin: 0;">Wallet Credited!</h2>
+      </div>
+      <div style="padding: 30px;">
+        <p>Hello ${userName},</p>
+        <p>Your Getlands Wallet has just been credited with <strong>₦${amount.toLocaleString()}</strong> for your <strong>${title}</strong> return.</p>
+        <p>You can keep these funds in your wallet for future acquisitions or withdraw them directly to your verified bank account at any time.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://www.getlands.shop/dashboard/wallet" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Wallet</a>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 40px;">If you have any questions, please contact support.</p>
+      </div>
+    </div>
+  `;
+  await sendResendEmail(to, "Your Getlands Wallet has been credited", html);
+}
+
+export async function sendWithdrawalProcessedEmail(to: string, userName: string, amount: number) {
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-w: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #008b45; padding: 20px; text-align: center; color: white;">
+        <h2 style="margin: 0;">Withdrawal Processed</h2>
+      </div>
+      <div style="padding: 30px;">
+        <p>Hello ${userName},</p>
+        <p>Good news! Your withdrawal request for <strong>₦${amount.toLocaleString()}</strong> has been successfully processed and sent to your bank account.</p>
+        <p>Please note that depending on your bank, it may take a few minutes to reflect in your account.</p>
+        <p style="font-size: 12px; color: #666; margin-top: 40px;">Thank you for trusting Getlands!</p>
+      </div>
+    </div>
+  `;
+  await sendResendEmail(to, "Your Withdrawal has been Processed", html);
+}

@@ -60,13 +60,24 @@ export async function getMasterLedger() {
 
   const totalUpcomingPayouts = upcomingPayouts.reduce((sum, p) => sum + p.amount, 0);
 
+  const pendingWithdrawals = await prisma.transaction.findMany({
+    where: { type: 'withdrawal', status: 'pending' },
+    include: {
+      user: {
+        include: { bankAccounts: { where: { status: 'active' } } }
+      }
+    },
+    orderBy: { date: 'asc' }
+  });
+
   return {
     aum: activeHoldings._sum.totalAmount || 0,
     walletLiabilities: wallets._sum.walletBalance || 0,
     totalIncoming,
     totalOutgoing: outgoing._sum.amount || 0,
     upcomingPayouts,
-    totalUpcomingPayouts
+    totalUpcomingPayouts,
+    pendingWithdrawals
   };
 }
 
@@ -133,7 +144,7 @@ export async function executePayoutAction(payoutId: string) {
 
   const payout = await prisma.payoutSchedule.findUnique({
     where: { id: payoutId },
-    include: { holding: { include: { opportunity: true } } }
+    include: { holding: { include: { opportunity: true } }, user: true }
   });
 
   if (!payout || payout.status !== 'PENDING') {
@@ -179,6 +190,9 @@ export async function executePayoutAction(payoutId: string) {
         }
       });
     });
+
+    const { sendWalletCreditEmail } = await import('@/lib/email');
+    await sendWalletCreditEmail(payout.user.email, payout.user.firstName, payout.amount, payout.holding.opportunity.title);
 
     revalidatePath('/admin/finance');
     return { success: true };
