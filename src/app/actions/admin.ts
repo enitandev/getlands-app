@@ -240,7 +240,7 @@ export async function approveTransaction(transactionId: string) {
       });
 
       // Check referral bonus
-      await triggerReferralBonus(tx.userId, tx.amount);
+      await triggerReferralBonus(tx.userId, tx.amount, holding.id);
       
       // Update cohort committed amount if holding is tied to a cohort
       if (holding.cohortId) {

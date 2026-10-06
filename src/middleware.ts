@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { decrypt } from '@/lib/session'
 
-const protectedRoutes = ['/dashboard', '/admin', '/checkout']
+const protectedRoutes = ['/dashboard', '/admin', '/checkout', '/agent']
 
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
@@ -13,17 +13,27 @@ export async function middleware(request: NextRequest) {
   // Create response object early so we can attach cookies if needed
   let response = NextResponse.next();
 
-  // 2. Auth Protection
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  // 2. Auth Protection & Redirects
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  const isAuthRoute = pathname === '/login' || pathname === '/register';
   
+  const session = request.cookies.get('session')?.value;
+  const payload = session ? await decrypt(session) : null;
+
   if (isProtectedRoute) {
-    const session = request.cookies.get('session')?.value
-    const payload = await decrypt(session)
-    
     if (!payload?.userId) {
-      response = NextResponse.redirect(new URL('/login', request.url))
+      response = NextResponse.redirect(new URL('/login', request.url));
     } else if (pathname.startsWith('/admin') && payload.role !== 'admin') {
-      response = NextResponse.redirect(new URL('/dashboard', request.url))
+      response = NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  } else if (isAuthRoute && payload?.userId) {
+    // If logged in and trying to access login/register, redirect to their dashboard
+    if (payload.role === 'admin') {
+      response = NextResponse.redirect(new URL('/admin', request.url));
+    } else if (payload.role === 'sales') {
+      response = NextResponse.redirect(new URL('/agent', request.url));
+    } else {
+      response = NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
 

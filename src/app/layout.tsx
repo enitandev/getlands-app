@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
+import PWARegistration from "@/components/PWARegistration";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -14,6 +15,13 @@ const manrope = Manrope({
   subsets: ["latin"],
   weight: ["500", "600", "700", "800"],
 });
+
+export const viewport: Viewport = {
+  themeColor: "#008b45",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1, // Prevents zooming on inputs in iOS
+};
 
 export const metadata: Metadata = {
   title: "Getlands | Premium Real-Asset Marketplace",
@@ -38,6 +46,20 @@ export const metadata: Metadata = {
     title: "Getlands | Premium Real-Asset Marketplace",
     description: "Discover verified land, fractional farm cycles, and high-yield land banking opportunities.",
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Getlands",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: [
+      { url: '/assets/pwa/apple-touch-icon.png' },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -53,6 +75,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink overflow-x-hidden" suppressHydrationWarning>
         <div className="grain pointer-events-none fixed inset-0 z-[100] opacity-[0.025]" />
         <ToastContainer />
+        <PWARegistration />
         {children}
       </body>
     </html>
