@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { formatCurrency } from '@/lib/mockData';
 import { createLeadAction, deleteLeadAction, updateLeadStatusAction } from '@/app/actions/admin-ops';
 
-export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }: { initialLeads: any[], agents: any[], pendingDrafts?: any[] }) {
+export default function ClientSales({ initialLeads, agents, pendingDrafts = [], commissions = [] }: { initialLeads: any[], agents: any[], pendingDrafts?: any[], commissions?: any[] }) {
   const [activeTab, setActiveTab] = useState('drafts');
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [isReleasing, setIsReleasing] = useState(false);
 
   const handleCreateLead = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,6 +25,21 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }
     alert('Draft approved successfully!');
   };
 
+  const handleManualRelease = async () => {
+    if (!confirm("Are you sure you want to release ALL due commissions from escrow to agents' wallets right now?")) return;
+    setIsReleasing(true);
+    try {
+      const { releaseDueCommissionsAction } = await import('@/app/actions/admin-ops');
+      const res = await releaseDueCommissionsAction();
+      alert(`Successfully released ${res.count} commissions.`);
+    } catch (e: any) {
+      alert(`Error: ${e.message}`);
+    }
+    setIsReleasing(false);
+  };
+
+  const pendingCommissionsCount = commissions.filter(c => c.status === 'PENDING').length;
+
   return (
     <div className="space-y-[30px]">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-[20px]">
@@ -36,10 +52,15 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }
             + New Lead
           </button>
         )}
+        {activeTab === 'commissions' && (
+          <button disabled={isReleasing} onClick={handleManualRelease} className="px-[24px] py-[12px] bg-amber-500 text-white text-[14px] font-bold rounded-full hover:bg-amber-600 transition-colors shadow-[0_8px_20px_rgba(245,166,35,0.2)]">
+            {isReleasing ? 'Releasing...' : 'Release Due Commissions'}
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-[30px] border-b border-black/5">
+      <div className="flex gap-[30px] border-b border-black/5 overflow-x-auto scrollbar-hide">
         <button onClick={() => setActiveTab('drafts')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative flex items-center gap-[8px] ${activeTab === 'drafts' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
           Pending Drafts
           {pendingDrafts.length > 0 && (
@@ -48,6 +69,15 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }
             </span>
           )}
           {activeTab === 'drafts' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
+        </button>
+        <button onClick={() => setActiveTab('commissions')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative flex items-center gap-[8px] ${activeTab === 'commissions' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
+          Commissions (Escrow)
+          {pendingCommissionsCount > 0 && (
+            <span className="bg-amber-500 text-white text-[10px] px-[6px] py-[2px] rounded-full flex items-center justify-center">
+              {pendingCommissionsCount}
+            </span>
+          )}
+          {activeTab === 'commissions' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
         <button onClick={() => setActiveTab('leads')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'leads' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
           Lead Pipeline
@@ -213,6 +243,39 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [] }
       )}
 
       {/* Drafts Content */}
+            {activeTab === 'commissions' && (
+        <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
+          <div className="hidden lg:grid grid-cols-[1.5fr_2fr_1fr_1fr_120px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
+            <div>Date</div>
+            <div>Agent</div>
+            <div>Holding Ref</div>
+            <div>Amount</div>
+            <div>Status</div>
+          </div>
+          {commissions.length === 0 ? (
+            <div className="p-[40px] text-center text-[#68736d] text-[14px]">No commissions recorded yet.</div>
+          ) : (
+            commissions.map((comm: any) => (
+              <div key={comm.id} className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr_1fr_1fr_120px] gap-[12px] lg:gap-[20px] p-[20px_24px] border-b border-black/5 last:border-0 items-center">
+                <div className="text-[13px] text-[#68736d]">{new Date(comm.createdAt).toLocaleDateString()}</div>
+                <div className="font-bold text-[14px] text-ink">{comm.agent?.firstName} {comm.agent?.lastName}</div>
+                <div className="text-[13px] text-ink font-mono">{comm.holding?.referenceCode || 'N/A'}</div>
+                <div className="font-bold text-[14px] text-[#008b45]">{formatCurrency(comm.amount)}</div>
+                <div>
+                  <span className={`inline-flex px-[8px] py-[4px] rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    comm.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                    comm.status === 'PAID' ? 'bg-green-100 text-green-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    {comm.status}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {activeTab === 'drafts' && (
         <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
           <div className="hidden lg:grid grid-cols-[1.5fr_2fr_1fr_1.5fr_120px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">

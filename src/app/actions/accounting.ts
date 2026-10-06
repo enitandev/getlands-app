@@ -13,10 +13,15 @@ export async function getMasterLedger() {
     _sum: { totalAmount: true }
   });
 
-  // Total Wallet Liabilities: Sum of all customers' walletBalance
+  // Total Wallet Liabilities: Sum of all users' walletBalance (customers and agents)
   const wallets = await prisma.user.aggregate({
-    where: { role: 'customer' },
     _sum: { walletBalance: true }
+  });
+
+  // Total Escrow Liabilities: Pending agent commissions
+  const escrow = await prisma.commission.aggregate({
+    where: { status: 'PENDING' },
+    _sum: { amount: true }
   });
 
   // Total Incoming: Successful deposits + direct investments (not from wallet)
@@ -73,6 +78,7 @@ export async function getMasterLedger() {
   return {
     aum: activeHoldings._sum.totalAmount || 0,
     walletLiabilities: wallets._sum.walletBalance || 0,
+    escrowLiabilities: escrow._sum.amount || 0,
     totalIncoming,
     totalOutgoing: outgoing._sum.amount || 0,
     upcomingPayouts,

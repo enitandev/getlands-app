@@ -77,15 +77,23 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
   }, []);
   
   const navItems = [
-    { name: 'Agent Overview', path: '/agent', icon: Icons.Overview },
+    { name: 'Overview', path: '/agent', icon: Icons.Overview },
     { name: 'My Clients', path: '/agent/network', icon: Icons.Referrals },
+    { name: 'Earnings', path: '/agent/earnings', icon: Icons.Wallet },
+    { name: 'My Team', path: '/agent/team', icon: Icons.Referrals },
     { name: 'Draft Portfolio', path: '/agent/draft', icon: Icons.Holdings },
     { name: 'Wallet', path: '/dashboard/wallet', icon: Icons.Wallet },
     { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Personal Account', path: '/dashboard', icon: Icons.Marketplace },
   ];
 
-  const mobileNavItems = navItems.slice(0, 5);
+  const mobileNavItems = [
+    { name: 'Home', path: '/agent', icon: Icons.Overview },
+    { name: 'Clients', path: '/agent/network', icon: Icons.Referrals },
+    { name: 'Earnings', path: '/agent/earnings', icon: Icons.Wallet },
+    { name: 'Team', path: '/agent/team', icon: Icons.Referrals },
+    { name: 'Drafts', path: '/agent/draft', icon: Icons.Holdings },
+  ];
 
   const handleReturnToAdmin = async () => {
     const { revertImpersonationAction } = await import('@/app/actions/auth');
@@ -270,9 +278,9 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
           <span className="text-[11px] font-bold text-ink">Draft</span>
         </Link>
         
-        <Link href="/dashboard/wallet" className="flex flex-col items-center gap-[4px] text-[#a1aba6]">
+        <Link href="/agent/earnings" className={`flex flex-col items-center gap-[4px] ${pathname.startsWith('/agent/earnings') ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
           <div className="scale-[0.8]">{Icons.Wallet}</div>
-          <span className="text-[10px] font-bold">Wallet</span>
+          <span className="text-[10px] font-bold">Earnings</span>
         </Link>
         
         <Link href="/dashboard" className="flex flex-col items-center gap-[4px] text-[#a1aba6]">

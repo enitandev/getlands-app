@@ -159,3 +159,56 @@ export async function approveWithdrawalAction(transactionId: string) {
 
   return { success: true };
 }
+
+export async function releaseDueCommissionsAction() {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') throw new Error("Unauthorized");
+
+  // Call the same logic as the cron job via fetch
+  // Wait, I can just copy the logic or call the endpoint.
+  // Actually, Server Actions can just do it directly.
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const pendingCommissions = await prisma.commission.findMany({
+      where: {
+        status: 'PENDING',
+        createdAt: { lte: sevenDaysAgo }
+      },
+      include: { holding: true, agent: true }
+    });
+
+    if (pendingCommissions.length === 0) return { success: true, count: 0 };
+
+    let releasedCount = 0;
+    for (const commission of pendingCommissions) {
+      if (!commission.holding || ['cancelled', 'refunded'].includes(commission.holding.status.toLowerCase())) {
+        await prisma.commission.update({ where: { id: commission.id }, data: { status: 'VOID' } });
+        continue;
+      }
+      if (commission.holding.status.toLowerCase() === 'pending') continue;
+
+      const transactions = [
+        prisma.commission.update({ where: { id: commission.id }, data: { status: 'PAID' } }),
+        prisma.user.update({ where: { id: commission.agentId }, data: { walletBalance: { increment: commission.amount } } }),
+        prisma.transaction.create({
+          data: { userId: commission.agentId, type: 'commission_payout', amount: commission.amount, status: 'success', reference: `COMM-${commission.id.substring(0, 8).toUpperCase()}` }
+        }),
+        prisma.notification.create({
+          data: { userId: commission.agentId, title: "Commission Released!", message: `Your ₦${commission.amount.toLocaleString()} commission has exited escrow and is now in your wallet.`, type: "TRANSACTION", linkUrl: "/dashboard/wallet", actionText: "View Wallet" }
+        })
+      ];
+      await prisma.$transaction(transactions);
+      
+      const { sendWalletCreditEmail } = await import('@/lib/email');
+      await sendWalletCreditEmail(commission.agent.email, commission.agent.firstName, commission.amount, `Commission payout for holding ${commission.holding.referenceCode}`);
+      releasedCount++;
+    }
+    revalidatePath('/admin/finance');
+    revalidatePath('/admin/sales');
+    return { success: true, count: releasedCount };
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+}

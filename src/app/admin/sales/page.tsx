@@ -28,5 +28,13 @@ export default async function AdminSalesPage() {
     orderBy: { dateAcquired: 'desc' }
   });
 
-  return <ClientSales initialLeads={leads} agents={agents} pendingDrafts={pendingDrafts} />;
+  const commissions = await prisma.commission.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      agent: { select: { firstName: true, lastName: true } },
+      holding: { select: { referenceCode: true } }
+    }
+  });
+
+  return <ClientSales initialLeads={leads} agents={agents} pendingDrafts={pendingDrafts} commissions={commissions} />;
 }

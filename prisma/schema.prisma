@@ -56,6 +56,7 @@ model User {
   transactions          Transaction[]
   notifications         Notification[]
   commissions           Commission[]
+  prospects             Prospect[]   @relation("AgentProspects")
   cohortReservations    CohortReservation[]
   shopOrders            ShopOrder[]
   shippingAddresses     ShippingAddress[]
@@ -424,4 +425,21 @@ model Message {
 
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id])
+}
+
+model Prospect {
+  id              String   @id @default(uuid())
+  agentId         String
+  name            String
+  phone           String?
+  email           String?
+  interestLevel   String   @default("WARM") // COLD, WARM, HOT
+  notes           String?
+  nextFollowUp    DateTime?
+  status          String   @default("PROSPECT") // PROSPECT, REGISTERED
+  convertedUserId String?  // If they register, link to their User ID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agent           User     @relation("AgentProspects", fields: [agentId], references: [id])
 }

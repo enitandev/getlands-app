@@ -29,10 +29,10 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
             </div>
             
             <div className="flex flex-col gap-[8px]">
-              <button disabled className="h-[45px] px-[24px] bg-white/10 text-white/50 font-bold text-[14px] rounded-full cursor-not-allowed w-fit">
-                Withdraw
-              </button>
-              <p className="text-[12px] text-[#a6baa9]">Commission payouts to your wallet are opening soon.</p>
+              <Link href="/dashboard/wallet" className="h-[45px] px-[24px] bg-[#008b45] hover:bg-[#007339] text-white font-bold text-[14px] rounded-full transition-colors shadow-lg flex items-center justify-center w-fit">
+                Withdraw to Bank
+              </Link>
+              <p className="text-[12px] text-[#a6baa9]">Commissions are paid directly to your main wallet.</p>
             </div>
           </div>
         </div>
@@ -50,12 +50,16 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
           <div className="bg-white border border-black/5 rounded-[24px] p-[25px] flex-1 flex flex-col justify-center relative overflow-hidden group">
             <h3 className="text-[#68736d] text-[13px] font-bold tracking-wider uppercase mb-[5px]">My Network</h3>
             <div className="text-[24px] font-manrope font-bold text-ink leading-none mb-[10px]">
-              {networkCount} Clients & Agents
+              {networkCount} People
             </div>
-            <Link href="/agent/network" className="text-[#008b45] text-[13px] font-bold flex items-center gap-[5px] hover:underline">
-              View network pipeline
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </Link>
+            <div className="flex gap-[15px]">
+              <Link href="/agent/network" className="text-[#008b45] text-[13px] font-bold flex items-center gap-[5px] hover:underline">
+                Clients <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </Link>
+              <Link href="/agent/team" className="text-[#008b45] text-[13px] font-bold flex items-center gap-[5px] hover:underline">
+                Sub-agents <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </Link>
+            </div>
           </div>
         </div>
         
@@ -66,7 +70,12 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
 
       {/* Recent Commissions */}
       <div>
-        <h2 className="font-manrope text-[20px] font-bold text-ink mb-[20px]">Recent Commissions</h2>
+        <div className="flex items-center justify-between mb-[20px]">
+          <h2 className="font-manrope text-[20px] font-bold text-ink">Recent Commissions</h2>
+          <Link href="/agent/earnings" className="text-[#008b45] text-[13px] font-bold hover:underline">
+            View full ledger &rarr;
+          </Link>
+        </div>
         <div className="bg-white border border-black/5 rounded-[20px] overflow-hidden">
           {recentCommissions.length === 0 ? (
             <div className="p-[40px] text-center">

@@ -86,6 +86,23 @@ export async function registerAction(formData: FormData) {
     }
   });
 
+  // Match prospect if they were referred
+  if (referredById) {
+    const prospect = await prisma.prospect.findFirst({
+      where: { 
+        agentId: referredById, 
+        email: email,
+        status: 'PROSPECT'
+      }
+    });
+    if (prospect) {
+      await prisma.prospect.update({
+        where: { id: prospect.id },
+        data: { status: 'REGISTERED', convertedUserId: user.id }
+      });
+    }
+  }
+
   await createSession(user.id, user.role);
   await sendWelcomeEmail(user.email, user.firstName);
 
