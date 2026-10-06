@@ -26,6 +26,8 @@ export async function loginAction(formData: FormData) {
 
   if (user.role === 'admin') {
     redirect('/admin');
+  } else if (user.role === 'sales') {
+    redirect('/agent');
   } else {
     redirect('/dashboard');
   }
@@ -108,6 +110,8 @@ export async function registerAction(formData: FormData) {
 
   if (user.role === 'admin') {
     redirect('/admin');
+  } else if (user.role === 'sales') {
+    redirect('/agent');
   } else {
     redirect('/dashboard');
   }

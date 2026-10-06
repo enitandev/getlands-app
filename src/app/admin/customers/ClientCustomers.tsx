@@ -133,7 +133,7 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                         const { impersonateUserAction } = await import('@/app/actions/admin-customers');
                         const res = await impersonateUserAction(c.id);
                         if (res.success) {
-                          window.location.href = '/dashboard';
+                          window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
                         }
                       }}>
                       Login As {c.firstName}

@@ -194,7 +194,7 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [], 
                           const { impersonateUserAction } = await import('@/app/actions/admin-customers');
                           const res = await impersonateUserAction(agent.id);
                           if (res.success) {
-                            window.location.href = '/dashboard';
+                            window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
                           }
                         }}
                       >
