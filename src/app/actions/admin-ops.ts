@@ -110,9 +110,11 @@ export async function deleteHoldingAction(holdingId: string) {
   const session = await getSession();
   if (!session || session.role !== 'admin') throw new Error("Unauthorized");
 
-  await prisma.holding.delete({
-    where: { id: holdingId }
-  });
+  await prisma.$transaction([
+    prisma.payoutSchedule.deleteMany({ where: { holdingId } }),
+    prisma.commission.deleteMany({ where: { holdingId } }),
+    prisma.holding.delete({ where: { id: holdingId } })
+  ]);
 
   const { revalidatePath } = await import('next/cache');
   revalidatePath('/admin/customers');
