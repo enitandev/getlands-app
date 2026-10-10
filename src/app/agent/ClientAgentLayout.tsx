@@ -238,16 +238,14 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 h-full overflow-hidden">
         <header className="lg:hidden flex items-center justify-between px-[22px] h-[70px] bg-white border-b border-black/5 sticky top-0 z-40">
-          <Link href="/" className="brand block w-[110px]">
-            <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />
+          <Link href="/agent" className="flex items-center gap-[8px]">
+            <div className="w-[32px] h-[32px] bg-[#008b45] rounded-[8px] flex items-center justify-center text-white font-bold text-[14px]">
+              AP
+            </div>
+            <div className="font-manrope font-bold text-[18px] text-ink tracking-tight">Agent<span className="text-[#008b45]">Portal</span></div>
           </Link>
           <div className="flex items-center gap-[15px]">
-            <Link href="/dashboard/messages" className="relative text-[#68736d]">
-              <div className="scale-[0.9]">{Icons.Messages}</div>
-              {unreadMsg > 0 && <span className="absolute -top-[2px] -right-[2px] w-[10px] h-[10px] bg-red-500 rounded-full border-2 border-white"></span>}
-            </Link>
-            <NotificationDropdown notifications={notifications} />
-            <Link href="/dashboard/settings" className="w-[32px] h-[32px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#18201c] text-[12px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
+            <Link href="/dashboard/settings" className="w-[36px] h-[36px] rounded-full bg-[#f7f9f7] border border-black/5 flex items-center justify-center text-[#18201c] text-[13px] font-bold hover:bg-[#008b45] hover:text-white transition-colors shadow-sm">
               {initials}
             </Link>
           </div>
