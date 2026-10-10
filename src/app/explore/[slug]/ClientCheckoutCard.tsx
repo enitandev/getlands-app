@@ -21,7 +21,7 @@ export default function ClientCheckoutCard({ opp, plans }: { opp: any, plans?: a
 
   const handleAcquire = () => {
     const planParam = selectedPlanId ? `&plan=${selectedPlanId}` : '';
-    router.push(`/checkout?opp=${opp.slug}&qty=${qty}${planParam}`);
+    router.push(`/dashboard/checkout?opp=${opp.slug}&qty=${qty}${planParam}`);
   };
 
   const selectedPlan = plans?.find(p => p.id === selectedPlanId);

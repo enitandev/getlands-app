@@ -29,7 +29,7 @@ export default function ClientMarketplace({ user, opportunities = [], returnPlan
   const [selectedPlanId, setSelectedPlanId] = useState(returnPlans[0]?.id || "");
 
   const handleAcquire = (opp: any) => {
-    let url = `/checkout?opp=${opp.slug}&qty=1`; // It defaults to min amount
+    let url = `/dashboard/checkout?opp=${opp.slug}&qty=1`; // It defaults to min amount
     if (opp.category === 'farm' && returnPlans.length > 0) {
       url += `&plan=${returnPlans[1]?.id || returnPlans[0]?.id}`;
     }
@@ -67,12 +67,29 @@ export default function ClientMarketplace({ user, opportunities = [], returnPlan
           <h3 className="font-manrope font-bold text-[20px] text-white mb-[10px] leading-tight">{opp.title}</h3>
           
           {isFarm ? (
-            <div className="font-bold text-[24px] text-[#a9e7bd] leading-none mb-[15px]">
-              {returnPlans.length > 0 ? `Up to ${Math.max(...returnPlans.map((p: any) => p.ratePercent))}%` : (opp.projectedReturn || 'Variable')}
-              <span className="text-[13px] text-[#a6baa9] font-normal ml-[5px]">{returnPlans.length > 0 ? 'Flexible Returns' : (opp.projectedReturn ? '/ month' : '')}</span>
+            <div className="mb-[15px] space-y-2">
+              <div className="text-[12px] text-[#a6baa9] uppercase tracking-wider font-bold">Return Plans</div>
+              <div className="flex flex-wrap gap-2">
+                {returnPlans.length > 0 ? (
+                  returnPlans.map((plan: any) => (
+                    <div key={plan.id} className="bg-[#008b45]/10 border border-[#008b45]/20 rounded-lg px-2 py-1 flex flex-col">
+                      <span className="text-[#a9e7bd] font-bold text-[14px] leading-tight">{plan.ratePercent}%</span>
+                      <span className="text-[#a6baa9] text-[10px] uppercase font-bold tracking-wider">{plan.intervalMonths} Months</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="font-bold text-[24px] text-[#a9e7bd] leading-none mb-[15px]">
+                    {opp.projectedReturn || 'Variable'}
+                    <span className="text-[13px] text-[#a6baa9] font-normal ml-[5px]">{opp.projectedReturn ? '/ month' : ''}</span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="font-bold text-[24px] text-[#a9e7bd] leading-none mb-[15px]">{formatCurrency(opp.price || opp.pricePerUnit || opp.acquisitionPrice || 0)}</div>
+            <div className="font-bold text-[24px] text-[#a9e7bd] leading-none mb-[15px]">
+              {formatCurrency(opp.price || opp.pricePerUnit || opp.acquisitionPrice || 0).replace('.00', '')}
+              {isLand ? <span className="text-[13px] text-[#a6baa9] font-normal ml-[5px]">/ plot</span> : ''}
+            </div>
           )}
           
           {oppCohort?.closesAt ? (

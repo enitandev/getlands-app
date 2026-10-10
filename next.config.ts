@@ -7,11 +7,6 @@ const nextConfig: NextConfig = {
         source: '/join',
         destination: '/register',
         permanent: true,
-      },
-      {
-        source: '/partners',
-        destination: '/register',
-        permanent: true,
       }
     ]
   }

@@ -51,7 +51,13 @@ export async function registerAction(formData: FormData) {
   const [firstName, ...lastNameParts] = name.split(' ');
   const lastName = lastNameParts.join(' ') || 'User';
 
-  const role = email.toLowerCase() === 'getlands.shop@gmail.com' ? 'admin' : 'customer';
+  const requestedRole = formData.get('role') as string;
+  let role = 'customer';
+  if (requestedRole === 'sales') {
+    role = 'sales';
+  } else if (email.toLowerCase() === 'getlands.shop@gmail.com') {
+    role = 'admin';
+  }
 
   const bcrypt = require('bcryptjs');
   const hashedPassword = await bcrypt.hash(password, 10);

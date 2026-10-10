@@ -273,7 +273,7 @@ export default function ClientDashboardOverview({ user, opportunities = [], retu
               <button 
                 onClick={() => {
                   const qty = Math.max(1, Math.round(selectedAmount / minAmount));
-                  let url = `/checkout?opp=${currentOpp.slug}&qty=${qty}`;
+                  let url = `/dashboard/checkout?opp=${currentOpp.slug}&qty=${qty}`;
                   if (currentOpp.category === 'farm' && selectedPlanId) url += `&plan=${selectedPlanId}`;
                   router.push(url);
                 }}

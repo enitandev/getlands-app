@@ -4,11 +4,12 @@ import { formatCurrency } from '@/lib/mockData';
 import { checkoutAction } from '@/app/actions/checkout';
 import { toast } from '@/components/ui/Toast';
 
-export default function ClientCheckout({ opportunity: opp, walletBalance, user, quantity = 1, settings, selectedPlan }: { opportunity: any, walletBalance: number, user?: any, quantity?: number, settings?: any, selectedPlan?: any }) {
+export default function ClientCheckout({ opportunity: opp, walletBalance, user, quantity: initialQuantity = 1, settings, selectedPlan }: { opportunity: any, walletBalance: number, user?: any, quantity?: number, settings?: any, selectedPlan?: any }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [qty, setQty] = useState(initialQuantity);
   
   // Timer state (25 minutes)
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -36,7 +37,7 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
   };
 
   const unitPrice = getPrice();
-  const total = unitPrice * quantity;
+  const total = unitPrice * qty;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -49,7 +50,7 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
     fd.append("opportunityId", opp.id);
     fd.append("paymentMethod", paymentMethod);
     fd.append("totalAmount", total.toString());
-    fd.append("units", quantity.toString());
+    fd.append("units", qty.toString());
     if (selectedPlan) {
       fd.append("planId", selectedPlan.id);
     }
@@ -62,7 +63,7 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
   };
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 lg:gap-12 py-8">
+    <div className="max-w-6xl mx-auto flex flex-col-reverse lg:flex-row gap-8 lg:gap-12 py-8 lg:px-0 px-4">
       
       {/* LEFT COLUMN - MAIN CONTENT */}
       <div className="flex-1">
@@ -205,18 +206,33 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
             <div className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden shrink-0">
               <img src={opp.coverImage} alt={opp.title} className="w-full h-full object-cover" />
             </div>
-            <div>
-              <h4 className="font-bold text-[15px] text-[#1a1a1a] line-clamp-1">{opp.title} {quantity > 1 && <span className="text-[#008b45] ml-1">x{quantity}</span>}</h4>
-              <p className="text-[13px] text-gray-500 line-clamp-1">{opp.location}</p>
-              <div className="flex gap-2 mt-1">
-                <div className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-bold uppercase tracking-wider rounded-md">
-                  {opp.category.replace('_', ' ')}
-                </div>
-                {selectedPlan && (
-                  <div className="inline-block px-2 py-0.5 bg-[#008b45]/10 text-[#008b45] text-[11px] font-bold uppercase tracking-wider rounded-md">
-                    {selectedPlan.name}
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-[15px] text-[#1a1a1a] line-clamp-1">{opp.title}</h4>
+              <p className="text-[13px] text-gray-500 line-clamp-1 mb-2">{opp.location}</p>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  <div className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-bold uppercase tracking-wider rounded-md">
+                    {opp.category.replace('_', ' ')}
                   </div>
-                )}
+                  {selectedPlan && (
+                    <div className="inline-block px-2 py-0.5 bg-[#008b45]/10 text-[#008b45] text-[11px] font-bold uppercase tracking-wider rounded-md">
+                      {selectedPlan.name}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden h-[30px]">
+                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-[30px] h-full flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-ink transition-colors disabled:opacity-30" disabled={qty <= 1}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  </button>
+                  <div className="w-[30px] h-full flex items-center justify-center text-[13px] font-bold text-ink border-x border-gray-200 bg-white">
+                    {qty}
+                  </div>
+                  <button onClick={() => setQty(qty + 1)} className="w-[30px] h-full flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-ink transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
