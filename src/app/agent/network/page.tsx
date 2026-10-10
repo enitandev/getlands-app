@@ -2,6 +2,7 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import ClientAgentNetwork from './ClientAgentNetwork';
+import { ensureReferralCode } from '@/lib/generateReferralCode';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +11,12 @@ export default async function AgentNetworkPage() {
   const agentId = session?.userId as string;
 
   const user = await prisma.user.findUnique({
-    where: { id: agentId },
-    select: { referralCode: true }
+    where: { id: agentId }
   });
+
+  if (user && !user.referralCode) {
+    user.referralCode = await ensureReferralCode(user);
+  }
 
   const clientsData = await prisma.user.findMany({
     where: { referredById: agentId },

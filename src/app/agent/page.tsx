@@ -2,6 +2,7 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import ClientAgentOverview from './ClientAgentOverview';
+import { ensureReferralCode } from '@/lib/generateReferralCode';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,10 @@ export default async function AgentOverviewPage() {
   const user = await prisma.user.findUnique({
     where: { id: userId }
   });
+
+  if (user && !user.referralCode) {
+    user.referralCode = await ensureReferralCode(user);
+  }
 
   const myNetwork = await prisma.user.count({
     where: { referredById: userId }
