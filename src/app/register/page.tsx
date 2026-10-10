@@ -66,6 +66,12 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            <div>
+              <label htmlFor="referralCode" className="block text-[13px] font-bold text-[#1a1a1a] mb-2">Referral Code (Optional)</label>
+              <input id="referralCode" name="referralCode" type="text" className="appearance-none block w-full h-[52px] px-4 bg-[#f9faf9] border border-transparent rounded-[14px] focus:bg-white focus:outline-none focus:border-[#008b45] focus:ring-4 focus:ring-[#008b45]/10 transition-all sm:text-[15px] uppercase" placeholder="e.g. EME-1A2B" />
+              <p className="mt-2 text-[12px] text-gray-500">If you were referred by an agent, enter their code here.</p>
+            </div>
+
             <div className="pt-2">
               <button type="submit" disabled={loading} className="w-full flex justify-center items-center h-[52px] px-4 border border-transparent rounded-full shadow-[0_8px_20px_rgba(0,139,69,0.2)] text-[15px] font-bold text-white bg-[#008b45] hover:bg-[#007339] focus:outline-none focus:ring-4 focus:ring-[#008b45]/20 disabled:opacity-50 transition-all">
                 {loading ? 'Creating account...' : 'Create Account'}

@@ -65,10 +65,17 @@ export async function registerAction(formData: FormData) {
   // Referral Handling
   let referredById = null;
   const cookieStore = await cookies();
-  const refCode = cookieStore.get('ref_code')?.value;
+  const formRefCode = formData.get('referralCode') as string;
+  const refCode = formRefCode || cookieStore.get('ref_code')?.value;
+  
   if (refCode) {
-    const referrer = await prisma.user.findUnique({ where: { referralCode: refCode } });
-    if (referrer) referredById = referrer.id;
+    const referrer = await prisma.user.findUnique({ where: { referralCode: refCode.toUpperCase().trim() } });
+    if (referrer) {
+      referredById = referrer.id;
+    } else if (formRefCode) {
+      // If they explicitly typed a code and it's invalid, block registration
+      return { error: 'Invalid referral code. Please check and try again.' };
+    }
   }
 
   // Generate a unique referral code for the new user
