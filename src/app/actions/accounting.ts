@@ -7,40 +7,6 @@ export async function getMasterLedger() {
   const session = await getSession();
   if (session?.role !== 'admin') throw new Error("Unauthorized");
 
-  // AUM: Sum of active holdings
-  const activeHoldings = await prisma.holding.aggregate({
-    where: { status: 'active' },
-    _sum: { totalAmount: true }
-  });
-
-  // Total Wallet Liabilities: Sum of all users' walletBalance (customers and agents)
-  const wallets = await prisma.user.aggregate({
-    _sum: { walletBalance: true }
-  });
-
-  // Total Escrow Liabilities: Pending agent commissions
-  const escrow = await prisma.commission.aggregate({
-    where: { status: 'PENDING' },
-    _sum: { amount: true }
-  });
-
-  // Total Incoming: Successful deposits + direct investments (not from wallet)
-  const deposits = await prisma.transaction.aggregate({
-    where: { status: 'success', type: 'deposit' },
-    _sum: { amount: true }
-  });
-  const directInvestments = await prisma.transaction.aggregate({
-    where: { status: 'success', type: 'investment', NOT: { reference: { startsWith: 'INV-W-' } } },
-    _sum: { amount: true }
-  });
-  const totalIncoming = (deposits._sum.amount || 0) + (directInvestments._sum.amount || 0);
-
-  // Total Outgoing: Successful withdrawals
-  const outgoing = await prisma.transaction.aggregate({
-    where: { status: 'success', type: 'withdrawal' },
-    _sum: { amount: true }
-  });
-
   // Payouts Due Soon (this month)
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -51,29 +17,64 @@ export async function getMasterLedger() {
   endOfMonth.setDate(0);
   endOfMonth.setHours(23, 59, 59, 999);
 
-  const upcomingPayouts = await prisma.payoutSchedule.findMany({
-    where: { 
-      status: 'PENDING',
-      dueDate: { lte: endOfMonth }
-    },
-    include: {
-      user: { select: { firstName: true, lastName: true, email: true } },
-      holding: { include: { opportunity: true } }
-    },
-    orderBy: { dueDate: 'asc' }
-  });
+  // Execute all aggregations and queries concurrently in parallel
+  const [
+    activeHoldings,
+    wallets,
+    escrow,
+    deposits,
+    directInvestments,
+    outgoing,
+    upcomingPayouts,
+    pendingWithdrawals
+  ] = await Promise.all([
+    prisma.holding.aggregate({
+      where: { status: 'active' },
+      _sum: { totalAmount: true }
+    }),
+    prisma.user.aggregate({
+      _sum: { walletBalance: true }
+    }),
+    prisma.commission.aggregate({
+      where: { status: 'PENDING' },
+      _sum: { amount: true }
+    }),
+    prisma.transaction.aggregate({
+      where: { status: 'success', type: 'deposit' },
+      _sum: { amount: true }
+    }),
+    prisma.transaction.aggregate({
+      where: { status: 'success', type: 'investment', NOT: { reference: { startsWith: 'INV-W-' } } },
+      _sum: { amount: true }
+    }),
+    prisma.transaction.aggregate({
+      where: { status: 'success', type: 'withdrawal' },
+      _sum: { amount: true }
+    }),
+    prisma.payoutSchedule.findMany({
+      where: { 
+        status: 'PENDING',
+        dueDate: { lte: endOfMonth }
+      },
+      include: {
+        user: { select: { firstName: true, lastName: true, email: true } },
+        holding: { include: { opportunity: true } }
+      },
+      orderBy: { dueDate: 'asc' }
+    }),
+    prisma.transaction.findMany({
+      where: { type: 'withdrawal', status: 'pending' },
+      include: {
+        user: {
+          include: { bankAccounts: { where: { status: 'active' } } }
+        }
+      },
+      orderBy: { date: 'asc' }
+    })
+  ]);
 
+  const totalIncoming = (deposits._sum.amount || 0) + (directInvestments._sum.amount || 0);
   const totalUpcomingPayouts = upcomingPayouts.reduce((sum, p) => sum + p.amount, 0);
-
-  const pendingWithdrawals = await prisma.transaction.findMany({
-    where: { type: 'withdrawal', status: 'pending' },
-    include: {
-      user: {
-        include: { bankAccounts: { where: { status: 'active' } } }
-      }
-    },
-    orderBy: { date: 'asc' }
-  });
 
   return {
     aum: activeHoldings._sum.totalAmount || 0,

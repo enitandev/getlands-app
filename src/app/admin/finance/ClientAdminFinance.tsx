@@ -1,31 +1,131 @@
 "use client";
-import React, { useState } from 'react';
-import { approveTransaction, rejectTransaction } from '@/app/actions/admin';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { approveTransaction, rejectTransaction, bulkApproveTransactions, bulkRejectTransactions } from '@/app/actions/admin';
 import { formatCurrency } from '@/lib/mockData';
+import { toast } from '@/components/ui/Toast';
 import ClientPayoutRow from './ClientPayoutRow';
 import ClientWithdrawalRow from './ClientWithdrawalRow';
 
 export default function ClientAdminFinance({ transactions = [], ledger }: { transactions: any[], ledger?: any }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'pending' | 'history' | 'ledger'>('pending');
+  const [txList, setTxList] = useState<any[]>(transactions);
   const [selectedTx, setSelectedTx] = useState<any | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-  const pendingTxs = transactions.filter(t => t.status === 'pending');
-  const historyTxs = transactions.filter(t => t.status !== 'pending');
+  useEffect(() => {
+    setTxList(transactions);
+  }, [transactions]);
+
+  const pendingTxs = txList.filter(t => t.status === 'pending');
+  const historyTxs = txList.filter(t => t.status !== 'pending');
+
+  const selectedTotal = pendingTxs
+    .filter(t => selectedIds.includes(t.id))
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === pendingTxs.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(pendingTxs.map(t => t.id));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
 
   const handleApprove = async (id: string) => {
-    await approveTransaction(id);
-    setSelectedTx(null);
-    window.location.reload();
+    setIsProcessing(id);
+    try {
+      const res = await approveTransaction(id);
+      if (res?.error) {
+        toast(res.error, 'error');
+      } else {
+        toast('Payment verified and holding activated!', 'success');
+        setTxList(prev => prev.map(t => t.id === id ? { ...t, status: 'success' } : t));
+        setSelectedTx(null);
+        setSelectedIds(prev => prev.filter(item => item !== id));
+        router.refresh();
+      }
+    } catch (err: any) {
+      toast(err.message || 'Approval failed', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
 
   const handleReject = async (id: string) => {
-    await rejectTransaction(id);
-    setSelectedTx(null);
-    window.location.reload();
+    setIsProcessing(id);
+    try {
+      const res = await rejectTransaction(id);
+      if (res?.error) {
+        toast(res.error, 'error');
+      } else {
+        toast('Transaction rejected', 'info');
+        setTxList(prev => prev.map(t => t.id === id ? { ...t, status: 'failed' } : t));
+        setSelectedTx(null);
+        setSelectedIds(prev => prev.filter(item => item !== id));
+        router.refresh();
+      }
+    } catch (err: any) {
+      toast(err.message || 'Rejection failed', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to approve ${selectedIds.length} transfers totaling ${formatCurrency(selectedTotal)}? This will activate all holdings and trigger referral bonuses.`)) return;
+
+    setIsProcessing('bulk-approve');
+    try {
+      const res = await bulkApproveTransactions(selectedIds);
+      if (res?.success) {
+        toast(`Successfully approved ${res.count} transactions!`, 'success');
+        setTxList(prev => prev.map(t => selectedIds.includes(t.id) ? { ...t, status: 'success' } : t));
+        setSelectedIds([]);
+        router.refresh();
+      } else {
+        toast('Bulk approval failed', 'error');
+      }
+    } catch (e: any) {
+      toast(e.message || 'Bulk approval failed', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to reject ${selectedIds.length} pending transfers?`)) return;
+
+    setIsProcessing('bulk-reject');
+    try {
+      const res = await bulkRejectTransactions(selectedIds);
+      if (res?.success) {
+        toast(`Successfully rejected ${res.count} transactions`, 'info');
+        setTxList(prev => prev.map(t => selectedIds.includes(t.id) ? { ...t, status: 'failed' } : t));
+        setSelectedIds([]);
+        router.refresh();
+      } else {
+        toast('Bulk rejection failed', 'error');
+      }
+    } catch (e: any) {
+      toast(e.message || 'Bulk rejection failed', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
 
   return (
-    <div className="space-y-[30px]">
+    <div className="space-y-[30px] pb-[80px]">
       <div className="flex justify-between items-end">
         <div>
           <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[10px]">Finance & Verifications</h1>
@@ -51,39 +151,128 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
       </div>
 
       {activeTab === 'pending' && (
-        <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
-          <div className="hidden lg:grid grid-cols-[1.5fr_2fr_1fr_1fr_100px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
-            <div>Customer</div>
-            <div>Type</div>
-            <div>Amount</div>
-            <div>Date</div>
-            <div className="text-right">Action</div>
-          </div>
-          <div className="divide-y divide-black/5">
-            {pendingTxs.map(tx => (
-              <div key={tx.id} className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr_1fr_1fr_100px] gap-[15px] lg:gap-[20px] p-[20px] lg:p-[20px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors">
-                <div>
-                  <strong className="block text-[14px] text-ink">{tx.user.firstName} {tx.user.lastName}</strong>
-                  <span className="text-[12px] text-[#68736d]">{tx.user.email}</span>
-                </div>
-                <div>
-                  <strong className="block text-[14px] text-ink capitalize">{tx.type}</strong>
-                  <span className="text-[12px] text-[#68736d]">{tx.reference}</span>
-                </div>
-                <div>
-                  <strong className="text-[15px] text-ink font-bold">{formatCurrency(tx.amount)}</strong>
-                </div>
-                <div className="text-[13px] text-[#68736d]">
-                  {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </div>
-                <div className="text-right">
-                  <button onClick={() => setSelectedTx(tx)} className="px-[16px] py-[8px] bg-[#008b45] text-white text-[12px] font-bold rounded-full hover:bg-[#007339] transition-colors">
-                    Review
-                  </button>
-                </div>
+        <div className="space-y-4">
+          {/* Bulk Action Banner */}
+          {selectedIds.length > 0 && (
+            <div className="bg-[#18201c] text-white p-4 rounded-[16px] flex flex-wrap items-center justify-between gap-4 shadow-lg animate-fade-in">
+              <div className="flex items-center gap-3">
+                <span className="w-7 h-7 rounded-full bg-[#008b45] flex items-center justify-center font-bold text-xs">{selectedIds.length}</span>
+                <span className="font-bold text-sm">Selected Transfers</span>
+                <span className="text-white/60 text-xs">|</span>
+                <span className="font-manrope font-extrabold text-[#a9e7bd] text-sm">Total: {formatCurrency(selectedTotal)}</span>
               </div>
-            ))}
-            {pendingTxs.length === 0 && <div className="p-8 text-center text-[#68736d] text-sm">No pending transactions.</div>}
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleBulkApprove} 
+                  disabled={isProcessing !== null}
+                  className="px-5 py-2.5 bg-[#008b45] hover:bg-[#007339] text-white text-xs font-bold rounded-full transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+                >
+                  {isProcessing === 'bulk-approve' ? (
+                    <>
+                      <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                      Approving {selectedIds.length}...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      Approve Selected ({selectedIds.length})
+                    </>
+                  )}
+                </button>
+                <button 
+                  onClick={handleBulkReject} 
+                  disabled={isProcessing !== null}
+                  className="px-4 py-2.5 bg-white/10 hover:bg-red-500/80 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"
+                >
+                  {isProcessing === 'bulk-reject' ? 'Rejecting...' : 'Reject Selected'}
+                </button>
+                <button 
+                  onClick={() => setSelectedIds([])} 
+                  className="text-xs text-white/70 hover:text-white px-2 py-1 font-medium"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
+            <div className="hidden lg:grid grid-cols-[40px_1.5fr_1.8fr_1fr_1fr_180px] gap-[15px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em] items-center">
+              <div>
+                <input 
+                  type="checkbox" 
+                  checked={pendingTxs.length > 0 && selectedIds.length === pendingTxs.length} 
+                  onChange={toggleSelectAll} 
+                  className="w-4 h-4 rounded accent-[#008b45] cursor-pointer" 
+                />
+              </div>
+              <div>Customer</div>
+              <div>Type & Reference</div>
+              <div>Amount</div>
+              <div>Date</div>
+              <div className="text-right">Actions</div>
+            </div>
+            <div className="divide-y divide-black/5">
+              {pendingTxs.map(tx => {
+                const isSelected = selectedIds.includes(tx.id);
+                const isItemProcessing = isProcessing === tx.id;
+                return (
+                  <div key={tx.id} className={`grid grid-cols-1 lg:grid-cols-[40px_1.5fr_1.8fr_1fr_1fr_180px] gap-[15px] p-[20px] lg:p-[20px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors ${isSelected ? 'bg-[#008b45]/5' : ''}`}>
+                    <div className="hidden lg:block">
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected} 
+                        onChange={() => toggleSelectOne(tx.id)} 
+                        className="w-4 h-4 rounded accent-[#008b45] cursor-pointer" 
+                      />
+                    </div>
+                    <div>
+                      <strong className="block text-[14px] text-ink">{tx.user?.firstName || 'User'} {tx.user?.lastName || ''}</strong>
+                      <span className="text-[12px] text-[#68736d]">{tx.user?.email || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <strong className="block text-[14px] text-ink capitalize">{tx.type}</strong>
+                      <span className="text-[12px] text-[#68736d] font-mono">{tx.reference}</span>
+                    </div>
+                    <div>
+                      <strong className="text-[15px] text-[#008b45] font-bold font-manrope">{formatCurrency(tx.amount)}</strong>
+                    </div>
+                    <div className="text-[13px] text-[#68736d]">
+                      {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => setSelectedTx(tx)} 
+                        className="px-[14px] py-[7px] bg-[#f4f7f5] text-ink border border-black/10 text-[12px] font-bold rounded-full hover:bg-black/5 transition-colors"
+                      >
+                        Review
+                      </button>
+                      <button 
+                        onClick={() => handleApprove(tx.id)} 
+                        disabled={isProcessing !== null}
+                        className="px-[14px] py-[7px] bg-[#008b45] text-white text-[12px] font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        {isItemProcessing ? (
+                          <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        )}
+                        {isItemProcessing ? 'Saving...' : 'Approve'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {pendingTxs.length === 0 && (
+                <div className="p-12 text-center text-[#68736d] text-sm">
+                  <div className="w-12 h-12 rounded-full bg-[#008b45]/10 text-[#008b45] flex items-center justify-center mx-auto mb-3">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <strong className="block text-ink text-base mb-1">No Pending Verifications</strong>
+                  <span>All customer bank transfers and deposits have been verified.</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -92,32 +281,32 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
         <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
           <div className="hidden lg:grid grid-cols-[1.5fr_2fr_1fr_1fr_100px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
             <div>Customer</div>
-            <div>Type</div>
+            <div>Type & Reference</div>
             <div>Amount</div>
             <div>Status</div>
-            <div className="text-right">Action</div>
+            <div className="text-right">Date</div>
           </div>
           <div className="divide-y divide-black/5">
             {historyTxs.map(tx => (
               <div key={tx.id} className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr_1fr_1fr_100px] gap-[15px] lg:gap-[20px] p-[20px] lg:p-[20px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors">
                 <div>
-                  <strong className="block text-[14px] text-ink">{tx.user.firstName} {tx.user.lastName}</strong>
-                  <span className="text-[12px] text-[#68736d]">{tx.user.email}</span>
+                  <strong className="block text-[14px] text-ink">{tx.user?.firstName || 'User'} {tx.user?.lastName || ''}</strong>
+                  <span className="text-[12px] text-[#68736d]">{tx.user?.email || 'N/A'}</span>
                 </div>
                 <div>
                   <strong className="block text-[14px] text-ink capitalize">{tx.type}</strong>
-                  <span className="text-[12px] text-[#68736d]">{tx.reference}</span>
+                  <span className="text-[12px] text-[#68736d] font-mono">{tx.reference}</span>
                 </div>
                 <div>
-                  <strong className="text-[15px] text-ink font-bold">{formatCurrency(tx.amount)}</strong>
+                  <strong className="text-[15px] text-ink font-bold font-manrope">{formatCurrency(tx.amount)}</strong>
                 </div>
                 <div>
-                  <span className={`px-[8px] py-[4px] rounded-full text-[10px] font-bold uppercase ${tx.status === 'success' ? 'bg-[#eef3ef] text-[#008b45]' : 'bg-[#fdeeee] text-[#e53935]'}`}>
+                  <span className={`px-[10px] py-[4px] rounded-full text-[10px] font-bold uppercase tracking-wider ${tx.status === 'success' ? 'bg-[#eef3ef] text-[#008b45]' : 'bg-[#fdeeee] text-[#e53935]'}`}>
                     {tx.status}
                   </span>
                 </div>
-                <div className="text-right">
-                  -
+                <div className="text-right text-[13px] text-[#68736d]">
+                  {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
               </div>
             ))}
@@ -264,12 +453,17 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
         </div>
       )}
 
+      {/* Review Transfer Modal */}
       {selectedTx && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in">
           <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden">
             <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
               <h2 className="font-manrope text-[20px] font-bold text-ink">Review Transfer</h2>
-              <button onClick={() => setSelectedTx(null)} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef]">
+              <button 
+                onClick={() => setSelectedTx(null)} 
+                disabled={isProcessing !== null}
+                className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] disabled:opacity-50"
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -277,7 +471,8 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
               <div className="space-y-[15px] bg-[#fcfdfc] p-[20px] rounded-[16px] border border-black/5">
                 <div>
                   <span className="block text-[12px] text-[#7a847f] mb-[2px]">Customer</span>
-                  <strong className="block text-[15px] text-ink">{selectedTx.user.firstName} {selectedTx.user.lastName}</strong>
+                  <strong className="block text-[15px] text-ink">{selectedTx.user?.firstName || 'User'} {selectedTx.user?.lastName || ''}</strong>
+                  <span className="block text-[12px] text-[#68736d]">{selectedTx.user?.email || 'N/A'}</span>
                 </div>
                 <div>
                   <span className="block text-[12px] text-[#7a847f] mb-[2px]">Type</span>
@@ -288,22 +483,20 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
                   <strong className="block text-[24px] font-manrope text-[#008b45]">{formatCurrency(selectedTx.amount)}</strong>
                 </div>
 
-                {selectedTx.type === 'investment' && (
-                  <div className="pt-[10px] border-t border-black/5">
-                    <span className="block text-[12px] text-[#7a847f] mb-[6px] font-bold uppercase tracking-wider">Proof of Payment</span>
-                    <a 
-                      href={`/api/receipt/${selectedTx.reference}`} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#008b45]/10 hover:bg-[#008b45]/20 text-[#008b45] font-bold text-[13px] rounded-[12px] transition-colors"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                      View Uploaded Receipt ↗
-                    </a>
-                  </div>
-                )}
+                <div className="pt-[10px] border-t border-black/5">
+                  <span className="block text-[12px] text-[#7a847f] mb-[6px] font-bold uppercase tracking-wider">Proof of Payment</span>
+                  <a 
+                    href={`/api/receipt/${selectedTx.reference}`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#008b45]/10 hover:bg-[#008b45]/20 text-[#008b45] font-bold text-[13px] rounded-[12px] transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    View Uploaded Receipt ↗
+                  </a>
+                </div>
                 
-                {selectedTx.type === 'withdrawal' && selectedTx.user.bankAccounts?.[0] && (
+                {selectedTx.type === 'withdrawal' && selectedTx.user?.bankAccounts?.[0] && (
                   <div className="pt-[10px] border-t border-black/5 mt-[10px]">
                     <span className="block text-[12px] text-[#7a847f] mb-[8px] uppercase tracking-wider font-bold">Transfer To</span>
                     <div className="bg-[#eef3ef]/50 p-[15px] rounded-[12px] space-y-[8px]">
@@ -324,9 +517,26 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
                 )}
               </div>
               <div className="flex gap-[15px]">
-                <button onClick={() => handleReject(selectedTx.id)} className="flex-1 py-[14px] bg-[#fdeeee] text-[#e53935] font-bold rounded-full">Reject</button>
-                <button onClick={() => handleApprove(selectedTx.id)} className="flex-[2] py-[14px] bg-[#008b45] text-white font-bold rounded-full shadow-[0_8px_20px_rgba(0,139,69,0.25)]">
-                  {selectedTx.type === 'withdrawal' ? 'Mark as Transferred' : 'Approve & Verify'}
+                <button 
+                  onClick={() => handleReject(selectedTx.id)} 
+                  disabled={isProcessing !== null}
+                  className="flex-1 py-[14px] bg-[#fdeeee] text-[#e53935] font-bold rounded-full disabled:opacity-50 hover:bg-[#fbdada] transition-colors"
+                >
+                  {isProcessing === selectedTx.id ? 'Processing...' : 'Reject'}
+                </button>
+                <button 
+                  onClick={() => handleApprove(selectedTx.id)} 
+                  disabled={isProcessing !== null}
+                  className="flex-[2] py-[14px] bg-[#008b45] text-white font-bold rounded-full shadow-[0_8px_20px_rgba(0,139,69,0.25)] hover:bg-[#007339] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {isProcessing === selectedTx.id ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                      Verifying & Crediting...
+                    </>
+                  ) : (
+                    selectedTx.type === 'withdrawal' ? 'Mark as Transferred' : 'Approve & Verify'
+                  )}
                 </button>
               </div>
             </div>

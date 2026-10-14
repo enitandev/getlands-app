@@ -190,7 +190,9 @@ export async function approveTransaction(transactionId: string) {
   await checkAdmin();
   
   const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
-  if (!tx || tx.status !== 'pending') return;
+  if (!tx || tx.status !== 'pending') {
+    return { success: false, error: 'Transaction not found or already processed' };
+  }
 
   await prisma.transaction.update({
     where: { id: transactionId },
@@ -268,13 +270,17 @@ export async function approveTransaction(transactionId: string) {
       }
     });
   }
+
+  return { success: true };
 }
 
 export async function rejectTransaction(transactionId: string) {
   await checkAdmin();
   
   const tx = await prisma.transaction.findUnique({ where: { id: transactionId }});
-  if (!tx || tx.status !== 'pending') return;
+  if (!tx || tx.status !== 'pending') {
+    return { success: false, error: 'Transaction not found or already processed' };
+  }
 
   await prisma.transaction.update({
     where: { id: transactionId },
@@ -299,6 +305,42 @@ export async function rejectTransaction(transactionId: string) {
       type: "SYSTEM"
     }
   });
+
+  return { success: true };
+}
+
+export async function bulkApproveTransactions(transactionIds: string[]) {
+  await checkAdmin();
+  if (!transactionIds || transactionIds.length === 0) return { success: false, count: 0 };
+
+  let approvedCount = 0;
+  for (const id of transactionIds) {
+    try {
+      const res = await approveTransaction(id);
+      if (res?.success) approvedCount++;
+    } catch (e) {
+      console.error(`Failed to bulk approve transaction ${id}:`, e);
+    }
+  }
+
+  return { success: true, count: approvedCount };
+}
+
+export async function bulkRejectTransactions(transactionIds: string[]) {
+  await checkAdmin();
+  if (!transactionIds || transactionIds.length === 0) return { success: false, count: 0 };
+
+  let rejectedCount = 0;
+  for (const id of transactionIds) {
+    try {
+      const res = await rejectTransaction(id);
+      if (res?.success) rejectedCount++;
+    } catch (e) {
+      console.error(`Failed to bulk reject transaction ${id}:`, e);
+    }
+  }
+
+  return { success: true, count: rejectedCount };
 }
 
 export async function deleteOpportunity(id: string) {
