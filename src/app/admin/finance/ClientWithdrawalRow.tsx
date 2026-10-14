@@ -7,7 +7,7 @@ export default function ClientWithdrawalRow({ withdrawal, formatCurrency }: { wi
   const activeBank = withdrawal.user.bankAccounts?.[0];
 
   const handleApprove = async () => {
-    if (!confirm(`Are you sure you have already wired ${formatCurrency(withdrawal.amount)} to ${withdrawal.user.firstName}'s bank account? This will mark it as paid and send them a confirmation email.`)) return;
+    if (!confirm(`Are you sure you have already wired ${formatCurrency(withdrawal.amount)} to ${withdrawal.user?.firstName || 'this user'}'s bank account? This will mark it as paid and send them a confirmation email.`)) return;
     
     setIsProcessing(true);
     const res = await approveWithdrawalAction(withdrawal.id);
@@ -23,8 +23,8 @@ export default function ClientWithdrawalRow({ withdrawal, formatCurrency }: { wi
         {new Date(withdrawal.date).toLocaleDateString()}
       </td>
       <td className="p-[15px]">
-        <strong className="block text-[14px] text-ink">{withdrawal.user.firstName} {withdrawal.user.lastName}</strong>
-        <span className="text-[12px] text-[#68736d]">{withdrawal.user.email}</span>
+        <strong className="block text-[14px] text-ink">{withdrawal.user?.firstName || 'User'} {withdrawal.user?.lastName || ''}</strong>
+        <span className="text-[12px] text-[#68736d]">{withdrawal.user?.email || 'N/A'}</span>
       </td>
       <td className="p-[15px]">
         {activeBank ? (

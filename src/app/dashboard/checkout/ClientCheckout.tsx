@@ -170,13 +170,20 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
             </p>
             
             <div className="max-w-[400px] mx-auto">
-              <label className="flex flex-col items-center justify-center w-full h-[200px] border-2 border-dashed border-gray-300 rounded-[16px] bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-6 group">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+              <label htmlFor="dropzone-file" className="relative flex flex-col items-center justify-center w-full h-[200px] border-2 border-dashed border-gray-300 rounded-[16px] bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-6 group overflow-hidden">
+                <input 
+                  id="dropzone-file" 
+                  type="file" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+                  accept="image/*,application/pdf" 
+                  onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                />
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none z-10">
                   {file ? (
-                    <div className="text-center">
+                    <div className="text-center px-4">
                       <svg className="w-10 h-10 text-[#008b45] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <p className="text-sm font-semibold text-gray-700">{file.name}</p>
-                      <p className="text-xs text-gray-500 mt-1">Click to replace</p>
+                      <p className="text-sm font-semibold text-gray-700 truncate max-w-[280px]">{file.name}</p>
+                      <p className="text-xs text-gray-500 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB • Tap to replace</p>
                     </div>
                   ) : (
                     <>
@@ -186,7 +193,6 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
                     </>
                   )}
                 </div>
-                <input id="dropzone-file" type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
               </label>
 
               <button onClick={() => setStep(1)} className="text-[14px] font-bold text-gray-500 hover:text-[#1a1a1a] transition-colors">

@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { triggerReferralBonus } from '@/lib/referral';
 import { generatePayoutSchedule } from '@/lib/payouts';
+import fs from 'fs';
+import path from 'path';
 
 async function checkCustomer() {
   const session = await getSession();
@@ -126,6 +128,41 @@ export async function checkoutAction(formData: FormData) {
         reference: `INV-B-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
       }
     });
+
+    // Handle Receipt Upload
+    const receiptFile = formData.get('receipt') as File;
+    if (receiptFile && receiptFile.size > 0) {
+      try {
+        const bytes = await receiptFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const originalName = receiptFile.name || 'receipt.jpg';
+        const ext = originalName.split('.').pop() || 'jpg';
+        
+        // 1. Save to local public/uploads/receipts
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'receipts');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const filePath = path.join(uploadDir, `${tx.reference}.${ext}`);
+        fs.writeFileSync(filePath, buffer);
+
+        // 2. Optionally upload to Supabase Storage if configured
+        if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          try {
+            const { createClient } = require('@supabase/supabase-js');
+            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+            await supabase.storage.from('getlands').upload(`receipts/${tx.reference}.${ext}`, buffer, {
+              contentType: receiptFile.type || 'image/jpeg',
+              upsert: true
+            });
+          } catch (supaErr) {
+            console.error("Supabase receipt upload fallback:", supaErr);
+          }
+        }
+      } catch (err) {
+        console.error("Error saving receipt file:", err);
+      }
+    }
 
     // Create pending holding
     await prisma.holding.create({

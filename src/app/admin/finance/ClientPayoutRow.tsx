@@ -33,11 +33,11 @@ export default function ClientPayoutRow({ payout, formatCurrency }: { payout: an
         </div>
       </td>
       <td className="p-[12px]">
-        <div className="font-bold text-ink">{payout.user.firstName} {payout.user.lastName}</div>
-        <div className="text-[11px] text-[#68736d]">{payout.user.email}</div>
+        <div className="font-bold text-ink">{payout.user?.firstName || 'User'} {payout.user?.lastName || ''}</div>
+        <div className="text-[11px] text-[#68736d]">{payout.user?.email || 'N/A'}</div>
       </td>
       <td className="p-[12px]">
-        <div className="text-[#4a554f]">{payout.holding.opportunity.title}</div>
+        <div className="text-[#4a554f]">{payout.holding?.opportunity?.title || 'General Investment'}</div>
         <div className="text-[11px] text-[#68736d] font-mono">{payout.type}</div>
       </td>
       <td className="p-[12px] font-bold text-[#008b45] text-[15px]">
