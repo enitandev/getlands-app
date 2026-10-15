@@ -44,24 +44,24 @@ export function Ways() {
       <div className="ways-grid grid grid-cols-1 lg:grid-cols-3 gap-[16px]">
         <WayCard 
           className="h-[500px] lg:h-[560px]"
-          bgClass="bg-[url('https://miro.medium.com/1%2AUdsTTEukqmn2iYn9w6PoYA.jpeg')] before:absolute before:inset-0 before:bg-gradient-to-b before:from-[rgba(3,13,7,0.05)] before:to-[rgba(3,13,7,0.72)]"
-          number="01" action="OWN" title="Land"
-          description="Acquire real land in strategic locations for your future."
+          bgClass="bg-[url('/assets/images/land-plots.jpg')] bg-cover bg-center before:absolute before:inset-0 before:bg-gradient-to-b before:from-[rgba(3,13,7,0.1)] before:to-[rgba(3,13,7,0.8)]"
+          number="01" action="OWN" title="Verified Land"
+          description="Acquire vetted freehold and farmland plots with authentic survey documentation, instant physical allocation, and zero land-grabber interference."
           href="/explore" linkText="Explore land ↗"
         />
         <WayCard 
           className="h-[500px] lg:h-[560px]"
-          bgClass="bg-[url('https://images.unsplash.com/photo-1723234870945-c4c4a9e2c683?auto=format&fit=crop&fm=jpg&q=85&w=1400')] before:absolute before:inset-0 before:bg-gradient-to-b before:from-[rgba(3,13,7,0.02)] before:to-[rgba(3,13,7,0.72)]"
-          number="02" action="GROW" title="Farms"
-          description="Participate in managed agricultural cycles with defined terms."
-          href="/explore" linkText="Explore farms ↗"
+          bgClass="bg-[url('/assets/images/tomato-trading.jpg')] bg-cover bg-center before:absolute before:inset-0 before:bg-gradient-to-b before:from-[rgba(3,13,7,0.05)] before:to-[rgba(3,13,7,0.8)]"
+          number="02" action="TRADE" title="Commodity Trading"
+          description="Participate in high-turnover agricultural commodity trade cycles (Tomato, Pepper, Garri, Onions) with automated 30, 60, or 90-day return plans yielding 5%, 12%, or 20%."
+          href="/explore" linkText="Explore trading cycles ↗"
         />
         <WayCard 
           className="h-[500px] lg:h-[560px]"
-          bgClass="bg-[url('https://www.climatechangeauthority.gov.au/sites/default/files/istock-1329114139.jpg')] before:absolute before:inset-0 before:bg-gradient-to-b before:from-[rgba(3,13,7,0.02)] before:to-[rgba(3,13,7,0.74)]"
-          number="03" action="HOLD" title="Land banking"
-          description="Structured opportunities around land acquisition and holding."
-          href="/explore" linkText="View opportunities ↗"
+          bgClass="bg-[url('/assets/images/hero-farmland.jpg')] bg-cover bg-center before:absolute before:inset-0 before:bg-gradient-to-b before:from-[rgba(3,13,7,0.05)] before:to-[rgba(3,13,7,0.8)]"
+          number="03" action="BANK" title="Land Banking"
+          description="Secure high-growth land holdings at pre-development prices with contractual, scheduled buyback valuations over 12–24 months."
+          href="/explore" linkText="View land banking ↗"
         />
       </div>
     </section>

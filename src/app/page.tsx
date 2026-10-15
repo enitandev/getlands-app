@@ -6,7 +6,6 @@ import { Farms } from "@/components/Farms";
 import { LandBanking } from "@/components/LandBanking";
 import { Portfolio } from "@/components/Portfolio";
 import { Trust } from "@/components/Trust";
-import { Future } from "@/components/Future";
 import { Closing } from "@/components/Closing";
 import { Footer } from "@/components/Footer";
 
@@ -27,7 +26,6 @@ export default async function Home() {
       <LandBanking />
       <Portfolio />
       <Trust />
-      <Future />
       <Closing />
       <Footer />
     </main>

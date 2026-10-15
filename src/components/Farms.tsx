@@ -30,40 +30,47 @@ export function Farms({ plans }: { plans?: any[] }) {
   }, { scope: container });
 
   return (
-    <section ref={container} className="farms scene bg-[#f7f9f7] min-h-screen relative overflow-hidden py-[110px] lg:py-[145px] px-[22px] lg:px-[max(6vw,72px)]" id="farms">
+    <section ref={container} className="farms scene bg-[#f7f9f7] min-h-screen relative overflow-hidden py-[110px] lg:py-[145px] px-[22px] lg:px-[max(6vw,72px)]" id="commodities">
       <div className="farms-head block lg:flex justify-between items-end mb-[55px]">
         <div>
-          <div className="eyebrow text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase">FARM OPPORTUNITIES</div>
+          <div className="eyebrow text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase">SHORT-CYCLE COMMODITY TRADING</div>
           <h2 className="font-manrope text-[54px] lg:text-[clamp(60px,7vw,108px)] leading-[0.88] tracking-[-0.075em] my-[20px]">
-            Let the land<br/><span className="text-[#008b45]">work, too.</span>
+            High-demand crops.<br/><span className="text-[#008b45]">Defined returns.</span>
           </h2>
-          <p className="text-[16px] text-[#68736e] m-0">Different crops. Different cycles. One place to discover them.</p>
+          <p className="text-[16px] text-[#68736e] m-0 max-w-[560px]">
+            Participate in wholesale agricultural commodity aggregation and distribution. Choose flexible 30-day (5%), 60-day (12%), or 90-day (20%) return plans.
+          </p>
         </div>
-        <Link href="/explore" className="inline-block mt-[20px] lg:mt-0 text-ink text-[11px] font-bold no-underline hover:underline">Browse all farms ↗</Link>
+        <Link href="/explore" className="inline-block mt-[20px] lg:mt-0 text-ink text-[12px] font-bold no-underline hover:text-[#008b45] transition-colors">
+          Browse all commodity cycles ↗
+        </Link>
       </div>
       
       <div className="farm-cards grid grid-cols-1 lg:grid-cols-3 gap-[18px]">
         <FarmCard 
           className="h-[470px] lg:h-[520px]"
-          photoClass="bg-[url('https://images.unsplash.com/photo-1608737637507-9aaeb9f4bf30?auto=format&fit=crop&fm=jpg&q=90&w=1400')]"
-          cycle="6 MONTHS" crop="PEPPER" title="Pepper Farm" location="Ogun State"
-          plans={plans} price="₦100,000" targetReturn="12%"
+          photoClass="bg-[url('/assets/images/tomato-trading.jpg')] bg-cover bg-center"
+          cycle="30 – 90 DAYS" crop="TOMATO" title="Tomato Commodity Trading" location="Ogun & Lagos Wholesale"
+          plans={plans} price="₦100,000" targetReturn="5% – 20%"
         />
         <FarmCard 
           className="h-[470px] lg:h-[520px]"
-          photoClass="bg-[url('https://images.unsplash.com/photo-1723234870945-c4c4a9e2c683?auto=format&fit=crop&fm=jpg&q=90&w=1400')]"
-          cycle="6 MONTHS" crop="TOMATO" title="Tomato Farm" location="Kaduna State"
-          plans={plans} price="₦100,000" targetReturn="12%"
+          photoClass="bg-[url('/assets/images/pepper-trading.jpg')] bg-cover bg-center"
+          cycle="30 – 90 DAYS" crop="PEPPER" title="Scotch Bonnet Trading" location="South-West Distribution"
+          plans={plans} price="₦100,000" targetReturn="5% – 20%"
         />
         <FarmCard 
           className="h-[470px] lg:h-[520px]"
-          photoClass="bg-[url('https://images.unsplash.com/photo-1757283961570-682154747d9c?auto=format&fit=crop&fm=jpg&q=90&w=1400')]"
-          cycle="6 MONTHS" crop="CASSAVA" title="Cassava Farm" location="Ogun State"
-          plans={plans} price="₦100,000" targetReturn="12%"
+          photoClass="bg-[url('/assets/images/garri-trading.jpg')] bg-cover bg-center"
+          cycle="30 – 90 DAYS" crop="GARRI & GRAIN" title="Yellow Garri Wholesale" location="Warehouse Aggregation"
+          plans={plans} price="₦100,000" targetReturn="5% – 20%"
         />
       </div>
       
-      <div className="farm-note mt-[18px] text-[#7c8681] text-[10px]">Terms and outcomes vary by opportunity.</div>
+      <div className="farm-note mt-[22px] flex items-center justify-between text-[#7c8681] text-[11px] flex-wrap gap-2">
+        <span>Capital and returns are automatically credited to your verified wallet upon maturity.</span>
+        <span className="font-bold text-[#008b45]">100% Contractually Guaranteed</span>
+      </div>
     </section>
   );
 }

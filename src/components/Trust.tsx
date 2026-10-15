@@ -28,24 +28,24 @@ export function Trust() {
       
       <div className="trust-grid grid grid-cols-1 lg:grid-cols-2 lg:border-t border-line mt-[55px] lg:mt-0">
         <div className="p-[28px_28px_30px_0] border-b border-line grid grid-cols-[45px_1fr] gap-x-[15px] gap-y-[4px]">
-          <b className="row-span-2 text-[#008b45] text-[10px]">01</b>
-          <strong className="font-manrope text-[22px] tracking-[-0.04em]">Location</strong>
-          <span className="text-[11px] text-[#76817b]">Where the asset exists.</span>
+          <b className="row-span-2 text-[#008b45] text-[12px] font-bold">01</b>
+          <strong className="font-manrope text-[20px] tracking-[-0.03em]">Title & Survey Verification</strong>
+          <span className="text-[13px] text-[#76817b] leading-relaxed">Every land plot is beacon-pegged, perimeter-surveyed, and backed by a genuine Deed of Assignment and official Allocation Letter.</span>
         </div>
         <div className="p-[28px_28px_30px_0] border-b border-line grid grid-cols-[45px_1fr] gap-x-[15px] gap-y-[4px]">
-          <b className="row-span-2 text-[#008b45] text-[10px]">02</b>
-          <strong className="font-manrope text-[22px] tracking-[-0.04em]">Documentation</strong>
-          <span className="text-[11px] text-[#76817b]">What supports your ownership.</span>
+          <b className="row-span-2 text-[#008b45] text-[12px] font-bold">02</b>
+          <strong className="font-manrope text-[20px] tracking-[-0.03em]">Physical Produce Backing</strong>
+          <span className="text-[13px] text-[#76817b] leading-relaxed">Commodity trading cycles are secured by physical inventory, verified aggregation hubs, and pre-negotiated institutional off-taker contracts.</span>
         </div>
         <div className="p-[28px_28px_30px_0] border-b border-line grid grid-cols-[45px_1fr] gap-x-[15px] gap-y-[4px]">
-          <b className="row-span-2 text-[#008b45] text-[10px]">03</b>
-          <strong className="font-manrope text-[22px] tracking-[-0.04em]">Terms</strong>
-          <span className="text-[11px] text-[#76817b]">What you are actually acquiring.</span>
+          <b className="row-span-2 text-[#008b45] text-[12px] font-bold">03</b>
+          <strong className="font-manrope text-[20px] tracking-[-0.03em]">Defined Return Plans</strong>
+          <span className="text-[13px] text-[#76817b] leading-relaxed">Fixed 30, 60, or 90-day cycles offering 5%, 12%, or 20% returns. Zero hidden deductions, documented in legal subscription agreements.</span>
         </div>
         <div className="p-[28px_28px_30px_0] border-b border-line grid grid-cols-[45px_1fr] gap-x-[15px] gap-y-[4px]">
-          <b className="row-span-2 text-[#008b45] text-[10px]">04</b>
-          <strong className="font-manrope text-[22px] tracking-[-0.04em]">Status</strong>
-          <span className="text-[11px] text-[#76817b]">What is available now.</span>
+          <b className="row-span-2 text-[#008b45] text-[12px] font-bold">04</b>
+          <strong className="font-manrope text-[20px] tracking-[-0.03em]">Instant Wallet Settlements</strong>
+          <span className="text-[13px] text-[#76817b] leading-relaxed">Automated ledger crediting on maturity date. Withdraw your capital and profit straight to your verified Nigerian bank account at any time.</span>
         </div>
       </div>
     </section>
