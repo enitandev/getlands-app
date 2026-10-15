@@ -5,7 +5,7 @@ import { toast } from '@/components/ui/Toast';
 
 export default function ClientReferrals({ referralCode, totalEarned, totalSignups, successfulReferrals, referredUsers }: any) {
   const [copied, setCopied] = useState(false);
-  const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/register?ref=${referralCode}` : `https://getlands.shop/register?ref=${referralCode}`;
+  const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/register?ref=${referralCode}` : `https://getlands.ng/register?ref=${referralCode}`;
 
   const copyToClipboard = () => {
     if (typeof navigator !== 'undefined') {

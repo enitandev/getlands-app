@@ -12,7 +12,7 @@ export function Footer() {
         <Link href="#marketplace" className="text-[#b8c2bd] text-[10px] no-underline">Marketplace</Link>
         <Link href="#how" className="text-[#b8c2bd] text-[10px] no-underline">How it works</Link>
         <Link href="#portfolio" className="text-[#b8c2bd] text-[10px] no-underline">My Getlands</Link>
-        <a href="https://getlands.shop" className="text-[#b8c2bd] text-[10px] no-underline">getlands.shop ↗</a>
+        <a href="https://getlands.ng" className="text-[#b8c2bd] text-[10px] no-underline">getlands.ng ↗</a>
       </nav>
       <small className="text-[9px]">© 2026 Getlands</small>
     </footer>

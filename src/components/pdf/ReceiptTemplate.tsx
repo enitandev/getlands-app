@@ -322,8 +322,8 @@ export const ReceiptTemplate = ({ holding, baseUrl }: { holding: any, baseUrl: s
             </View>
             <View style={styles.contactBox}>
               <Text style={styles.contactItem}>+234 913 348 5636</Text>
-              <Text style={styles.contactItem}>www.getlands.shop</Text>
-              <Text style={styles.contactItem}>info@getlands.shop</Text>
+              <Text style={styles.contactItem}>www.getlands.ng</Text>
+              <Text style={styles.contactItem}>info@getlands.ng</Text>
             </View>
           </View>
 

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 
 export default function ReferralLinkCard({ code }: { code: string }) {
-  const [origin, setOrigin] = useState('https://getlands.shop');
+  const [origin, setOrigin] = useState('https://getlands.ng');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {

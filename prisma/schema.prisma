@@ -195,7 +195,7 @@ model Notification {
 model PlatformSetting {
   id                    String   @id @default("global")
   companyName           String   @default("Getlands Real-Asset Marketplace")
-  supportEmail          String   @default("support@getlands.shop")
+  supportEmail          String   @default("support@getlands.ng")
   processingFee         Float    @default(1.5)
   
   agentDirectCommissionFirst  Float    @default(5.0)

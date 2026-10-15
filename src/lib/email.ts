@@ -1,4 +1,4 @@
-const fromEmail = 'Getlands <hello@getlands.shop>';
+const fromEmail = 'Getlands <hello@getlands.ng>';
 
 async function sendResendEmail(to: string, subject: string, html: string) {
   if (!process.env.RESEND_API_KEY) {
@@ -44,7 +44,7 @@ export async function sendWelcomeEmail(email: string, firstName: string) {
         As a verified member, you now have exclusive access to our marketplace of verified lands, high-yield farm cycles, and structured land banking opportunities.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="https://getlands.shop/explore" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
+        <a href="https://getlands.ng/explore" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
           Explore the Marketplace
         </a>
       </div>
@@ -60,7 +60,7 @@ export async function sendWelcomeEmail(email: string, firstName: string) {
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetUrl = `https://getlands.shop/reset-password?token=${token}`;
+  const resetUrl = `https://getlands.ng/reset-password?token=${token}`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-w-xl mx-auto p-6 bg-white border border-gray-200 rounded-xl">
@@ -91,7 +91,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
 }
 
 export async function sendClaimAccountEmail(email: string, firstName: string, token: string) {
-  const resetUrl = `https://getlands.shop/reset-password?token=${token}`;
+  const resetUrl = `https://getlands.ng/reset-password?token=${token}`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-w-xl mx-auto p-6 bg-white border border-gray-200 rounded-xl">
@@ -138,7 +138,7 @@ export async function sendNewInvestmentEmail(email: string, firstName: string, o
         Your official Allocation Letter, Subscription Agreement, and Payment Receipt have been generated and are now available for download.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${resetToken ? `https://getlands.shop/reset-password?token=${resetToken}` : `https://getlands.shop/dashboard/holdings`}" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
+        <a href="${resetToken ? `https://getlands.ng/reset-password?token=${resetToken}` : `https://getlands.ng/dashboard/holdings`}" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
           ${resetToken ? "Set Password & View Portfolio" : "View Your Portfolio"}
         </a>
       </div>
@@ -166,7 +166,7 @@ export async function sendAgentPromotionEmail(email: string, firstName: string) 
         You now have exclusive access to the Agent Portal, where you can find your unique referral links, build your network, draft offline portfolios for your clients, and earn commissions on every successful acquisition.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="https://getlands.shop/agent" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
+        <a href="https://getlands.ng/agent" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
           Access Agent Portal
         </a>
       </div>
@@ -191,7 +191,7 @@ export async function sendWalletCreditEmail(to: string, userName: string, amount
         <p>Your Getlands Wallet has just been credited with <strong>₦${amount.toLocaleString()}</strong> for your <strong>${title}</strong> return.</p>
         <p>You can keep these funds in your wallet for future acquisitions or withdraw them directly to your verified bank account at any time.</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://www.getlands.shop/dashboard/wallet" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Wallet</a>
+          <a href="https://getlands.ng/dashboard/wallet" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Wallet</a>
         </div>
         <p style="font-size: 12px; color: #666; margin-top: 40px;">If you have any questions, please contact support.</p>
       </div>
