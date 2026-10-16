@@ -152,7 +152,8 @@ export async function sendNewInvestmentEmail(email: string, firstName: string, o
   await sendResendEmail(email, 'New Getlands Investment Assigned', html);
 }
 
-export async function sendAgentPromotionEmail(email: string, firstName: string) {
+export async function sendAgentPromotionEmail(email: string, firstName: string, referralCode?: string) {
+  const refLink = referralCode ? `https://getlands.ng?ref=${referralCode}` : null;
   const html = `
     <div style="font-family: Arial, sans-serif; max-w-xl mx-auto p-6 bg-white border border-gray-200 rounded-xl">
       <div style="text-align: center; margin-bottom: 24px;">
@@ -165,6 +166,13 @@ export async function sendAgentPromotionEmail(email: string, firstName: string) 
       <p style="color: #333; font-size: 16px; line-height: 1.5;">
         You now have exclusive access to the Agent Portal, where you can find your unique referral links, build your network, draft offline portfolios for your clients, and earn commissions on every successful acquisition.
       </p>
+      ${refLink ? `
+      <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 12px; padding: 16px 20px; margin: 24px 0; text-align: center;">
+        <p style="color: #68736d; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 6px 0;">Your Official Referral Link</p>
+        <a href="${refLink}" style="color: #008b45; font-size: 15px; font-weight: bold; text-decoration: underline; word-break: break-all;">${refLink}</a>
+        <p style="color: #7a847f; font-size: 12px; margin: 8px 0 0 0;">Referral Code: <strong>${referralCode}</strong></p>
+      </div>
+      ` : ''}
       <div style="text-align: center; margin: 32px 0;">
         <a href="https://getlands.ng/agent" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
           Access Agent Portal

@@ -190,7 +190,7 @@ export async function appointSalesAgentAction(userId: string) {
   });
   
   const { sendAgentPromotionEmail } = await import('@/lib/email');
-  await sendAgentPromotionEmail(user.email, user.firstName);
+  await sendAgentPromotionEmail(user.email, user.firstName, referralCode);
   
   revalidatePath('/admin/customers');
   revalidatePath(`/admin/customers/${userId}`);
