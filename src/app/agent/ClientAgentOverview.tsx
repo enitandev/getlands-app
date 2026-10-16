@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/mockData';
 import ReferralLinkCard from './ReferralLinkCard';
 
-export default function ClientAgentOverview({ user, networkCount, pendingCommissions, availableCommissions, recentCommissions }: any) {
+export default function ClientAgentOverview({ user, networkCount, pendingCommissions, availableCommissions, recentCommissions, personalHoldings = [] }: any) {
   
   return (
     <div className="flex flex-col h-[calc(100dvh-165px)] lg:h-[calc(100vh-100px)] overflow-y-auto scrollbar-hide pb-[20px] lg:pb-[50px]">
@@ -66,7 +66,96 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
       </div>
 
       {/* Referral Link */}
-      <ReferralLinkCard code={user.referralCode} />
+      <div className="mb-[40px]">
+        <ReferralLinkCard code={user.referralCode} />
+      </div>
+
+      {/* Personal Portfolio Section */}
+      <div className="mb-[40px]">
+        <div className="flex items-center justify-between mb-[20px]">
+          <div>
+            <h2 className="font-manrope text-[20px] font-bold text-ink">Personal Portfolio</h2>
+            <p className="text-[13px] text-[#68736d]">Your active commodity trades, land acquisitions, and payout schedules.</p>
+          </div>
+          <Link href="/dashboard/holdings" className="text-[#008b45] text-[13px] font-bold hover:underline shrink-0">
+            View full portfolio &rarr;
+          </Link>
+        </div>
+
+        {personalHoldings.length === 0 ? (
+          <div className="bg-white border border-black/5 rounded-[20px] p-[30px] flex flex-col sm:flex-row items-center justify-between gap-[20px]">
+            <div>
+              <strong className="block text-[14px] text-ink mb-[4px]">No active personal holdings</strong>
+              <p className="text-[13px] text-[#68736d]">You have not subscribed to any commodity trades or land banking opportunities under this account yet.</p>
+            </div>
+            <Link 
+              href="/dashboard/marketplace" 
+              className="px-[20px] py-[10px] bg-[#eef3ef] hover:bg-[#008b45] text-[#008b45] hover:text-white font-bold text-[13px] rounded-full transition-colors whitespace-nowrap"
+            >
+              Browse Marketplace
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white border border-black/5 rounded-[20px] overflow-hidden divide-y divide-black/5 shadow-sm">
+            {personalHoldings.map((h: any) => {
+              const nextPayout = h.payouts?.find((p: any) => p.status === 'PENDING');
+              return (
+                <div key={h.id} className="p-[20px] lg:p-[24px] flex flex-col md:flex-row md:items-center justify-between gap-[15px] hover:bg-[#fcfdfc] transition-colors">
+                  <div className="flex items-center gap-[15px]">
+                    <div className="w-[44px] h-[44px] rounded-[12px] bg-[#eef3ef] flex items-center justify-center text-[#008b45] shrink-0">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-[8px] flex-wrap">
+                        <strong className="text-[15px] text-ink">{h.opportunity?.title || 'Investment Holding'}</strong>
+                        <span className="bg-[#eef3ef] text-[#008b45] text-[10px] font-bold px-[8px] py-[2px] rounded-full uppercase tracking-wider">
+                          {h.status}
+                        </span>
+                        {h.planName && (
+                          <span className="bg-black/5 text-[#555] text-[10px] font-bold px-[8px] py-[2px] rounded-full">
+                            {h.planName}
+                          </span>
+                        )}
+                        {h.ratePercent && !h.planName && (
+                          <span className="bg-black/5 text-[#555] text-[10px] font-bold px-[8px] py-[2px] rounded-full">
+                            {h.ratePercent}% ROI
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[12px] text-[#68736d] mt-[4px]">
+                        Acquired {new Date(h.dateAcquired).toLocaleDateString()} • {h.units} {h.units === 1 ? 'Unit' : 'Units'}
+                        {h.maturityDate && (
+                          <span> • Maturity: {new Date(h.maturityDate).toLocaleDateString()}</span>
+                        )}
+                        {nextPayout && (
+                          <span className="text-[#008b45] font-semibold"> • Next Payout: {formatCurrency(nextPayout.amount)} ({new Date(nextPayout.dueDate).toLocaleDateString()})</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between md:justify-end gap-[20px] pt-[10px] md:pt-0 border-t md:border-t-0 border-black/5">
+                    <div className="md:text-right">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#7a847f] block">Subscribed Value</span>
+                      <strong className="text-[16px] font-manrope text-ink">{formatCurrency(h.totalAmount)}</strong>
+                    </div>
+                    <Link
+                      href="/dashboard/holdings"
+                      className="px-[14px] py-[8px] bg-white border border-black/10 hover:border-[#008b45] text-ink hover:text-[#008b45] text-[12px] font-bold rounded-full transition-colors whitespace-nowrap"
+                    >
+                      View Documents
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Recent Commissions */}
       <div>

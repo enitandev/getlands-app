@@ -69,36 +69,84 @@ export default function ClientWallet({ balance, transactions, bankAccounts }: { 
           {transactions.length === 0 ? (
             <div className="p-8 text-center text-[#68736d] text-[14px]">No transactions yet.</div>
           ) : (
-            transactions.map(tx => (
-              <div key={tx.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_100px] gap-[15px] p-[20px] lg:p-[20px_30px] items-center hover:bg-[#fcfdfc] transition-colors">
-                <div className="flex gap-[15px] items-center">
-                  <div className={`w-[40px] h-[40px] rounded-full flex items-center justify-center shrink-0 ${
-                    tx.type === 'deposit' ? 'bg-[#eef3ef] text-[#008b45]' : 
-                    tx.status === 'pending' ? 'bg-[#fff8e1] text-[#f5a623]' : 'bg-[#fdeeee] text-[#e53935]'
-                  }`}>
-                    {tx.type === 'deposit' ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    )}
+            transactions.map(tx => {
+              const normType = tx.type.toLowerCase();
+              let label = tx.type.replace(/_/g, ' ');
+              let badge: string | null = null;
+              let badgeClass = '';
+              let isCredit = normType !== 'withdrawal' && normType !== 'investment';
+
+              if (normType === 'commission_payout') {
+                label = 'Sales Commission';
+                badge = 'Agent Commission';
+                badgeClass = 'bg-[#eef3ef] text-[#008b45]';
+                isCredit = true;
+              } else if (normType === 'roi' || normType === 'dividend') {
+                label = normType === 'roi' ? 'Commodity Trade ROI' : 'Dividend Payout';
+                badge = 'Trade Return';
+                badgeClass = 'bg-[#008b45]/10 text-[#008b45]';
+                isCredit = true;
+              } else if (normType === 'principal_return') {
+                label = 'Principal Capital Return';
+                badge = 'Capital Return';
+                badgeClass = 'bg-[#008b45]/10 text-[#008b45]';
+                isCredit = true;
+              } else if (normType === 'deposit') {
+                label = 'Wallet Deposit';
+                isCredit = true;
+              } else if (normType === 'withdrawal') {
+                label = 'Bank Withdrawal';
+                isCredit = false;
+              } else if (normType === 'investment') {
+                label = 'Opportunity Allocation';
+                badge = 'Investment';
+                badgeClass = 'bg-black/5 text-[#555]';
+                isCredit = false;
+              }
+
+              return (
+                <div key={tx.id} className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_120px] gap-[15px] p-[20px] lg:p-[20px_30px] items-center hover:bg-[#fcfdfc] transition-colors">
+                  <div className="flex gap-[15px] items-center">
+                    <div className={`w-[40px] h-[40px] rounded-full flex items-center justify-center shrink-0 ${
+                      isCredit ? 'bg-[#eef3ef] text-[#008b45]' : 
+                      tx.status === 'pending' ? 'bg-[#fff8e1] text-[#f5a623]' : 'bg-[#fdeeee] text-[#e53935]'
+                    }`}>
+                      {isCredit ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-[8px] flex-wrap">
+                        <strong className="text-[14px] text-ink capitalize">{label} {tx.status === 'pending' ? '(Pending)' : ''}</strong>
+                        {badge && (
+                          <span className={`text-[10px] font-bold px-[8px] py-[2px] rounded-full uppercase tracking-wider ${badgeClass}`}>
+                            {badge}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[12px] text-[#7a847f] font-mono block mt-[2px]">{tx.reference || tx.id.slice(0, 8)}</span>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="block text-[15px] text-ink capitalize">{tx.type} {tx.status === 'pending' ? '(Pending)' : ''}</strong>
-                    <span className="text-[12px] text-[#7a847f] font-mono">{tx.reference || tx.id.slice(0, 8)}</span>
+                  
+                  <div className="text-[13px] text-[#68736d]">
+                    {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  
+                  <div className="text-right">
+                    <strong className={`block text-[16px] font-manrope ${isCredit ? 'text-[#008b45]' : 'text-ink'}`}>
+                      {isCredit ? '+' : '-'}{formatCurrency(tx.amount)}
+                    </strong>
+                    <span className={`text-[10px] uppercase font-bold tracking-wider ${
+                      tx.status === 'success' ? 'text-[#008b45]' : tx.status === 'pending' ? 'text-[#f5a623]' : 'text-[#e53935]'
+                    }`}>
+                      {tx.status}
+                    </span>
                   </div>
                 </div>
-                
-                <div className="text-[13px] text-[#68736d]">
-                  {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </div>
-                
-                <div className="text-right">
-                  <strong className={`block text-[16px] ${tx.type === 'deposit' ? 'text-[#008b45]' : 'text-ink'}`}>
-                    {tx.type === 'deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
-                  </strong>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

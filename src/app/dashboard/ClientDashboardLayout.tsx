@@ -134,6 +134,21 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
           </button>
         </div>
 
+        {!isCollapsed && isSalesAgent && (
+          <div className="flex bg-[#f2f5f3] p-[3px] rounded-full mb-[25px] border border-black/5 shrink-0">
+            <Link 
+              href="/agent" 
+              className="flex-1 text-center py-[7px] px-[8px] text-[#68736d] hover:text-[#18201c] rounded-full text-[11px] font-bold transition-colors whitespace-nowrap"
+              title="Switch to Sales Agent Portal"
+            >
+              Agent Portal
+            </Link>
+            <span className="flex-1 text-center py-[7px] px-[8px] bg-[#008b45] text-white rounded-full text-[11px] font-bold shadow-sm whitespace-nowrap">
+              Investor Mode
+            </span>
+          </div>
+        )}
+
         <nav className={`flex flex-col gap-[10px] w-full ${isCollapsed ? 'px-[15px]' : ''}`}>
           {navItems.map(item => {
             const isActive = pathname === item.path;

@@ -178,17 +178,24 @@ export async function sendInviteAction(userId: string) {
 }
 
 export async function appointSalesAgentAction(userId: string) {
+  const existing = await prisma.user.findUnique({ where: { id: userId } });
+  if (!existing) throw new Error("User not found");
+
+  const { ensureReferralCode } = await import('@/lib/generateReferralCode');
+  const referralCode = await ensureReferralCode(existing);
+
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { role: 'sales' }
+    data: { role: 'sales', referralCode }
   });
   
   const { sendAgentPromotionEmail } = await import('@/lib/email');
   await sendAgentPromotionEmail(user.email, user.firstName);
   
   revalidatePath('/admin/customers');
+  revalidatePath(`/admin/customers/${userId}`);
   revalidatePath('/admin/sales');
-  return { success: true };
+  return { success: true, referralCode };
 }
 
 export async function removeSalesAgentAction(userId: string) {
@@ -197,6 +204,7 @@ export async function removeSalesAgentAction(userId: string) {
     data: { role: 'customer' }
   });
   revalidatePath('/admin/customers');
+  revalidatePath(`/admin/customers/${userId}`);
   revalidatePath('/admin/sales');
   return { success: true };
 }

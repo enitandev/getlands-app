@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { RecordReferralModal } from '../LegacyReferralModal';
 import { DeleteHoldingButton } from '../DeleteHoldingButton';
 import CustomerLedger from './CustomerLedger';
+import AgentRoleToggle from './AgentRoleToggle';
 
 export default async function CustomerProfile({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,7 +34,7 @@ export default async function CustomerProfile({ params }: { params: Promise<{ id
 
   return (
     <div className="space-y-[40px] max-w-[1000px] mx-auto">
-      <div className="flex items-center justify-between gap-[15px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[15px]">
         <div className="flex items-center gap-[15px]">
           <Link href="/admin/customers" className="w-[40px] h-[40px] bg-white border border-black/10 rounded-full flex items-center justify-center text-ink hover:bg-[#f7f9f7] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -44,7 +45,13 @@ export default async function CustomerProfile({ params }: { params: Promise<{ id
           </div>
         </div>
         
-        <div className="flex gap-[10px]">
+        <div className="flex items-center flex-wrap gap-[10px]">
+          <AgentRoleToggle 
+            userId={user.id} 
+            initialRole={user.role} 
+            userName={`${user.firstName} ${user.lastName}`} 
+            referralCode={user.referralCode} 
+          />
           <RecordReferralModal referrerUserId={user.id} />
         </div>
       </div>
@@ -69,6 +76,18 @@ export default async function CustomerProfile({ params }: { params: Promise<{ id
             <div>
               <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Account Status</div>
               <span className="inline-flex px-[8px] py-[2px] bg-[#eef3ef] text-[#008b45] text-[10px] font-bold uppercase tracking-[0.05em] rounded-full mt-[4px]">{user.kycStatus || 'Unverified'}</span>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Account Role</div>
+              {user.role === 'sales' ? (
+                <span className="inline-flex items-center gap-[4px] px-[8px] py-[2px] bg-[#f5a623]/15 text-[#b26a00] text-[10px] font-bold uppercase tracking-[0.05em] rounded-full mt-[4px]">
+                  Sales Agent {user.referralCode ? `(${user.referralCode})` : ''}
+                </span>
+              ) : (
+                <span className="inline-flex px-[8px] py-[2px] bg-black/5 text-[#68736d] text-[10px] font-bold uppercase tracking-[0.05em] rounded-full mt-[4px]">
+                  Customer
+                </span>
+              )}
             </div>
           </div>
         </div>

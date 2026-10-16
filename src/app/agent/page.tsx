@@ -23,10 +23,20 @@ export default async function AgentOverviewPage() {
   });
 
   // Totals are aggregated over ALL commissions, not just the recent ones displayed
-  const [pendingAgg, paidAgg, recentCommissions] = await Promise.all([
+  const [pendingAgg, paidAgg, recentCommissions, personalHoldings] = await Promise.all([
     prisma.commission.aggregate({ where: { agentId: userId, status: 'PENDING' }, _sum: { amount: true } }),
     prisma.commission.aggregate({ where: { agentId: userId, status: 'PAID' }, _sum: { amount: true } }),
-    prisma.commission.findMany({ where: { agentId: userId }, orderBy: { createdAt: 'desc' }, take: 10 })
+    prisma.commission.findMany({ where: { agentId: userId }, orderBy: { createdAt: 'desc' }, take: 10 }),
+    prisma.holding.findMany({
+      where: { userId },
+      include: {
+        opportunity: true,
+        payouts: {
+          orderBy: { dueDate: 'asc' }
+        }
+      },
+      orderBy: { dateAcquired: 'desc' }
+    })
   ]);
 
   return (
@@ -36,6 +46,7 @@ export default async function AgentOverviewPage() {
       pendingCommissions={pendingAgg._sum.amount || 0}
       availableCommissions={paidAgg._sum.amount || 0}
       recentCommissions={recentCommissions}
+      personalHoldings={personalHoldings}
     />
   );
 }

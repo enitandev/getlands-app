@@ -1,12 +1,14 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/Toast';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { formatCurrency } from '@/lib/mockData';
 import { addLegacyCustomerAction, assignOpportunityAction, deleteCustomerAction, sendInviteAction } from '@/app/actions/admin-customers';
 
 export default function ClientCustomers({ users, opportunities, returnPlans = [] }: { users: any[], opportunities: any[], returnPlans?: any[] }) {
+  const router = useRouter();
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedOppId, setSelectedOppId] = useState("");
@@ -69,7 +71,7 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
       </div>
 
       <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
-        <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_80px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
+        <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_170px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
           <div>Customer Details</div>
           <div>Joined</div>
           <div>Holdings Count</div>
@@ -79,7 +81,7 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
         
         <div className="divide-y divide-black/5">
           {users.map(c => (
-            <div key={c.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_80px] gap-[15px] lg:gap-[20px] p-[20px] lg:p-[16px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors">
+            <div key={c.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_170px] gap-[15px] lg:gap-[20px] p-[20px] lg:p-[16px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors">
               <div className="flex gap-[15px] items-center">
                 <div className="w-[40px] h-[40px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#008b45] font-bold text-[14px]">
                   {c.firstName.charAt(0) + c.lastName.charAt(0)}
@@ -87,8 +89,10 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                 <div>
                   <div className="flex items-center gap-[8px]">
                     <strong className="block text-[14px] text-ink">{c.firstName + ' ' + c.lastName}</strong>
-                    {c.role === 'sales' && (
+                    {c.role === 'sales' ? (
                       <span className="bg-[#f5a623]/20 text-[#d89018] text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wider">Agent</span>
+                    ) : (
+                      <span className="bg-black/5 text-[#7a847f] text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wider">Customer</span>
                     )}
                   </div>
                   <span className="text-[12px] text-[#68736d] truncate">{c.email}</span>
@@ -110,10 +114,41 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                 <strong className="text-[14px] text-[#008b45]">{formatCurrency(c.totalValue)}</strong>
               </div>
               
-              <div className="mt-[10px] lg:mt-0 text-right relative">
+              <div className="mt-[10px] lg:mt-0 flex items-center justify-end gap-[8px] relative">
+                {c.role === 'sales' ? (
+                  <span className="hidden sm:inline-flex items-center gap-[4px] text-[11px] font-bold text-[#008b45] bg-[#eef3ef] px-[10px] py-[5px] rounded-full">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Sales Agent
+                  </span>
+                ) : (
+                  <button 
+                    disabled={loading}
+                    onClick={() => {
+                      setConfirmConfig({
+                        isOpen: true,
+                        title: 'Appoint as Sales Agent',
+                        message: `Upgrade ${c.firstName} ${c.lastName} to a Sales Agent? They will immediately receive access to the Agent Portal, a unique referral link, and welcome email.`,
+                        action: async () => {
+                          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                          setLoading(true);
+                          const { appointSalesAgentAction } = await import('@/app/actions/admin-customers');
+                          await appointSalesAgentAction(c.id);
+                          toast(`${c.firstName} appointed as Sales Agent!`, 'success');
+                          router.refresh();
+                          setLoading(false);
+                        }
+                      });
+                    }}
+                    className="px-[10px] py-[5px] text-[12px] font-bold text-[#008b45] bg-[#eef3ef] hover:bg-[#008b45] hover:text-white rounded-[8px] transition-colors whitespace-nowrap"
+                  >
+                    + Appoint Agent
+                  </button>
+                )}
+
                 <button 
                   onClick={() => setOpenDropdownId(openDropdownId === c.id ? null : c.id)} 
-                  className="w-[32px] h-[32px] rounded-full hover:bg-black/5 flex items-center justify-center transition-colors ml-auto"
+                  className="w-[32px] h-[32px] rounded-full hover:bg-black/5 flex items-center justify-center transition-colors shrink-0"
+                  aria-label="More actions"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
                 </button>
@@ -181,6 +216,7 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                               await appointSalesAgentAction(c.id);
                               toast('User appointed as Sales Agent!', 'success');
                             }
+                            router.refresh();
                             setLoading(false);
                           }
                         });

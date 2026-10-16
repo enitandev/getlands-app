@@ -185,6 +185,21 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
           </button>
         </div>
 
+        {!isCollapsed && (
+          <div className="flex bg-[#f2f5f3] p-[3px] rounded-full mb-[25px] border border-black/5 shrink-0">
+            <span className="flex-1 text-center py-[7px] px-[8px] bg-[#008b45] text-white rounded-full text-[11px] font-bold shadow-sm whitespace-nowrap">
+              Agent Portal
+            </span>
+            <Link 
+              href="/dashboard" 
+              className="flex-1 text-center py-[7px] px-[8px] text-[#68736d] hover:text-[#18201c] rounded-full text-[11px] font-bold transition-colors whitespace-nowrap"
+              title="Switch to Personal Investor Account"
+            >
+              Investor Mode
+            </Link>
+          </div>
+        )}
+
         <nav className={`flex flex-col gap-[10px] w-full ${isCollapsed ? 'px-[15px]' : ''}`}>
           {navItems.map(item => {
             const isActive = pathname === item.path;
@@ -244,7 +259,13 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
             </div>
             <div className="font-manrope font-bold text-[18px] text-ink tracking-tight">Agent<span className="text-[#008b45]">Portal</span></div>
           </Link>
-          <div className="flex items-center gap-[15px]">
+          <div className="flex items-center gap-[10px]">
+            <Link 
+              href="/dashboard" 
+              className="text-[11px] font-bold text-[#008b45] bg-[#eef3ef] border border-[#008b45]/20 px-[10px] py-[5px] rounded-full"
+            >
+              Investor Mode &rarr;
+            </Link>
             <Link href="/dashboard/settings" className="w-[36px] h-[36px] rounded-full bg-[#f7f9f7] border border-black/5 flex items-center justify-center text-[#18201c] text-[13px] font-bold hover:bg-[#008b45] hover:text-white transition-colors shadow-sm">
               {initials}
             </Link>
