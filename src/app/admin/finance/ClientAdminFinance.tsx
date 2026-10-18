@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/mockData';
 import { toast } from '@/components/ui/Toast';
 import ClientPayoutRow from './ClientPayoutRow';
 import ClientWithdrawalRow from './ClientWithdrawalRow';
+import ClientWalletLiabilityRow from './ClientWalletLiabilityRow';
 
 export default function ClientAdminFinance({ transactions = [], ledger }: { transactions: any[], ledger?: any }) {
   const router = useRouter();
@@ -362,6 +363,51 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
               </div>
               <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Total Outflow</span>
               <strong className="font-manrope text-[28px] font-bold text-ink leading-none">{formatCurrency(ledger.totalOutgoing || 0)}</strong>
+            </div>
+          </div>
+
+          {/* Active Wallet Liabilities & Settlement Reconciliation */}
+          <div className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[10px]">
+              <div>
+                <h3 className="font-manrope text-[16px] font-bold text-ink">Active Wallet Liabilities & Customer Balances</h3>
+                <p className="text-[13px] text-[#68736d]">Users holding digital wallet balances. If a customer was already paid directly via bank, clear their balance below.</p>
+              </div>
+              <div className="text-left sm:text-right">
+                <span className="block text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[2px]">Total Platform Liability</span>
+                <strong className="text-[18px] text-red-600 font-manrope">{formatCurrency(ledger.walletLiabilities || 0)}</strong>
+              </div>
+            </div>
+            
+            <div className="p-[20px]">
+              {(!ledger.usersWithBalance || ledger.usersWithBalance.length === 0) ? (
+                <div className="text-center p-[40px] bg-[#f7f9f7] rounded-[16px]">
+                  <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-[15px]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <h3 className="font-manrope text-[16px] font-bold text-ink mb-[5px]">Zero Pending Wallet Liabilities</h3>
+                  <p className="text-[13px] text-[#68736d]">All customer wallets are settled with ₦0 pending liabilities.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[850px]">
+                    <thead>
+                      <tr className="border-b border-black/5 text-[11px] text-[#7a847f] uppercase tracking-wider">
+                        <th className="p-[10px_0] font-bold">Customer</th>
+                        <th className="p-[10px] font-bold">Wallet Balance</th>
+                        <th className="p-[10px] font-bold">Bank on File</th>
+                        <th className="p-[10px] font-bold">Recent Credited Payouts</th>
+                        <th className="p-[10px] font-bold text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/5">
+                      {ledger.usersWithBalance.map((u: any) => (
+                        <ClientWalletLiabilityRow key={u.id} user={u} formatCurrency={formatCurrency} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 

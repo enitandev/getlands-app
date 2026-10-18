@@ -224,3 +224,43 @@ export async function sendWithdrawalProcessedEmail(to: string, userName: string,
   `;
   await sendResendEmail(to, "Your Withdrawal has been Processed", html);
 }
+
+export async function sendDirectBankPayoutEmail(to: string, userName: string, amount: number, title: string, bankName?: string, accountNumber?: string) {
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-w: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #008b45; padding: 20px; text-align: center; color: white;">
+        <h2 style="margin: 0;">Payout Transferred to Bank</h2>
+      </div>
+      <div style="padding: 30px;">
+        <p>Hello ${userName},</p>
+        <p>Your investment return of <strong>₦${amount.toLocaleString()}</strong> for <strong>${title}</strong> has been transferred directly to your bank account${bankName && accountNumber ? ` (${bankName} - ${accountNumber})` : ''}.</p>
+        <p>Depending on your bank's network processing, your credit alert will reflect shortly.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://getlands.ng/dashboard/holdings" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Holdings</a>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 40px;">Thank you for investing with Getlands.</p>
+      </div>
+    </div>
+  `;
+  await sendResendEmail(to, "Your Getlands Investment Payout has been Sent", html);
+}
+
+export async function sendWalletReconciliationEmail(to: string, userName: string, amount: number, reason: string) {
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-w: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #182a20; padding: 20px; text-align: center; color: white;">
+        <h2 style="margin: 0;">Wallet Adjustment Notice</h2>
+      </div>
+      <div style="padding: 30px;">
+        <p>Hello ${userName},</p>
+        <p>Your Getlands Wallet balance has been adjusted by <strong>-₦${amount.toLocaleString()}</strong>.</p>
+        <p style="color: #666; font-size: 14px;">Reason: <em>${reason}</em></p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://getlands.ng/dashboard/wallet" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Wallet History</a>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 40px;">If you have any questions regarding this adjustment, please contact support.</p>
+      </div>
+    </div>
+  `;
+  await sendResendEmail(to, "Getlands Wallet Adjustment Notice", html);
+}

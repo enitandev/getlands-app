@@ -102,6 +102,16 @@ export default function ClientWallet({ balance, transactions, bankAccounts }: { 
                 badge = 'Investment';
                 badgeClass = 'bg-black/5 text-[#555]';
                 isCredit = false;
+              } else if (normType === 'direct_bank_payout') {
+                label = 'Direct Bank Payout';
+                badge = 'Direct Bank';
+                badgeClass = 'bg-[#008b45]/10 text-[#008b45]';
+                isCredit = true;
+              } else if (normType === 'offline_settlement_reconciliation') {
+                label = 'Bank Settlement Adjustment';
+                badge = 'Reconciliation';
+                badgeClass = 'bg-amber-500/10 text-amber-700';
+                isCredit = false;
               }
 
               return (

@@ -26,7 +26,8 @@ export async function getMasterLedger() {
     directInvestments,
     outgoing,
     upcomingPayouts,
-    pendingWithdrawals
+    pendingWithdrawals,
+    usersWithBalance
   ] = await Promise.all([
     prisma.holding.aggregate({
       where: { status: 'active' },
@@ -57,7 +58,18 @@ export async function getMasterLedger() {
         dueDate: { lte: endOfMonth }
       },
       include: {
-        user: { select: { firstName: true, lastName: true, email: true } },
+        user: { 
+          select: { 
+            id: true,
+            firstName: true, 
+            lastName: true, 
+            email: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            bankAccounts: { where: { status: 'active' } }
+          } 
+        },
         holding: { include: { opportunity: true } }
       },
       orderBy: { dueDate: 'asc' }
@@ -70,6 +82,27 @@ export async function getMasterLedger() {
         }
       },
       orderBy: { date: 'asc' }
+    }),
+    prisma.user.findMany({
+      where: { walletBalance: { gt: 0 } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        walletBalance: true,
+        bankName: true,
+        accountNumber: true,
+        accountName: true,
+        bankAccounts: { where: { status: 'active' } },
+        payouts: {
+          where: { status: 'PAID' },
+          orderBy: { paidAt: 'desc' },
+          take: 3,
+          include: { holding: { include: { opportunity: true } } }
+        }
+      },
+      orderBy: { walletBalance: 'desc' }
     })
   ]);
 
@@ -84,7 +117,8 @@ export async function getMasterLedger() {
     totalOutgoing: outgoing._sum.amount || 0,
     upcomingPayouts,
     totalUpcomingPayouts,
-    pendingWithdrawals
+    pendingWithdrawals,
+    usersWithBalance
   };
 }
 
@@ -202,8 +236,134 @@ export async function executePayoutAction(payoutId: string) {
     await sendWalletCreditEmail(payout.user.email, payout.user.firstName, payout.amount, payout.holding.opportunity.title);
 
     revalidatePath('/admin/finance');
+    revalidatePath('/dashboard/wallet');
     return { success: true };
   } catch (err: any) {
     return { error: err.message || 'Failed to execute payout' };
+  }
+}
+
+export async function executeDirectBankPayoutAction(payoutId: string, bankReference?: string) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const payout = await prisma.payoutSchedule.findUnique({
+    where: { id: payoutId },
+    include: { 
+      holding: { include: { opportunity: true } }, 
+      user: { include: { bankAccounts: { where: { status: 'active' } } } } 
+    }
+  });
+
+  if (!payout || payout.status !== 'PENDING') {
+    return { error: 'Invalid payout or already processed' };
+  }
+
+  try {
+    const activeBank = payout.user.bankAccounts?.[0];
+    const bankName = activeBank?.bankName || payout.user.bankName;
+    const accountNumber = activeBank?.accountNumber || payout.user.accountNumber;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Create audit transaction for direct bank payout (DOES NOT touch walletBalance!)
+      const txn = await tx.transaction.create({
+        data: {
+          userId: payout.userId,
+          type: 'direct_bank_payout',
+          amount: payout.amount,
+          status: 'success',
+          reference: bankReference?.trim() ? `BANK-${bankReference.trim().toUpperCase()}` : `BANK-${Date.now().toString().slice(-6)}`
+        }
+      });
+
+      // 2. Mark payout schedule as PAID directly
+      await tx.payoutSchedule.update({
+        where: { id: payoutId },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+          transactionId: txn.id
+        }
+      });
+
+      // 3. Notify User
+      await tx.notification.create({
+        data: {
+          userId: payout.userId,
+          type: 'TRANSACTION',
+          title: 'Payout Transferred to Bank',
+          message: `Your payout of ₦${payout.amount.toLocaleString()} for ${payout.holding.opportunity.title} has been transferred directly to your bank account.`,
+        }
+      });
+    });
+
+    const { sendDirectBankPayoutEmail } = await import('@/lib/email');
+    await sendDirectBankPayoutEmail(payout.user.email, payout.user.firstName, payout.amount, payout.holding.opportunity.title, bankName || undefined, accountNumber || undefined);
+
+    revalidatePath('/admin/finance');
+    revalidatePath('/dashboard/holdings');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to record direct bank payout' };
+  }
+}
+
+export async function reconcileWalletBalanceAction(userId: string, amount: number, reason: string = "Settled directly via bank transfer", sendEmail: boolean = false) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    return { error: 'User not found' };
+  }
+
+  if (amount <= 0 || amount > user.walletBalance) {
+    return { error: `Invalid deduction amount. Current wallet balance is ₦${user.walletBalance.toLocaleString()}` };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Deduct amount from user walletBalance
+      await tx.user.update({
+        where: { id: userId },
+        data: { walletBalance: { decrement: amount } }
+      });
+
+      // 2. Create audited adjustment transaction
+      await tx.transaction.create({
+        data: {
+          userId,
+          type: 'offline_settlement_reconciliation',
+          amount,
+          status: 'success',
+          reference: `REC-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`
+        }
+      });
+
+      // 3. In-app notification
+      await tx.notification.create({
+        data: {
+          userId,
+          type: 'TRANSACTION',
+          title: 'Wallet Balance Reconciled',
+          message: `Your wallet balance was adjusted by ₦${amount.toLocaleString()} for direct bank payout settlement.`,
+        }
+      });
+    });
+
+    if (sendEmail) {
+      const { sendWalletReconciliationEmail } = await import('@/lib/email');
+      await sendWalletReconciliationEmail(user.email, user.firstName, amount, reason);
+    }
+
+    revalidatePath('/admin/finance');
+    revalidatePath('/dashboard/wallet');
+    revalidatePath(`/admin/customers/${userId}`);
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to reconcile wallet balance' };
   }
 }
