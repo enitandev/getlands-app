@@ -37,6 +37,9 @@ export default async function ReferralsPage() {
   const totalSignups = referredUsers.length;
   const successfulReferrals = referredUsers.filter(u => u.hasTriggeredReferralReward).length;
 
+  const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
+  const referralBonusPercentage = settings?.agentDirectCommissionFirst ?? 5.0;
+
   return (
     <ClientReferrals 
       referralCode={user.referralCode} 
@@ -44,6 +47,7 @@ export default async function ReferralsPage() {
       totalSignups={totalSignups}
       successfulReferrals={successfulReferrals}
       referredUsers={referredUsers}
+      referralBonusPercentage={referralBonusPercentage}
     />
   );
 }

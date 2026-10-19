@@ -161,6 +161,8 @@ model Transaction {
   userId        String
   type          String    // deposit, withdrawal, investment
   amount        Float
+  fee           Float?    @default(0)
+  netAmount     Float?
   status        String    @default("success") // pending, success, failed
   reference     String    @unique
   date          DateTime  @default(now())

@@ -63,14 +63,14 @@ export default function ClientSettings({ initialSettings }: { initialSettings: a
                 <h2 className="font-manrope text-[18px] font-bold mb-[20px]">Financial Settings</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
                   <div>
-                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Default Processing Fee (%)</label>
-                    <input type="number" step="0.1" name="processingFee" defaultValue={initialSettings.processingFee} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
-                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Applied to automated checkout payments.</p>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Withdrawal / Capital Settlement Fee (%)</label>
+                    <input type="number" step="0.1" name="processingFee" defaultValue={initialSettings.processingFee ?? 1.5} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
+                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Percentage deducted when a customer requests a wallet withdrawal to their bank.</p>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Agent Commission - First Purchase (%)</label>
+                    <label className="block text-[13px] font-bold text-ink mb-[8px]">Agent & Referral First Purchase Commission (%)</label>
                     <input type="number" step="0.1" name="agentDirectCommissionFirst" defaultValue={initialSettings.agentDirectCommissionFirst} className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors" />
-                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Paid to direct agent on client's first acquisition.</p>
+                    <p className="text-[11px] text-[#7a847f] mt-[5px]">Paid to sales agents and standard customer referrers on their client's first acquisition.</p>
                   </div>
                   <div>
                     <label className="block text-[13px] font-bold text-ink mb-[8px]">Agent Commission - Future Purchases (%)</label>

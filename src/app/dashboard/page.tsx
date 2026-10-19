@@ -35,7 +35,7 @@ export default async function DashboardOverviewPage() {
   });
 
   const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
-  const referralBonusPercentage = settings?.referralBonusPercentage || 10;
+  const referralBonusPercentage = settings?.agentDirectCommissionFirst ?? 5.0;
 
   const returnPlans = await prisma.returnPlan.findMany({
     where: { isActive: true },

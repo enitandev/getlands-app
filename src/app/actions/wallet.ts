@@ -34,18 +34,26 @@ export async function requestWithdrawalAction(formData: FormData) {
       return { error: "Please add a verified bank account in Settings first." };
     }
 
-    // 2. Create the withdrawal transaction (status: pending)
+    // 2. Calculate Settlement Fee & Net Amount
+    const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
+    const feeRate = settings?.processingFee ?? 0;
+    const fee = Math.round(((amount * feeRate) / 100) * 100) / 100;
+    const netAmount = Math.max(0, amount - fee);
+
+    // 3. Create the withdrawal transaction (status: pending)
     const transaction = await prisma.transaction.create({
       data: {
         userId: user.id,
         type: 'withdrawal',
         amount: amount,
+        fee: fee,
+        netAmount: netAmount,
         status: 'pending',
         reference: `WDL-${Date.now()}-${Math.floor(Math.random() * 1000)}`
       }
     });
 
-    // 3. Deduct the amount from wallet balance immediately (locked)
+    // 4. Deduct the full gross amount from wallet balance immediately (locked)
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -53,13 +61,13 @@ export async function requestWithdrawalAction(formData: FormData) {
       }
     });
 
-    // 4. Send an admin notification
+    // 5. Send an admin notification
     await prisma.notification.create({
       data: {
         userId: null, // Global/Admin notification
         type: 'SYSTEM',
         title: 'New Withdrawal Request',
-        message: `${user.firstName} ${user.lastName} requested a withdrawal of ₦${amount.toLocaleString()}.`,
+        message: `${user.firstName} ${user.lastName} requested a withdrawal of ₦${amount.toLocaleString()} (Net wire: ₦${netAmount.toLocaleString()}, Fee: ₦${fee.toLocaleString()}).`,
         linkUrl: '/admin/finance'
       }
     });

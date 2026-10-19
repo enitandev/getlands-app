@@ -22,5 +22,15 @@ export default async function WalletPage() {
 
   if (!user) redirect('/login');
 
-  return <ClientWallet balance={user.walletBalance} transactions={user.transactions} bankAccounts={user.bankAccounts} />;
+  const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
+  const settlementFeePercent = settings?.processingFee ?? 1.5;
+
+  return (
+    <ClientWallet 
+      balance={user.walletBalance} 
+      transactions={user.transactions} 
+      bankAccounts={user.bankAccounts} 
+      settlementFeePercent={settlementFeePercent} 
+    />
+  );
 }

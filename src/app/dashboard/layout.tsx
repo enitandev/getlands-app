@@ -29,7 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const unreadMessageCount = await getUnreadMessageCount();
 
   const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
-  const referralBonusPercentage = settings?.referralBonusPercentage || 10;
+  const referralBonusPercentage = settings?.agentDirectCommissionFirst ?? 5.0;
 
   return (
     <ClientDashboardLayout 
@@ -38,6 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       notifications={user.notifications} 
       unreadMessageCount={unreadMessageCount} 
       referralBonusPercentage={referralBonusPercentage}
+      referralCode={user.referralCode}
       isImpersonating={!!session.originalAdminId}
       isSalesAgent={user.role === 'sales'}
     >

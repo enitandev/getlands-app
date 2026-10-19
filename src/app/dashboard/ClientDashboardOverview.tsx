@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/mockData';
 import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 import DistributionChart from '@/components/ui/DistributionChart';
 
-export default function ClientDashboardOverview({ user, opportunities = [], returnPlans = [], referralBonusPercentage = 10, reports }: any) {
+export default function ClientDashboardOverview({ user, activeAnnouncement, opportunities = [], returnPlans = [], referralBonusPercentage = 5, reports }: any) {
   const router = useRouter();
   const openOpps = opportunities?.filter((o: any) => o.status === 'available') || [];
   

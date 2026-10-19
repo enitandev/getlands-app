@@ -35,6 +35,9 @@ export async function updatePlatformSettingsAction(formData: FormData) {
   });
 
   revalidatePath('/admin/settings');
+  revalidatePath('/dashboard/wallet');
+  revalidatePath('/dashboard/referrals');
+  revalidatePath('/dashboard');
   revalidatePath('/checkout');
 }
 
@@ -135,6 +138,9 @@ export async function approveWithdrawalAction(transactionId: string) {
     return { error: 'Invalid or already processed transaction' };
   }
 
+  const fee = transaction.fee ?? 0;
+  const netAmount = transaction.netAmount ?? (transaction.amount - fee);
+
   await prisma.$transaction([
     prisma.transaction.update({
       where: { id: transactionId },
@@ -145,13 +151,15 @@ export async function approveWithdrawalAction(transactionId: string) {
         userId: transaction.userId,
         type: 'TRANSACTION',
         title: 'Withdrawal Successful',
-        message: `Your withdrawal of ₦${transaction.amount.toLocaleString()} has been processed and sent to your bank.`,
+        message: fee > 0 
+          ? `Your withdrawal of ₦${transaction.amount.toLocaleString()} (Net payout: ₦${netAmount.toLocaleString()} after ₦${fee.toLocaleString()} settlement fee) has been sent to your bank.`
+          : `Your withdrawal of ₦${transaction.amount.toLocaleString()} has been processed and sent to your bank.`,
       }
     })
   ]);
 
   const { sendWithdrawalProcessedEmail } = await import('@/lib/email');
-  await sendWithdrawalProcessedEmail(transaction.user.email, transaction.user.firstName, transaction.amount);
+  await sendWithdrawalProcessedEmail(transaction.user.email, transaction.user.firstName, transaction.amount, netAmount, fee);
 
   const { revalidatePath } = await import('next/cache');
   revalidatePath('/admin/finance');

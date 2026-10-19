@@ -5,9 +5,10 @@ import { fundWalletAction } from '@/app/actions/checkout';
 import { requestWithdrawalAction } from '@/app/actions/wallet';
 import Link from 'next/link';
 
-export default function ClientWallet({ balance, transactions, bankAccounts }: { balance: number, transactions: any[], bankAccounts: any[] }) {
+export default function ClientWallet({ balance, transactions, bankAccounts, settlementFeePercent = 1.5 }: { balance: number, transactions: any[], bankAccounts: any[], settlementFeePercent?: number }) {
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawError, setWithdrawError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -224,7 +225,7 @@ export default function ClientWallet({ balance, transactions, bankAccounts }: { 
           <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden">
             <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
               <h2 className="font-manrope text-[18px] lg:text-[20px] font-bold text-ink">Withdraw Funds</h2>
-              <button onClick={() => setIsWithdrawModalOpen(false)} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors">
+              <button onClick={() => { setIsWithdrawModalOpen(false); setWithdrawAmount(''); }} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -273,6 +274,8 @@ export default function ClientWallet({ balance, transactions, bankAccounts }: { 
                     placeholder="0.00" 
                     required 
                     max={balance}
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
                     disabled={!activeBank}
                     className="w-full h-[50px] bg-[#f7f9f7] rounded-[12px] pl-[35px] pr-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors font-manrope font-bold text-[16px] disabled:opacity-50" 
                   />
@@ -282,6 +285,32 @@ export default function ClientWallet({ balance, transactions, bankAccounts }: { 
                   <strong className="text-[12px] text-[#008b45]">{formatCurrency(balance)}</strong>
                 </div>
               </div>
+
+              {Number(withdrawAmount) > 0 && (
+                <div className="bg-[#f7f9f7] rounded-[16px] p-[16px] border border-black/5 space-y-[8px] text-[13px]">
+                  <div className="flex justify-between items-center text-[#68736d]">
+                    <span>Requested Gross:</span>
+                    <span className="font-manrope font-medium text-ink">{formatCurrency(parseFloat(withdrawAmount) || 0)}</span>
+                  </div>
+                  {settlementFeePercent > 0 && (
+                    <div className="flex justify-between items-center text-[#68736d]">
+                      <span>Settlement Fee ({settlementFeePercent}%):</span>
+                      <span className="font-manrope font-medium text-red-600">
+                        -{formatCurrency(Math.round((((parseFloat(withdrawAmount) || 0) * settlementFeePercent) / 100) * 100) / 100)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="border-t border-black/5 pt-[8px] flex justify-between items-center">
+                    <strong className="text-ink">Net Bank Wire:</strong>
+                    <strong className="font-manrope text-[16px] text-[#008b45]">
+                      {formatCurrency(Math.max(0, (parseFloat(withdrawAmount) || 0) - (Math.round((((parseFloat(withdrawAmount) || 0) * settlementFeePercent) / 100) * 100) / 100)))}
+                    </strong>
+                  </div>
+                  <p className="text-[11px] text-[#7a847f] pt-1 leading-relaxed">
+                    Your Getlands wallet will be debited {formatCurrency(parseFloat(withdrawAmount) || 0)}. The net amount of {formatCurrency(Math.max(0, (parseFloat(withdrawAmount) || 0) - (Math.round((((parseFloat(withdrawAmount) || 0) * settlementFeePercent) / 100) * 100) / 100)))} will be transferred directly to your bank account.
+                  </p>
+                </div>
+              )}
 
               <div className="pt-[10px]">
                 <button 

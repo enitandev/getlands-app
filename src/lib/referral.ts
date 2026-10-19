@@ -88,7 +88,8 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
       // Standard customers only get paid on the FIRST purchase
       if (!isFirstPurchase) return false;
 
-      const bonusAmount = (investmentAmount * (settings.referralBonusPercentage || 10.0)) / 100;
+      const bonusRate = settings.agentDirectCommissionFirst || 5.0;
+      const bonusAmount = (investmentAmount * bonusRate) / 100;
       if (bonusAmount > 0) {
         transactions.push(
           prisma.user.update({
@@ -108,7 +109,7 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
             data: {
               userId: referrer.id,
               title: "Referral Bonus Received!",
-              message: `You earned ₦${bonusAmount.toLocaleString()} because your friend made their first acquisition.`,
+              message: `You earned ₦${bonusAmount.toLocaleString()} (${bonusRate}%) because your friend made their first acquisition.`,
               type: "TRANSACTION",
               linkUrl: "/dashboard/wallet",
               actionText: "View Wallet"

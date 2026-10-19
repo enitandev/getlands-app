@@ -479,10 +479,12 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                       <tr className="border-b border-black/5 text-[11px] text-[#7a847f] uppercase tracking-wider">
-                        <th className="p-[10px_0] font-bold w-[120px]">Date</th>
+                        <th className="p-[10px_0] font-bold w-[110px]">Date</th>
                         <th className="p-[10px] font-bold">Customer</th>
                         <th className="p-[10px] font-bold">Bank Details</th>
-                        <th className="p-[10px] font-bold">Amount</th>
+                        <th className="p-[10px] font-bold">Requested</th>
+                        <th className="p-[10px] font-bold">Fee</th>
+                        <th className="p-[10px] font-bold">Net Wire</th>
                         <th className="p-[10px] font-bold text-right">Action</th>
                       </tr>
                     </thead>

@@ -208,16 +208,37 @@ export async function sendWalletCreditEmail(to: string, userName: string, amount
   await sendResendEmail(to, "Your Getlands Wallet has been credited", html);
 }
 
-export async function sendWithdrawalProcessedEmail(to: string, userName: string, amount: number) {
+export async function sendWithdrawalProcessedEmail(to: string, userName: string, amount: number, netAmount?: number, fee?: number) {
+  const finalNet = netAmount ?? (amount - (fee ?? 0));
+  const feeBlock = fee && fee > 0
+    ? `
+      <div style="background-color: #f7f9f7; border: 1px solid #eef3ef; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 14px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: #68736d;">Requested Amount:</span>
+          <strong>₦${amount.toLocaleString()}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: #68736d;">Settlement Fee:</span>
+          <span style="color: #c53030;">-₦${fee.toLocaleString()}</span>
+        </div>
+        <div style="border-top: 1px solid #e0e0e0; padding-top: 8px; display: flex; justify-content: space-between;">
+          <strong style="color: #182a20;">Net Transferred to Bank:</strong>
+          <strong style="color: #008b45; font-size: 16px;">₦${finalNet.toLocaleString()}</strong>
+        </div>
+      </div>
+    `
+    : `<p>Your withdrawal request for <strong>₦${amount.toLocaleString()}</strong> has been successfully processed and sent to your bank account.</p>`;
+
   const html = `
-    <div style="font-family: sans-serif; color: #333; max-w: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
       <div style="background-color: #008b45; padding: 20px; text-align: center; color: white;">
         <h2 style="margin: 0;">Withdrawal Processed</h2>
       </div>
       <div style="padding: 30px;">
         <p>Hello ${userName},</p>
-        <p>Good news! Your withdrawal request for <strong>₦${amount.toLocaleString()}</strong> has been successfully processed and sent to your bank account.</p>
-        <p>Please note that depending on your bank, it may take a few minutes to reflect in your account.</p>
+        <p>Good news! Your withdrawal request has been approved and processed.</p>
+        ${feeBlock}
+        <p>Please note that depending on your bank's network processing, your credit alert will reflect in your account shortly.</p>
         <p style="font-size: 12px; color: #666; margin-top: 40px;">Thank you for trusting Getlands!</p>
       </div>
     </div>

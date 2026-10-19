@@ -63,10 +63,32 @@ const Icons = {
   )
 };
 
-export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, referralBonusPercentage = 10, isImpersonating = false, isSalesAgent = false }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; referralBonusPercentage?: number, isImpersonating?: boolean, isSalesAgent?: boolean }) {
+export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, referralBonusPercentage = 5, referralCode = '', isImpersonating = false, isSalesAgent = false }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; referralBonusPercentage?: number, referralCode?: string | null, isImpersonating?: boolean, isSalesAgent?: boolean }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyInviteLink = async () => {
+    if (!referralCode) {
+      window.location.href = '/dashboard/referrals';
+      return;
+    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://getlands.ng';
+    const link = `${origin}/register?ref=${referralCode}`;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = link;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -178,8 +200,18 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
               <p className="text-[#68736d] text-[12px] leading-relaxed mb-[15px]">
                 Credited to your wallet when a friend makes their first acquisition.
               </p>
-              <button className="w-full h-[40px] bg-white border border-[#008b45]/20 text-[#008b45] text-[13px] font-bold rounded-full hover:bg-[#eef3ef] transition-colors">
-                Copy invite link
+              <button 
+                onClick={handleCopyInviteLink}
+                className="w-full h-[40px] bg-white border border-[#008b45]/20 text-[#008b45] text-[13px] font-bold rounded-full hover:bg-[#eef3ef] transition-colors flex items-center justify-center gap-1.5"
+              >
+                {copiedLink ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Copied!
+                  </>
+                ) : (
+                  'Copy invite link'
+                )}
               </button>
             </div>
           )}
