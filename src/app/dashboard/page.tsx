@@ -19,11 +19,14 @@ export default async function DashboardOverviewPage() {
       notifications: {
         take: 3,
         orderBy: { createdAt: 'desc' }
-      }
+      },
+      bankAccounts: true
     }
   });
 
   if (!user) redirect('/login');
+
+  const hasMissingBank = (!user.accountNumber || !user.bankName) && (!user.bankAccounts || user.bankAccounts.length === 0);
 
   const opportunities = await prisma.opportunity.findMany({
     where: { status: { not: 'draft' } },
@@ -35,6 +38,7 @@ export default async function DashboardOverviewPage() {
   const dashboardAnnouncements = await getActiveAnnouncements({
     userRole: user.role,
     kycStatus: user.kycStatus,
+    hasMissingBank,
     placement: 'dashboard_card'
   });
 

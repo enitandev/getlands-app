@@ -5,7 +5,9 @@ import {
   createAnnouncementAction, 
   updateAnnouncementAction, 
   toggleAnnouncementStatusAction, 
-  deleteAnnouncementAction 
+  deleteAnnouncementAction,
+  sendAnnouncementEmailAction,
+  getAudienceCountAction
 } from '@/app/actions/announcements';
 
 interface AnnouncementItem {
@@ -22,8 +24,21 @@ interface AnnouncementItem {
   priority: number;
   startsAt: Date | string | null;
   expiresAt: Date | string | null;
+  emailSentAt?: Date | string | null;
+  emailSentCount?: number;
   createdAt: Date | string;
   updatedAt: Date | string;
+}
+
+function getAudienceLabel(aud: string) {
+  switch (aud) {
+    case 'all': return 'Everyone';
+    case 'customers': return 'Customers Only';
+    case 'agents': return 'Sales Agents Only';
+    case 'unverified_kyc': return 'Unverified KYC';
+    case 'missing_bank': return 'Missing Bank Details';
+    default: return aud;
+  }
 }
 
 export default function ClientAnnouncements({ initialAnnouncements }: { initialAnnouncements: AnnouncementItem[] }) {
@@ -32,8 +47,10 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
   const [editingAnnouncement, setEditingAnnouncement] = useState<AnnouncementItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'top_banner' | 'dashboard_card'>('all');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [isSendingDirectEmail, setIsSendingDirectEmail] = useState<string | null>(null);
 
-  // Form State for Live Preview
+  // Form State for Live Preview & Submission
   const [formTitle, setFormTitle] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const [formType, setFormType] = useState('promo');
@@ -46,6 +63,25 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
   const [formStartsAt, setFormStartsAt] = useState('');
   const [formExpiresAt, setFormExpiresAt] = useState('');
   const [formBroadcast, setFormBroadcast] = useState(false);
+  const [formSendEmail, setFormSendEmail] = useState(false); // strictly false by default, not automatic
+  const [audienceCount, setAudienceCount] = useState<number | null>(null);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  // Query recipient count when modal is open or audience changes
+  useEffect(() => {
+    if (isModalOpen) {
+      getAudienceCountAction(formAudience).then(res => {
+        setAudienceCount(res.count);
+      }).catch(() => setAudienceCount(null));
+    }
+  }, [isModalOpen, formAudience]);
 
   // Close on Escape key & manage body scroll
   useEffect(() => {
@@ -82,6 +118,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
     setFormStartsAt('');
     setFormExpiresAt('');
     setFormBroadcast(false);
+    setFormSendEmail(false); // Not automatic
     setIsModalOpen(true);
   };
 
@@ -99,6 +136,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
     setFormStartsAt(ann.startsAt ? new Date(ann.startsAt).toISOString().slice(0, 16) : '');
     setFormExpiresAt(ann.expiresAt ? new Date(ann.expiresAt).toISOString().slice(0, 16) : '');
     setFormBroadcast(false);
+    setFormSendEmail(false); // Not automatic
     setIsModalOpen(true);
   };
 
@@ -111,7 +149,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
     } catch {
       // Revert if failed
       setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, isActive: currentStatus } : a));
-      alert("Failed to update announcement status");
+      setToast({ message: "Failed to update announcement status", type: 'error' });
     }
   };
 
@@ -123,9 +161,39 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
     setAnnouncements(prev => prev.filter(a => a.id !== id));
     try {
       await deleteAnnouncementAction(id);
+      setToast({ message: "Announcement deleted", type: 'info' });
     } catch {
       setAnnouncements(previous);
-      alert("Failed to delete announcement");
+      setToast({ message: "Failed to delete announcement", type: 'error' });
+    }
+  };
+
+  const handleSendEmailDirect = async (ann: AnnouncementItem) => {
+    const audLabel = getAudienceLabel(ann.targetAudience);
+    if (!confirm(`Send official email broadcast for "${ann.title}" to ${audLabel}?`)) {
+      return;
+    }
+
+    setIsSendingDirectEmail(ann.id);
+    try {
+      const res = await sendAnnouncementEmailAction(ann.id);
+      if (res.error) {
+        setToast({ message: res.error, type: 'error' });
+      } else {
+        setToast({ 
+          message: `Email broadcast delivered to ${res.emailsSent} recipient(s)!`, 
+          type: 'success' 
+        });
+        setAnnouncements(prev => prev.map(a => a.id === ann.id ? {
+          ...a,
+          emailSentAt: new Date(),
+          emailSentCount: (a.emailSentCount || 0) + (res.emailsSent || 0)
+        } : a));
+      }
+    } catch (err: any) {
+      setToast({ message: err.message || "Failed to dispatch email broadcast", type: 'error' });
+    } finally {
+      setIsSendingDirectEmail(null);
     }
   };
 
@@ -138,10 +206,11 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
     formData.set('targetAudience', formAudience);
     formData.set('isDismissible', formIsDismissible ? 'true' : 'false');
     formData.set('broadcastNotification', formBroadcast ? 'true' : 'false');
+    formData.set('sendEmail', formSendEmail ? 'true' : 'false');
 
     try {
       if (editingAnnouncement) {
-        await updateAnnouncementAction(editingAnnouncement.id, formData);
+        const res = await updateAnnouncementAction(editingAnnouncement.id, formData);
         setAnnouncements(prev => prev.map(a => {
           if (a.id === editingAnnouncement.id) {
             return {
@@ -157,19 +226,32 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
               priority: formPriority,
               startsAt: formStartsAt ? new Date(formStartsAt) : null,
               expiresAt: formExpiresAt ? new Date(formExpiresAt) : null,
+              emailSentAt: formSendEmail ? new Date() : a.emailSentAt,
+              emailSentCount: formSendEmail ? (a.emailSentCount || 0) + (res.emailsSent || 0) : a.emailSentCount,
             };
           }
           return a;
         }));
+
+        if (res.emailsSent && res.emailsSent > 0) {
+          setToast({ message: `Announcement updated & emailed to ${res.emailsSent} users!`, type: 'success' });
+        } else {
+          setToast({ message: "Announcement updated successfully!", type: 'success' });
+        }
       } else {
         const res = await createAnnouncementAction(formData);
         if (res.announcement) {
           setAnnouncements(prev => [res.announcement as AnnouncementItem, ...prev]);
         }
+        if (res.emailsSent && res.emailsSent > 0) {
+          setToast({ message: `Announcement published & emailed to ${res.emailsSent} users!`, type: 'success' });
+        } else {
+          setToast({ message: "Announcement published successfully!", type: 'success' });
+        }
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      alert(err.message || "An error occurred");
+      setToast({ message: err.message || "An error occurred", type: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -338,9 +420,17 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                   <div className="text-[12px] text-ink font-medium capitalize">
                     {ann.placement === 'top_banner' ? 'Top Global Banner' : ann.placement === 'dashboard_card' ? 'Dashboard Spotlight' : 'Pop-up Modal'}
                   </div>
-                  <span className="inline-flex px-[8px] py-[2px] bg-black/5 text-[#555] rounded text-[11px] font-mono">
-                    Audience: {ann.targetAudience === 'all' ? 'Everyone' : ann.targetAudience}
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="inline-flex px-[8px] py-[2px] bg-black/5 text-[#555] rounded text-[11px] font-mono">
+                      Audience: {getAudienceLabel(ann.targetAudience)}
+                    </span>
+                    {ann.emailSentCount && ann.emailSentCount > 0 ? (
+                      <span className="inline-flex items-center gap-1 px-[8px] py-[2px] bg-[#eef3ef] text-[#008b45] rounded text-[10px] font-bold" title={`Delivered to ${ann.emailSentCount} email recipients`}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                        {ann.emailSentCount} Emailed
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
 
                 {/* Action CTA */}
@@ -363,6 +453,19 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
 
                 {/* Actions */}
                 <div className="flex items-center justify-end gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => handleSendEmailDirect(ann)}
+                    disabled={isSendingDirectEmail === ann.id}
+                    className="w-[32px] h-[32px] rounded-full bg-[#f4f7f5] hover:bg-[#eef3ef] text-[#68736d] hover:text-[#008b45] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                    title={`Send email broadcast to ${getAudienceLabel(ann.targetAudience)}`}
+                  >
+                    {isSendingDirectEmail === ann.id ? (
+                      <div className="w-3.5 h-3.5 border-2 border-[#008b45]/30 border-t-[#008b45] rounded-full animate-spin"></div>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                    )}
+                  </button>
                   <button 
                     onClick={() => openEditModal(ann)} 
                     className="px-[12px] py-[6px] rounded-full bg-[#f4f7f5] text-ink text-[12px] font-bold hover:bg-black/5 transition-colors cursor-pointer"
@@ -664,12 +767,13 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 <label className="block text-[13px] font-bold text-ink mb-[10px]">
                   3. Target Audience (Who Sees It) *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                   {[
-                    { id: 'all', label: 'Everyone (Public + Users)', desc: 'Homepage, marketplace & users' },
+                    { id: 'all', label: 'Everyone', desc: 'Homepage & all registered users' },
                     { id: 'customers', label: 'Customers Only', desc: 'Investors and farmland buyers' },
                     { id: 'agents', label: 'Sales Agents Only', desc: 'Agent portal commission updates' },
                     { id: 'unverified_kyc', label: 'Unverified KYC', desc: 'Users pending ID verification' },
+                    { id: 'missing_bank', label: 'Missing Bank Details', desc: 'Users without payout accounts' },
                   ].map(aud => (
                     <button
                       key={aud.id}
@@ -784,7 +888,8 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 </div>
 
                 {/* Checkboxes */}
-                <div className="pt-2 border-t border-black/5 space-y-3">
+                <div className="pt-3 border-t border-black/5 space-y-3.5">
+                  {/* Option 1: Dismissible */}
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input 
                       type="checkbox" 
@@ -798,6 +903,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                     </div>
                   </label>
 
+                  {/* Option 2: In-App Broadcast */}
                   {!editingAnnouncement && (
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input 
@@ -812,6 +918,51 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                       </div>
                     </label>
                   )}
+
+                  {/* Option 3: Deliver as Email Broadcast (Third option, not automatic) */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formSendEmail} 
+                        onChange={(e) => setFormSendEmail(e.target.checked)} 
+                        className="w-4 h-4 rounded accent-[#008b45]" 
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <strong className="block text-[13px] text-ink font-manrope">Send Announcement via Email Broadcast</strong>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#eef3ef] text-[#008b45]">
+                            Direct Email
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-[#68736d]">
+                          Dispatches an official email notice directly to the inboxes of the selected target audience.
+                        </span>
+                      </div>
+                    </label>
+
+                    {formSendEmail && (
+                      <div className="ml-7 p-3.5 bg-[#eef3ef]/70 rounded-[14px] border border-[#008b45]/20 text-[12px] text-[#182a20] space-y-1.5 animate-fade-in">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold flex items-center gap-1.5 text-[#008b45]">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                            Direct Email Broadcast Enabled
+                          </span>
+                          <span className="text-[11px] font-mono bg-white px-2.5 py-0.5 rounded-full border border-[#008b45]/20 font-bold text-[#008b45]">
+                            {audienceCount !== null ? `~${audienceCount} recipient${audienceCount === 1 ? '' : 's'}` : 'Calculating...'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#526058] leading-relaxed">
+                          Recipient Audience: <strong>{getAudienceLabel(formAudience)}</strong> &bull; Sender: <strong>Getlands &lt;hello@getlands.ng&gt;</strong>
+                        </p>
+                        <p className="text-[11px] text-[#7a847f]">
+                          Subject Line: <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-black/5 text-[#333]">
+                            {formType === 'critical' ? '[URGENT] ' : formType === 'warning' ? '[Notice] ' : formType === 'promo' ? '[Getlands Promo] ' : '[Getlands] '}{formTitle || 'Announcement Title'}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </form>
@@ -834,15 +985,36 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 {isSubmitting ? (
                   <>
                     <div className="w-[16px] h-[16px] border-[2px] border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Saving...
+                    {formSendEmail ? "Sending Emails..." : "Saving..."}
                   </>
                 ) : (
-                  editingAnnouncement ? "Update Announcement" : "Publish Announcement"
+                  editingAnnouncement 
+                    ? (formSendEmail ? "Update & Send Emails" : "Update Announcement")
+                    : (formSendEmail ? "Publish & Send Emails" : "Publish Announcement")
                 )}
               </button>
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 p-[14px_22px] rounded-[16px] shadow-2xl text-white text-[13px] font-medium flex items-center gap-3 animate-fade-in ${
+          toast.type === 'error' ? 'bg-red-600' : 'bg-[#182a20] border border-[#008b45]/40'
+        }`}>
+          {toast.type === 'success' && (
+            <span className="w-5 h-5 rounded-full bg-[#008b45] flex items-center justify-center text-white text-[11px] font-bold">✓</span>
+          )}
+          <span>{toast.message}</span>
+          <button 
+            type="button" 
+            onClick={() => setToast(null)}
+            className="text-white/60 hover:text-white ml-2 text-sm cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
       )}
     </div>

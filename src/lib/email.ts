@@ -285,3 +285,194 @@ export async function sendWalletReconciliationEmail(to: string, userName: string
   `;
   await sendResendEmail(to, "Getlands Wallet Adjustment Notice", html);
 }
+
+export interface AnnouncementEmailOptions {
+  recipients: { email: string; firstName?: string | null }[];
+  title: string;
+  message: string;
+  type: string;
+  actionText?: string | null;
+  actionUrl?: string | null;
+}
+
+export async function sendAnnouncementEmailBatch({
+  recipients,
+  title,
+  message,
+  type,
+  actionText,
+  actionUrl,
+}: AnnouncementEmailOptions): Promise<{ sent: number; total: number; error?: string }> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("Missing RESEND_API_KEY, skipping announcement emails.");
+    return { sent: 0, total: recipients.length, error: "Missing RESEND_API_KEY" };
+  }
+
+  // Deduplicate and sanitize recipients
+  const seenEmails = new Set<string>();
+  const validRecipients: { email: string; firstName?: string | null }[] = [];
+
+  for (const r of recipients) {
+    const cleanEmail = (r.email || '').trim().toLowerCase();
+    if (cleanEmail && cleanEmail.includes('@') && !seenEmails.has(cleanEmail)) {
+      seenEmails.add(cleanEmail);
+      validRecipients.push({ email: cleanEmail, firstName: r.firstName });
+    }
+  }
+
+  if (validRecipients.length === 0) {
+    return { sent: 0, total: 0 };
+  }
+
+  // Determine badge styling based on announcement type
+  let badgeText = 'PLATFORM UPDATE';
+  let badgeBg = '#182a20';
+  let subjectPrefix = '[Getlands] ';
+
+  if (type === 'promo') {
+    badgeText = 'EXCLUSIVE OFFER';
+    badgeBg = '#008b45';
+    subjectPrefix = '[Getlands Promo] ';
+  } else if (type === 'warning') {
+    badgeText = 'IMPORTANT NOTICE';
+    badgeBg = '#d97706';
+    subjectPrefix = '[Notice] ';
+  } else if (type === 'critical') {
+    badgeText = 'URGENT ADVISORY';
+    badgeBg = '#dc2626';
+    subjectPrefix = '[URGENT] ';
+  }
+
+  const subject = `${subjectPrefix}${title}`;
+
+  // Format paragraphs safely
+  const paragraphs = message
+    .split(/\n\n+/)
+    .map(p => p.trim())
+    .filter(Boolean);
+
+  const formattedMessage = paragraphs
+    .map(p => `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.65; color: #374151;">${p.replace(/\n/g, '<br/>')}</p>`)
+    .join('');
+
+  // Determine button URL
+  let targetUrl = 'https://getlands.ng/dashboard';
+  if (actionUrl) {
+    targetUrl = actionUrl.startsWith('/') ? `https://getlands.ng${actionUrl}` : actionUrl;
+  }
+  const buttonLabel = actionText || 'Open Portal';
+
+  const actionButtonHtml = `
+    <div style="margin: 32px 0 16px 0;">
+      <a href="${targetUrl}" style="display: inline-block; background-color: #008b45; color: #ffffff; padding: 14px 32px; border-radius: 50px; font-weight: 700; font-size: 14px; text-decoration: none; letter-spacing: 0.02em;">
+        ${buttonLabel} &rarr;
+      </a>
+    </div>
+  `;
+
+  // Build individualized email payloads
+  const emailPayloads = validRecipients.map(r => {
+    const greeting = r.firstName ? `Hello ${r.firstName},` : 'Hello,';
+    const html = `
+      <div style="background-color: #f7f9f7; padding: 36px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #18201c;">
+        <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5eae6; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);">
+          
+          <!-- Header -->
+          <div style="background-color: #182a20; padding: 24px 32px; border-bottom: 3px solid #008b45;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td>
+                  <span style="font-size: 18px; font-weight: 800; letter-spacing: 0.1em; color: #ffffff; text-transform: uppercase;">GETLANDS</span>
+                </td>
+                <td align="right">
+                  <span style="display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background-color: ${badgeBg}; color: #ffffff;">
+                    ${badgeText}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Content -->
+          <div style="padding: 36px 32px 28px 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; color: #68736d; font-weight: 500;">
+              ${greeting}
+            </p>
+            
+            <h1 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 800; color: #182a20; line-height: 1.35;">
+              ${title}
+            </h1>
+
+            <div style="margin-bottom: 24px;">
+              ${formattedMessage}
+            </div>
+
+            ${actionButtonHtml}
+          </div>
+
+          <!-- Footer -->
+          <div style="padding: 24px 32px; background-color: #fafcfb; border-top: 1px solid #eef3ef; font-size: 12px; line-height: 1.5; color: #7a847f;">
+            <p style="margin: 0 0 6px 0;">
+              You are receiving this official communication as a registered member of Getlands.
+            </p>
+            <p style="margin: 0;">
+              &copy; ${new Date().getFullYear()} Getlands. All rights reserved. &middot; <a href="https://getlands.ng" style="color: #008b45; text-decoration: none; font-weight: 600;">getlands.ng</a>
+            </p>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    return {
+      from: fromEmail,
+      to: r.email,
+      subject,
+      html,
+    };
+  });
+
+  // Batch dispatching in chunks of up to 100
+  let totalSent = 0;
+  const BATCH_SIZE = 100;
+
+  for (let i = 0; i < emailPayloads.length; i += BATCH_SIZE) {
+    const chunk = emailPayloads.slice(i, i + BATCH_SIZE);
+    try {
+      const res = await fetch('https://api.resend.com/emails/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify(chunk),
+      });
+
+      if (res.ok) {
+        totalSent += chunk.length;
+      } else {
+        // Fallback to individual dispatch for this chunk
+        console.warn(`Batch email API responded with ${res.status}. Falling back to individual dispatch.`);
+        for (const item of chunk) {
+          try {
+            await sendResendEmail(item.to, item.subject, item.html);
+            totalSent++;
+          } catch (err) {
+            console.error(`Failed to send fallback email to ${item.to}:`, err);
+          }
+        }
+      }
+    } catch (chunkErr) {
+      console.error("Error dispatching email chunk:", chunkErr);
+      // Fallback
+      for (const item of chunk) {
+        try {
+          await sendResendEmail(item.to, item.subject, item.html);
+          totalSent++;
+        } catch {}
+      }
+    }
+  }
+
+  return { sent: totalSent, total: validRecipients.length };
+}

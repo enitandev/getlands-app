@@ -7,6 +7,7 @@ import GlobalAnnouncementBanner from "@/components/announcements/GlobalAnnouncem
 import AnnouncementModal from "@/components/announcements/AnnouncementModal";
 import { getActiveAnnouncements } from "@/app/actions/announcements";
 import { getSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -77,9 +78,23 @@ export default async function RootLayout({
   try {
     const session = await getSession();
     const role = (session?.role as string) || null;
+    let kycStatus: string | null = null;
+    let hasMissingBank = false;
+
+    if (session?.userId) {
+      const u = await prisma.user.findUnique({
+        where: { id: session.userId as string },
+        select: { kycStatus: true, bankName: true, accountNumber: true, bankAccounts: { select: { id: true }, take: 1 } },
+      });
+      if (u) {
+        kycStatus = u.kycStatus;
+        hasMissingBank = (!u.accountNumber || !u.bankName) && (!u.bankAccounts || u.bankAccounts.length === 0);
+      }
+    }
+
     const [banners, modals] = await Promise.all([
-      getActiveAnnouncements({ userRole: role, placement: 'top_banner' }),
-      getActiveAnnouncements({ userRole: role, placement: 'modal_popup' }),
+      getActiveAnnouncements({ userRole: role, kycStatus, hasMissingBank, placement: 'top_banner' }),
+      getActiveAnnouncements({ userRole: role, kycStatus, hasMissingBank, placement: 'modal_popup' }),
     ]);
     bannerAnnouncement = banners[0] || null;
     modalAnnouncement = modals[0] || null;
