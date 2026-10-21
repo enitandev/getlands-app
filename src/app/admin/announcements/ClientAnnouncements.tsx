@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   createAnnouncementAction, 
   updateAnnouncementAction, 
@@ -36,7 +36,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
   // Form State for Live Preview
   const [formTitle, setFormTitle] = useState('');
   const [formMessage, setFormMessage] = useState('');
-  const [formType, setFormType] = useState('info');
+  const [formType, setFormType] = useState('promo');
   const [formPlacement, setFormPlacement] = useState('top_banner');
   const [formAudience, setFormAudience] = useState('all');
   const [formActionText, setFormActionText] = useState('');
@@ -47,11 +47,32 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
   const [formExpiresAt, setFormExpiresAt] = useState('');
   const [formBroadcast, setFormBroadcast] = useState(false);
 
+  // Close on Escape key & manage body scroll
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen]);
+
   const openCreateModal = () => {
     setEditingAnnouncement(null);
     setFormTitle('');
     setFormMessage('');
-    setFormType('info');
+    setFormType('promo');
     setFormPlacement('top_banner');
     setFormAudience('all');
     setFormActionText('');
@@ -112,6 +133,9 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
     e.preventDefault();
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
+    formData.set('type', formType);
+    formData.set('placement', formPlacement);
+    formData.set('targetAudience', formAudience);
     formData.set('isDismissible', formIsDismissible ? 'true' : 'false');
     formData.set('broadcastNotification', formBroadcast ? 'true' : 'false');
 
@@ -172,12 +196,12 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
             Platform Announcements
           </h1>
           <p className="text-[13px] lg:text-[14px] text-[#68736d]">
-            Publish targeted banners, spotlight cards, and modal broadcasts across Getlands.
+            Publish targeted promotional banners, system alerts, and spotlight cards across Getlands.
           </p>
         </div>
         <button 
           onClick={openCreateModal} 
-          className="px-[24px] py-[12px] bg-[#008b45] text-white text-[13px] font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)] flex items-center justify-center gap-2 self-start sm:self-auto"
+          className="px-[24px] py-[12px] bg-[#008b45] text-white text-[13px] font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)] flex items-center justify-center gap-2 self-start sm:self-auto cursor-pointer"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Create Announcement
@@ -195,11 +219,11 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
           <div className="font-manrope text-[28px] font-bold text-[#008b45]">{activeCount}</div>
         </div>
         <div className="bg-white rounded-[20px] p-[20px] border border-black/5 shadow-sm">
-          <div className="text-[11px] font-bold text-[#7a847f] uppercase tracking-wider mb-[4px]">Active Top Banners</div>
+          <div className="text-[11px] font-bold text-[#7a847f] uppercase tracking-wider mb-[4px]">Top Banners</div>
           <div className="font-manrope text-[28px] font-bold text-ink">{bannerCount}</div>
         </div>
         <div className="bg-white rounded-[20px] p-[20px] border border-black/5 shadow-sm">
-          <div className="text-[11px] font-bold text-[#7a847f] uppercase tracking-wider mb-[4px]">Active Spotlight Cards</div>
+          <div className="text-[11px] font-bold text-[#7a847f] uppercase tracking-wider mb-[4px]">Spotlight Cards</div>
           <div className="font-manrope text-[28px] font-bold text-ink">{cardCount}</div>
         </div>
       </div>
@@ -208,7 +232,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
       <div className="flex gap-[8px] border-b border-black/5 pb-[12px] overflow-x-auto">
         <button
           onClick={() => setActiveTab('all')}
-          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors ${
+          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors cursor-pointer ${
             activeTab === 'all' ? 'bg-[#182a20] text-white' : 'bg-white text-[#68736d] hover:bg-black/5'
           }`}
         >
@@ -216,7 +240,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
         </button>
         <button
           onClick={() => setActiveTab('active')}
-          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors ${
+          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors cursor-pointer ${
             activeTab === 'active' ? 'bg-[#008b45] text-white' : 'bg-white text-[#68736d] hover:bg-black/5'
           }`}
         >
@@ -224,7 +248,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
         </button>
         <button
           onClick={() => setActiveTab('top_banner')}
-          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors ${
+          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors cursor-pointer ${
             activeTab === 'top_banner' ? 'bg-[#182a20] text-white' : 'bg-white text-[#68736d] hover:bg-black/5'
           }`}
         >
@@ -232,7 +256,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
         </button>
         <button
           onClick={() => setActiveTab('dashboard_card')}
-          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors ${
+          className={`px-[16px] py-[8px] rounded-full text-[13px] font-bold transition-colors cursor-pointer ${
             activeTab === 'dashboard_card' ? 'bg-[#182a20] text-white' : 'bg-white text-[#68736d] hover:bg-black/5'
           }`}
         >
@@ -244,8 +268,8 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
       <div className="bg-white rounded-[24px] shadow-sm border border-black/5 overflow-hidden">
         <div className="hidden lg:grid grid-cols-[80px_2.5fr_1.2fr_1.2fr_100px_140px] gap-[15px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
           <div>Status</div>
-          <div>Announcement & Message</div>
-          <div>Placement & Audience</div>
+          <div>Announcement & Details</div>
+          <div>Format & Placement</div>
           <div>Action / Link</div>
           <div>Priority</div>
           <div className="text-right">Actions</div>
@@ -286,7 +310,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                       ann.type === 'critical' ? 'bg-red-50 text-red-600' :
                       'bg-[#f4f7f5] text-[#18201c]'
                     }`}>
-                      {ann.type}
+                      {ann.type === 'promo' ? 'Promo / Deal' : ann.type === 'warning' ? 'Notice' : ann.type === 'critical' ? 'Urgent' : 'Info'}
                     </span>
                     {isExpired && (
                       <span className="inline-flex px-[8px] py-[2px] rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-500">
@@ -312,10 +336,10 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 {/* Placement & Target */}
                 <div className="space-y-1">
                   <div className="text-[12px] text-ink font-medium capitalize">
-                    {ann.placement.replace('_', ' ')}
+                    {ann.placement === 'top_banner' ? 'Top Global Banner' : ann.placement === 'dashboard_card' ? 'Dashboard Spotlight' : 'Pop-up Modal'}
                   </div>
                   <span className="inline-flex px-[8px] py-[2px] bg-black/5 text-[#555] rounded text-[11px] font-mono">
-                    Audience: {ann.targetAudience}
+                    Audience: {ann.targetAudience === 'all' ? 'Everyone' : ann.targetAudience}
                   </span>
                 </div>
 
@@ -327,7 +351,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                       <span className="text-[11px] text-[#7a847f] font-mono truncate block max-w-[140px]">{ann.actionUrl}</span>
                     </div>
                   ) : (
-                    <span className="text-[12px] text-[#a6baa9]">None</span>
+                    <span className="text-[12px] text-[#a6baa9]">No CTA button</span>
                   )}
                 </div>
 
@@ -341,13 +365,13 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 <div className="flex items-center justify-end gap-2">
                   <button 
                     onClick={() => openEditModal(ann)} 
-                    className="px-[12px] py-[6px] rounded-full bg-[#f4f7f5] text-ink text-[12px] font-bold hover:bg-black/5 transition-colors"
+                    className="px-[12px] py-[6px] rounded-full bg-[#f4f7f5] text-ink text-[12px] font-bold hover:bg-black/5 transition-colors cursor-pointer"
                   >
                     Edit
                   </button>
                   <button 
                     onClick={() => handleDelete(ann.id, ann.title)} 
-                    className="px-[12px] py-[6px] rounded-full bg-red-50 text-red-600 text-[12px] font-bold hover:bg-red-100 transition-colors"
+                    className="px-[12px] py-[6px] rounded-full bg-red-50 text-red-600 text-[12px] font-bold hover:bg-red-100 transition-colors cursor-pointer"
                   >
                     Delete
                   </button>
@@ -368,31 +392,54 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
         </div>
       </div>
 
-      {/* Create / Edit Modal with Live Preview */}
+      {/* CREATE & EDIT MODAL (Fixed-Header, Fixed-Footer, Backdrop Click, Esc-Dismissible) */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-[24px] w-full max-w-[800px] shadow-2xl overflow-hidden my-8">
-            <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-6 animate-fade-in backdrop-blur-sm overflow-hidden"
+        >
+          <div className="bg-white rounded-[24px] w-full max-w-[850px] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden border border-black/10 animate-scale-up">
+            
+            {/* 1. STICKY MODAL HEADER */}
+            <div className="p-[18px_24px] lg:p-[20px_30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc] shrink-0">
               <div>
-                <h2 className="font-manrope text-[20px] font-bold text-ink">
-                  {editingAnnouncement ? 'Edit Announcement' : 'New Platform Announcement'}
+                <h2 className="font-manrope text-[18px] lg:text-[22px] font-bold text-ink leading-tight">
+                  {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
                 </h2>
-                <p className="text-[12px] text-[#68736d]">Fill out the details below and view the live preview.</p>
+                <p className="text-[12px] text-[#68736d] mt-0.5">
+                  Select your announcement category, placement, and target audience.
+                </p>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsModalOpen(false)} 
-                className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors"
+                className="w-[36px] h-[36px] bg-[#f4f7f5] hover:bg-[#eef3ef] rounded-full flex items-center justify-center text-[#68736d] hover:text-ink transition-colors cursor-pointer shrink-0"
+                title="Close (Esc)"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-[20px] lg:p-[30px] space-y-[25px]">
-              {/* Live Preview Box */}
-              <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5">
-                <div className="flex items-center justify-between mb-[12px]">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#7a847f]">Live End-User Preview</span>
-                  <span className="text-[11px] font-mono text-[#008b45] font-bold uppercase">{formPlacement.replace('_', ' ')}</span>
+            {/* 2. SCROLLABLE FORM BODY */}
+            <form id="announcement-form" onSubmit={handleSubmit} className="overflow-y-auto p-[20px] lg:p-[30px] space-y-[26px] flex-1">
+              
+              {/* LIVE END-USER PREVIEW */}
+              <div className="bg-[#f7f9f7] rounded-[18px] p-[18px] lg:p-[22px] border border-black/5">
+                <div className="flex items-center justify-between mb-[12px] flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#008b45] animate-pulse"></span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#7a847f]">Live Customer Preview</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/5 text-[#555] uppercase font-bold">
+                      Format: {formPlacement.replace('_', ' ')}
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/5 text-[#555] uppercase font-bold">
+                      Target: {formAudience}
+                    </span>
+                  </div>
                 </div>
 
                 {formPlacement === 'top_banner' && (
@@ -402,21 +449,21 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                     formType === 'critical' ? 'bg-red-50 text-red-900 border-red-200' :
                     'bg-[#f4f7f5] text-ink border-black/10'
                   }`}>
-                    <div className="flex items-center gap-2.5">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                         formType === 'promo' ? 'bg-[#008b45] text-white' :
                         formType === 'warning' ? 'bg-[#d97706] text-white' :
                         formType === 'critical' ? 'bg-red-600 text-white' :
-                        'bg-black/10 text-ink'
+                        'bg-[#182a20] text-white'
                       }`}>
-                        {formType}
+                        {formType === 'promo' ? 'Promo' : formType === 'warning' ? 'Notice' : formType === 'critical' ? 'Urgent' : 'Info'}
                       </span>
-                      <span className="font-bold">{formTitle || 'Announcement Title'}</span>
-                      <span className="opacity-80 hidden md:inline">— {formMessage || 'Your message preview will appear right here.'}</span>
+                      <span className="font-bold truncate">{formTitle || 'Announcement Title'}</span>
+                      <span className="opacity-80 hidden md:inline truncate">— {formMessage || 'Your message preview will appear right here.'}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       {formActionText && (
-                        <span className={`px-3 py-1 rounded-full text-[11px] font-bold underline ${
+                        <span className={`text-[12px] font-bold underline ${
                           formType === 'promo' ? 'text-[#a9e7bd]' : 'text-[#008b45]'
                         }`}>
                           {formActionText} →
@@ -438,13 +485,13 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                   }`}>
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                           formType === 'promo' ? 'bg-[#008b45] text-white' :
                           formType === 'warning' ? 'bg-[#d97706] text-white' :
                           formType === 'critical' ? 'bg-red-600 text-white' :
-                          'bg-[#eef3ef] text-[#008b45]'
+                          'bg-[#182a20] text-white'
                         }`}>
-                          {formType}
+                          {formType === 'promo' ? 'Promo' : formType === 'warning' ? 'Notice' : formType === 'critical' ? 'Urgent' : 'Info'}
                         </span>
                         <h4 className="font-manrope font-bold text-[16px]">{formTitle || 'Spotlight Title'}</h4>
                       </div>
@@ -464,17 +511,17 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 )}
 
                 {formPlacement === 'modal_popup' && (
-                  <div className="bg-white rounded-[20px] p-[25px] border border-black/10 shadow-lg max-w-[450px] mx-auto text-center">
+                  <div className="bg-white rounded-[20px] p-[24px] border border-black/10 shadow-lg max-w-[420px] mx-auto text-center">
                     <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase mb-2 ${
                       formType === 'promo' ? 'bg-[#eef3ef] text-[#008b45]' :
                       formType === 'warning' ? 'bg-[#fffbeb] text-[#d97706]' :
                       formType === 'critical' ? 'bg-red-50 text-red-600' :
                       'bg-black/5 text-ink'
                     }`}>
-                      {formType} Modal Notice
+                      {formType} Notice
                     </span>
-                    <h3 className="font-manrope font-bold text-[18px] text-ink mb-2">{formTitle || 'Important Platform Update'}</h3>
-                    <p className="text-[13px] text-[#68736d] leading-relaxed mb-4">
+                    <h3 className="font-manrope font-bold text-[17px] text-ink mb-2">{formTitle || 'Important Platform Update'}</h3>
+                    <p className="text-[12px] text-[#68736d] leading-relaxed mb-4">
                       {formMessage || 'Pop-up modals appear focused upon visiting the platform and ensure maximum user visibility.'}
                     </p>
                     <div className="flex gap-2 justify-center">
@@ -491,10 +538,161 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 )}
               </div>
 
-              {/* Form Inputs Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
-                {/* Title */}
-                <div className="md:col-span-2">
+              {/* SECTION 1: ANNOUNCEMENT TYPE / CATEGORY */}
+              <div>
+                <label className="block text-[13px] font-bold text-ink mb-[10px]">
+                  1. Choose Announcement Type & Visual Styling *
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { 
+                      id: 'promo', 
+                      name: 'Promo / Deal', 
+                      badge: 'Promo',
+                      desc: 'New crops, high-yield cycles, bonus commissions', 
+                      border: 'border-[#008b45] bg-[#008b45]/5 ring-2 ring-[#008b45]/20',
+                      badgeClass: 'bg-[#008b45] text-white' 
+                    },
+                    { 
+                      id: 'info', 
+                      name: 'General Update', 
+                      badge: 'Info',
+                      desc: 'Product features, holiday schedule, company news', 
+                      border: 'border-[#182a20] bg-black/5 ring-2 ring-black/10',
+                      badgeClass: 'bg-[#182a20] text-white' 
+                    },
+                    { 
+                      id: 'warning', 
+                      name: 'Notice / Delay', 
+                      badge: 'Notice',
+                      desc: 'Bank gateway downtime, network delays, KYC deadline', 
+                      border: 'border-[#d97706] bg-[#fffbeb] ring-2 ring-[#d97706]/20',
+                      badgeClass: 'bg-[#d97706] text-white' 
+                    },
+                    { 
+                      id: 'critical', 
+                      name: 'Urgent Alert', 
+                      badge: 'Urgent',
+                      desc: 'Emergency maintenance, critical security advisory', 
+                      border: 'border-red-600 bg-red-50 ring-2 ring-red-600/20',
+                      badgeClass: 'bg-red-600 text-white' 
+                    },
+                  ].map(item => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => setFormType(item.id)}
+                      className={`p-3.5 rounded-[16px] border cursor-pointer transition-all flex flex-col justify-between ${
+                        formType === item.id 
+                          ? item.border 
+                          : 'border-black/10 bg-[#f7f9f7] hover:border-black/20 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${item.badgeClass}`}>
+                          {item.badge}
+                        </span>
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                          formType === item.id ? 'border-[#008b45] bg-[#008b45]' : 'border-black/20 bg-white'
+                        }`}>
+                          {formType === item.id && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-manrope font-bold text-[13px] text-ink">{item.name}</div>
+                        <div className="text-[11px] text-[#68736d] mt-1 leading-tight">{item.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION 2: DISPLAY PLACEMENT */}
+              <div>
+                <label className="block text-[13px] font-bold text-ink mb-[10px]">
+                  2. Display Placement (Where It Appears) *
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      id: 'top_banner',
+                      name: 'Top Global Banner',
+                      desc: 'Slim bar pinned across the very top of the website header',
+                      icon: (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="11" width="18" height="10" rx="2"/></svg>
+                      )
+                    },
+                    {
+                      id: 'dashboard_card',
+                      name: 'Dashboard Spotlight Card',
+                      desc: 'Highlight card embedded directly on the customer & agent overview',
+                      icon: (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                      )
+                    },
+                    {
+                      id: 'modal_popup',
+                      name: 'Pop-up Modal Dialog',
+                      desc: 'High-visibility modal that appears focused when users log in or visit',
+                      icon: (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M12 9v6"/><path d="M9 12h6"/></svg>
+                      )
+                    }
+                  ].map(p => (
+                    <div 
+                      key={p.id}
+                      onClick={() => setFormPlacement(p.id)}
+                      className={`p-3.5 rounded-[16px] border cursor-pointer transition-all ${
+                        formPlacement === p.id 
+                          ? 'border-[#008b45] bg-[#008b45]/5 ring-2 ring-[#008b45]/20' 
+                          : 'border-black/10 bg-[#f7f9f7] hover:border-black/20 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className={formPlacement === p.id ? 'text-[#008b45]' : 'text-[#68736d]'}>{p.icon}</span>
+                        <span className="font-manrope font-bold text-[13px] text-ink">{p.name}</span>
+                      </div>
+                      <p className="text-[11px] text-[#68736d] leading-tight">{p.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION 3: TARGET AUDIENCE */}
+              <div>
+                <label className="block text-[13px] font-bold text-ink mb-[10px]">
+                  3. Target Audience (Who Sees It) *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { id: 'all', label: 'Everyone (Public + Users)', desc: 'Homepage, marketplace & users' },
+                    { id: 'customers', label: 'Customers Only', desc: 'Investors and farmland buyers' },
+                    { id: 'agents', label: 'Sales Agents Only', desc: 'Agent portal commission updates' },
+                    { id: 'unverified_kyc', label: 'Unverified KYC', desc: 'Users pending ID verification' },
+                  ].map(aud => (
+                    <button
+                      key={aud.id}
+                      type="button"
+                      onClick={() => setFormAudience(aud.id)}
+                      className={`p-3 rounded-[14px] border text-left transition-all cursor-pointer ${
+                        formAudience === aud.id 
+                          ? 'border-[#008b45] bg-[#008b45] text-white shadow-sm' 
+                          : 'border-black/10 bg-[#f7f9f7] text-[#68736d] hover:bg-white hover:text-ink'
+                      }`}
+                    >
+                      <strong className="block text-[12px] font-manrope">{aud.label}</strong>
+                      <span className={`block text-[10px] mt-0.5 ${formAudience === aud.id ? 'text-white/80' : 'text-[#7a847f]'}`}>
+                        {aud.desc}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION 4: CONTENT INPUTS */}
+              <div className="space-y-[18px] pt-2 border-t border-black/5">
+                <div>
                   <label className="block text-[13px] font-bold text-ink mb-[6px]">Announcement Title *</label>
                   <input 
                     type="text" 
@@ -507,8 +705,7 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                   />
                 </div>
 
-                {/* Message */}
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-[13px] font-bold text-ink mb-[6px]">Message Body *</label>
                   <textarea 
                     name="message" 
@@ -521,168 +718,130 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                   ></textarea>
                 </div>
 
-                {/* Type */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Visual Severity Type</label>
-                  <select 
-                    name="type" 
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium"
-                  >
-                    <option value="promo">Promo (Emerald Accent)</option>
-                    <option value="info">System Info (Clean Ink)</option>
-                    <option value="warning">Warning / Operational (Amber)</option>
-                    <option value="critical">Critical / Urgent (Crimson)</option>
-                  </select>
-                </div>
-
-                {/* Placement */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Display Placement</label>
-                  <select 
-                    name="placement" 
-                    value={formPlacement}
-                    onChange={(e) => setFormPlacement(e.target.value)}
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium"
-                  >
-                    <option value="top_banner">Top Global Banner (Pinned)</option>
-                    <option value="dashboard_card">Dashboard Spotlight Card</option>
-                    <option value="modal_popup">Focused Pop-up Modal</option>
-                  </select>
-                </div>
-
-                {/* Target Audience */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Target Audience</label>
-                  <select 
-                    name="targetAudience" 
-                    value={formAudience}
-                    onChange={(e) => setFormAudience(e.target.value)}
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium"
-                  >
-                    <option value="all">All Visitors (Public + Logged-in)</option>
-                    <option value="customers">Customers / Investors Only</option>
-                    <option value="agents">Sales Agents Only</option>
-                    <option value="unverified_kyc">Unverified KYC Users Only</option>
-                  </select>
-                </div>
-
-                {/* Priority */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Priority Level (Higher shows first)</label>
-                  <input 
-                    type="number" 
-                    name="priority" 
-                    value={formPriority}
-                    onChange={(e) => setFormPriority(parseInt(e.target.value, 10) || 0)}
-                    min="0" 
-                    max="100" 
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
-                  />
-                </div>
-
-                {/* Action CTA Text */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Action Button Label (Optional)</label>
-                  <input 
-                    type="text" 
-                    name="actionText" 
-                    value={formActionText}
-                    onChange={(e) => setFormActionText(e.target.value)}
-                    placeholder="e.g. Invest Now, View Marketplace" 
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
-                  />
-                </div>
-
-                {/* Action CTA URL */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Action Link URL (Optional)</label>
-                  <input 
-                    type="text" 
-                    name="actionUrl" 
-                    value={formActionUrl}
-                    onChange={(e) => setFormActionUrl(e.target.value)}
-                    placeholder="e.g. /dashboard/marketplace or https://..." 
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
-                  />
-                </div>
-
-                {/* Scheduling StartsAt */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Publish Date / Time (Optional)</label>
-                  <input 
-                    type="datetime-local" 
-                    name="startsAt" 
-                    value={formStartsAt}
-                    onChange={(e) => setFormStartsAt(e.target.value)}
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
-                  />
-                  <p className="text-[11px] text-[#7a847f] mt-1">Leave empty to publish immediately.</p>
-                </div>
-
-                {/* Scheduling ExpiresAt */}
-                <div>
-                  <label className="block text-[13px] font-bold text-ink mb-[6px]">Expiration Date / Time (Optional)</label>
-                  <input 
-                    type="datetime-local" 
-                    name="expiresAt" 
-                    value={formExpiresAt}
-                    onChange={(e) => setFormExpiresAt(e.target.value)}
-                    className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
-                  />
-                  <p className="text-[11px] text-[#7a847f] mt-1">Leave empty for no automatic expiration.</p>
-                </div>
-              </div>
-
-              {/* Checkboxes */}
-              <div className="pt-2 border-t border-black/5 space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={formIsDismissible} 
-                    onChange={(e) => setFormIsDismissible(e.target.checked)} 
-                    className="w-4 h-4 rounded accent-[#008b45]" 
-                  />
+                {/* Action CTA & Link */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-[15px]">
                   <div>
-                    <strong className="block text-[13px] text-ink font-manrope">Allow user to dismiss</strong>
-                    <span className="text-[11px] text-[#68736d]">When enabled, users can click close and it will not reappear on their device.</span>
+                    <label className="block text-[13px] font-bold text-ink mb-[6px]">Action Button Label (Optional)</label>
+                    <input 
+                      type="text" 
+                      name="actionText" 
+                      value={formActionText}
+                      onChange={(e) => setFormActionText(e.target.value)}
+                      placeholder="e.g. Invest Now, View Marketplace" 
+                      className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
+                    />
                   </div>
-                </label>
 
-                {!editingAnnouncement && (
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[6px]">Action Link URL (Optional)</label>
+                    <input 
+                      type="text" 
+                      name="actionUrl" 
+                      value={formActionUrl}
+                      onChange={(e) => setFormActionUrl(e.target.value)}
+                      placeholder="e.g. /dashboard/marketplace or https://..." 
+                      className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
+                    />
+                  </div>
+                </div>
+
+                {/* Scheduling & Priority */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-[15px]">
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[6px]">Publish Date (Optional)</label>
+                    <input 
+                      type="datetime-local" 
+                      name="startsAt" 
+                      value={formStartsAt}
+                      onChange={(e) => setFormStartsAt(e.target.value)}
+                      className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[12px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[12px] font-medium" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[6px]">Expiration Date (Optional)</label>
+                    <input 
+                      type="datetime-local" 
+                      name="expiresAt" 
+                      value={formExpiresAt}
+                      onChange={(e) => setFormExpiresAt(e.target.value)}
+                      className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[12px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[12px] font-medium" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-bold text-ink mb-[6px]">Priority Level</label>
+                    <input 
+                      type="number" 
+                      name="priority" 
+                      value={formPriority}
+                      onChange={(e) => setFormPriority(parseInt(e.target.value, 10) || 0)}
+                      min="0" 
+                      max="100" 
+                      className="w-full h-[48px] bg-[#f7f9f7] rounded-[12px] px-[15px] outline-none focus:border-[#008b45] border border-transparent transition-colors text-[13px] font-medium" 
+                    />
+                  </div>
+                </div>
+
+                {/* Checkboxes */}
+                <div className="pt-2 border-t border-black/5 space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input 
                       type="checkbox" 
-                      checked={formBroadcast} 
-                      onChange={(e) => setFormBroadcast(e.target.checked)} 
+                      checked={formIsDismissible} 
+                      onChange={(e) => setFormIsDismissible(e.target.checked)} 
                       className="w-4 h-4 rounded accent-[#008b45]" 
                     />
                     <div>
-                      <strong className="block text-[13px] text-ink font-manrope">Broadcast as In-App Notification</strong>
-                      <span className="text-[11px] text-[#68736d]">Also drops an alert in the target audience's notification bell inbox.</span>
+                      <strong className="block text-[13px] text-ink font-manrope">Allow user to dismiss</strong>
+                      <span className="text-[11px] text-[#68736d]">When enabled, users can click close and it will not reappear on their device.</span>
                     </div>
                   </label>
-                )}
-              </div>
 
-              <div className="pt-[10px]">
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting} 
-                  className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-[18px] h-[18px] border-[2px] border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Saving Announcement...
-                    </>
-                  ) : (
-                    editingAnnouncement ? "Update Announcement" : "Publish Announcement"
+                  {!editingAnnouncement && (
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formBroadcast} 
+                        onChange={(e) => setFormBroadcast(e.target.checked)} 
+                        className="w-4 h-4 rounded accent-[#008b45]" 
+                      />
+                      <div>
+                        <strong className="block text-[13px] text-ink font-manrope">Broadcast as In-App Notification</strong>
+                        <span className="text-[11px] text-[#68736d]">Also drops an alert in the target audience's notification bell inbox.</span>
+                      </div>
+                    </label>
                   )}
-                </button>
+                </div>
               </div>
             </form>
+
+            {/* 3. STICKY MODAL FOOTER (Always Visible & Accessible) */}
+            <div className="p-[16px_24px] lg:p-[20px_30px] border-t border-black/5 bg-[#fcfdfc] flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-[24px] py-[12px] rounded-full bg-[#f4f7f5] hover:bg-black/5 text-ink text-[13px] font-bold transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                form="announcement-form"
+                disabled={isSubmitting} 
+                className="px-[28px] py-[12px] bg-[#008b45] text-white font-bold text-[13px] rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-[16px] h-[16px] border-[2px] border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  editingAnnouncement ? "Update Announcement" : "Publish Announcement"
+                )}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
