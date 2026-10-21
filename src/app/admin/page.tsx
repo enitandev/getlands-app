@@ -6,6 +6,8 @@ import { getAdminReports } from '@/app/actions/reports';
 import RevenueChart from '@/components/ui/RevenueChart';
 import DistributionChart from '@/components/ui/DistributionChart';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   const reports = await getAdminReports();
   const revenueChart = reports?.revenueChart || [];

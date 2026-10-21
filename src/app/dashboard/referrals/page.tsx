@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import ClientReferrals from './ClientReferrals';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ReferralsPage() {
   const session = await getSession();
   if (!session?.userId) redirect('/login');

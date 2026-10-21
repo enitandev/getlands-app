@@ -5,6 +5,8 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { formatCurrency } from '@/lib/mockData';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ManageHoldingPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const session = await getSession();

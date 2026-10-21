@@ -2,6 +2,8 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import ClientSettings from './ClientSettings';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminSettingsPage() {
   let settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
   

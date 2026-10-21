@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session';
 import ClientWallet from './ClientWallet';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function WalletPage() {
   const session = await getSession();
   if (!session?.userId) redirect('/login');

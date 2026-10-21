@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import ClientMarketplace from './ClientMarketplace';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MarketplacePage() {
   const session = await getSession();
   if (!session?.userId) redirect('/login');

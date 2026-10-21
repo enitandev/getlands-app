@@ -2,6 +2,8 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import ClientCustomers from './ClientCustomers';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminCustomersPage() {
   const dbUsers = await prisma.user.findMany({
     where: { 

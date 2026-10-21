@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import ClientMessages from './ClientMessages';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MessagesPage() {
   const session = await getSession();
   if (!session) redirect('/login');

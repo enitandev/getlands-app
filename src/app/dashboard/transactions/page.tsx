@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session';
 import ClientTransactions from './ClientTransactions';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function TransactionsPage() {
   const session = await getSession();
   if (!session?.userId) redirect('/login');

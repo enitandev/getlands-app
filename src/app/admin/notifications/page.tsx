@@ -2,6 +2,8 @@ import { checkAdmin } from "@/app/actions/admin";
 import { prisma } from "@/lib/prisma";
 import ClientAdminNotifications from "./ClientAdminNotifications";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminNotificationsPage() {
   await checkAdmin();
 

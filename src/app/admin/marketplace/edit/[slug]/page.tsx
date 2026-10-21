@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import ClientEditOpportunity from './ClientEditOpportunity';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function EditOpportunityPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
   const opp = await prisma.opportunity.findUnique({

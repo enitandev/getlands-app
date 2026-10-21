@@ -11,6 +11,8 @@ import { Footer } from "@/components/Footer";
 
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const plans = await prisma.returnPlan.findMany({
     orderBy: { sortOrder: 'asc' }

@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import ClientAdminMessages from './ClientAdminMessages';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminMessagesPage() {
   const session = await getSession();
   if (!session) redirect('/login');

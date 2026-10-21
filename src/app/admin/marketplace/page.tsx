@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { formatCurrency } from '@/lib/mockData';
 import ClientAdminMarketplaceDelete from './ClientAdminMarketplaceDelete';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminMarketplace() {
   const opportunities = await prisma.opportunity.findMany({
     orderBy: { createdAt: 'desc' }
