@@ -3,6 +3,10 @@ import { DM_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
 import PWARegistration from "@/components/PWARegistration";
+import GlobalAnnouncementBanner from "@/components/announcements/GlobalAnnouncementBanner";
+import AnnouncementModal from "@/components/announcements/AnnouncementModal";
+import { getActiveAnnouncements } from "@/app/actions/announcements";
+import { getSession } from "@/lib/session";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -62,11 +66,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let bannerAnnouncement: any = null;
+  let modalAnnouncement: any = null;
+
+  try {
+    const session = await getSession();
+    const role = (session?.role as string) || null;
+    const [banners, modals] = await Promise.all([
+      getActiveAnnouncements({ userRole: role, placement: 'top_banner' }),
+      getActiveAnnouncements({ userRole: role, placement: 'modal_popup' }),
+    ]);
+    bannerAnnouncement = banners[0] || null;
+    modalAnnouncement = modals[0] || null;
+  } catch (err) {
+    // Graceful fallback
+  }
+
   return (
     <html
       lang="en"
@@ -76,6 +96,8 @@ export default function RootLayout({
         <div className="grain pointer-events-none fixed inset-0 z-[100] opacity-[0.025]" />
         <ToastContainer />
         <PWARegistration />
+        <GlobalAnnouncementBanner announcement={bannerAnnouncement} />
+        <AnnouncementModal announcement={modalAnnouncement} />
         {children}
       </body>
     </html>

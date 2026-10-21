@@ -174,16 +174,8 @@ export async function editOpportunity(id: string, formData: FormData) {
 }
 
 export async function createAnnouncement(formData: FormData) {
-  await checkAdmin();
-  const title = formData.get('title') as string;
-  const message = formData.get('message') as string;
-  const type = formData.get('type') as string;
-  
-  await prisma.announcement.create({
-    data: { title, message, type, isActive: true }
-  });
-  
-  redirect('/admin/announcements');
+  const { createAnnouncementAction } = await import('./announcements');
+  return createAnnouncementAction(formData);
 }
 
 export async function approveTransaction(transactionId: string) {

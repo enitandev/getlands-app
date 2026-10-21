@@ -29,9 +29,11 @@ export default async function DashboardOverviewPage() {
     include: { cohorts: { orderBy: { createdAt: 'desc' }, take: 1 } }
   });
 
-  const activeAnnouncement = await prisma.announcement.findFirst({
-    where: { isActive: true },
-    orderBy: { createdAt: 'desc' }
+  const { getActiveAnnouncements } = await import('@/app/actions/announcements');
+  const dashboardAnnouncements = await getActiveAnnouncements({
+    userRole: user.role,
+    kycStatus: user.kycStatus,
+    placement: 'dashboard_card'
   });
 
   const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
@@ -45,5 +47,14 @@ export default async function DashboardOverviewPage() {
   const { getCustomerReports } = await import('@/app/actions/reports');
   const reports = await getCustomerReports(user.id);
 
-  return <ClientDashboardOverview user={user} activeAnnouncement={activeAnnouncement} opportunities={opportunities} returnPlans={returnPlans} referralBonusPercentage={referralBonusPercentage} reports={reports} />;
+  return (
+    <ClientDashboardOverview 
+      user={user} 
+      dashboardAnnouncements={dashboardAnnouncements} 
+      opportunities={opportunities} 
+      returnPlans={returnPlans} 
+      referralBonusPercentage={referralBonusPercentage} 
+      reports={reports} 
+    />
+  );
 }

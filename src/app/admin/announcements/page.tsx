@@ -4,8 +4,11 @@ import ClientAnnouncements from './ClientAnnouncements';
 
 export default async function AdminAnnouncementsPage() {
   const announcements = await prisma.announcement.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: [
+      { priority: 'desc' },
+      { createdAt: 'desc' }
+    ]
   });
 
-  return <ClientAnnouncements initialAnnouncements={announcements} />;
+  return <ClientAnnouncements initialAnnouncements={announcements as any} />;
 }

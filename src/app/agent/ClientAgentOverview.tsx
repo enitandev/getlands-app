@@ -3,8 +3,9 @@ import React from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/mockData';
 import ReferralLinkCard from './ReferralLinkCard';
+import DashboardAnnouncementCard from '@/components/announcements/DashboardAnnouncementCard';
 
-export default function ClientAgentOverview({ user, networkCount, pendingCommissions, availableCommissions, recentCommissions, personalHoldings = [] }: any) {
+export default function ClientAgentOverview({ user, networkCount, pendingCommissions, availableCommissions, recentCommissions, personalHoldings = [], announcements = [] }: any) {
   
   return (
     <div className="flex flex-col h-[calc(100dvh-165px)] lg:h-[calc(100vh-100px)] overflow-y-auto scrollbar-hide pb-[20px] lg:pb-[50px]">
@@ -14,6 +15,9 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
         <h1 className="font-manrope text-[28px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-tight mb-[5px]">Welcome back, {user.firstName}</h1>
         <p className="text-[14px] text-[#68736d]">Here is what is happening with your sales pipeline today.</p>
       </header>
+
+      {/* Agent Spotlight Announcements */}
+      <DashboardAnnouncementCard announcements={announcements} />
 
       {/* Hero Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px] mb-[40px] shrink-0">

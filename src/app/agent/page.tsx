@@ -39,6 +39,12 @@ export default async function AgentOverviewPage() {
     })
   ]);
 
+  const { getActiveAnnouncements } = await import('@/app/actions/announcements');
+  const agentAnnouncements = await getActiveAnnouncements({
+    userRole: 'sales',
+    placement: 'dashboard_card'
+  });
+
   return (
     <ClientAgentOverview 
       user={user} 
@@ -47,6 +53,7 @@ export default async function AgentOverviewPage() {
       availableCommissions={paidAgg._sum.amount || 0}
       recentCommissions={recentCommissions}
       personalHoldings={personalHoldings}
+      announcements={agentAnnouncements}
     />
   );
 }

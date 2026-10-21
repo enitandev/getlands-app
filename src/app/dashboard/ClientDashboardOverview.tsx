@@ -6,8 +6,9 @@ import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency } from '@/lib/mockData';
 import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 import DistributionChart from '@/components/ui/DistributionChart';
+import DashboardAnnouncementCard from '@/components/announcements/DashboardAnnouncementCard';
 
-export default function ClientDashboardOverview({ user, activeAnnouncement, opportunities = [], returnPlans = [], referralBonusPercentage = 5, reports }: any) {
+export default function ClientDashboardOverview({ user, dashboardAnnouncements = [], opportunities = [], returnPlans = [], referralBonusPercentage = 5, reports }: any) {
   const router = useRouter();
   const openOpps = opportunities?.filter((o: any) => o.status === 'available') || [];
   
@@ -146,6 +147,7 @@ export default function ClientDashboardOverview({ user, activeAnnouncement, oppo
       </div>
 
       {/* Main Content Grid */}
+      <DashboardAnnouncementCard announcements={dashboardAnnouncements || []} />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-[20px] lg:gap-[30px] mb-[20px] lg:mb-[40px] shrink-0">
         
         {/* Featured Opportunity Block */}
