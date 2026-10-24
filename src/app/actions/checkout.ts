@@ -17,10 +17,31 @@ async function checkCustomer() {
 
 export async function fundWalletAction(formData: FormData) {
   const userId = await checkCustomer();
-  const amount = parseFloat(formData.get('amount') as string);
+  const amountStr = formData.get('amount') as string;
+  const amount = parseFloat(amountStr);
   
-  // Note: receipt file upload would normally go to S3/Supabase Storage.
-  // For POC, we just record the pending transaction.
+  if (isNaN(amount) || amount <= 0) {
+    throw new Error('Invalid deposit amount');
+  }
+
+  // Idempotency / Deduplication Guard:
+  // Prevent rapid duplicate clicks or retries from recording multiple deposit records
+  const existingPendingDeposit = await prisma.transaction.findFirst({
+    where: {
+      userId,
+      type: 'deposit',
+      status: 'pending',
+      amount,
+      date: { gte: new Date(Date.now() - 60 * 1000) } // within last 60 seconds
+    },
+    orderBy: { date: 'desc' }
+  });
+
+  if (existingPendingDeposit) {
+    console.warn(`[Deduplication] Blocked duplicate fundWalletAction for user ${userId}, reusing tx ${existingPendingDeposit.id}`);
+    redirect('/dashboard/wallet');
+    return;
+  }
   
   await prisma.transaction.create({
     data: {
@@ -43,6 +64,10 @@ export async function checkoutAction(formData: FormData) {
   const units = parseFloat(formData.get('units') as string || '1');
   const cohortId = formData.get('cohortId') as string | null;
   const planId = formData.get('planId') as string | null;
+
+  if (!opportunityId || isNaN(totalAmount) || totalAmount <= 0) {
+    throw new Error('Invalid checkout parameters');
+  }
   
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found');
@@ -65,6 +90,24 @@ export async function checkoutAction(formData: FormData) {
       throw new Error('Insufficient wallet balance');
     }
 
+    // Idempotency Guard for Wallet Checkout (within last 30s)
+    const existingWalletTx = await prisma.transaction.findFirst({
+      where: {
+        userId,
+        type: 'investment',
+        status: 'success',
+        amount: totalAmount,
+        date: { gte: new Date(Date.now() - 30 * 1000) }
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    if (existingWalletTx) {
+      console.warn(`[Deduplication] Blocked duplicate wallet checkout for user ${userId}`);
+      redirect('/dashboard/holdings');
+      return;
+    }
+
     // 1. Deduct wallet
     await prisma.user.update({
       where: { id: userId },
@@ -72,7 +115,7 @@ export async function checkoutAction(formData: FormData) {
     });
 
     // 2. Create success transaction
-    await prisma.transaction.create({
+    const tx = await prisma.transaction.create({
       data: {
         userId,
         type: 'investment',
@@ -91,6 +134,7 @@ export async function checkoutAction(formData: FormData) {
         totalAmount,
         units,
         status: 'active',
+        transactionId: tx.id,
         ...planData
       }
     });
@@ -118,6 +162,26 @@ export async function checkoutAction(formData: FormData) {
 
   } else {
     // Bank Transfer Route
+    // Idempotency / Deduplication Guard:
+    // If an identical pending transaction or holding was created within the last 60s,
+    // do NOT create duplicates! Reuse the existing transaction and proceed cleanly.
+    const existingPendingTx = await prisma.transaction.findFirst({
+      where: {
+        userId,
+        type: 'investment',
+        status: 'pending',
+        amount: totalAmount,
+        date: { gte: new Date(Date.now() - 60 * 1000) }
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    if (existingPendingTx) {
+      console.warn(`[Deduplication] Blocked duplicate bank transfer checkout for user ${userId}, reusing tx ${existingPendingTx.id}`);
+      redirect('/dashboard/holdings');
+      return;
+    }
+
     // Create pending transaction
     const tx = await prisma.transaction.create({
       data: {

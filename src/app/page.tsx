@@ -6,6 +6,7 @@ import { Farms } from "@/components/Farms";
 import { LandBanking } from "@/components/LandBanking";
 import { Portfolio } from "@/components/Portfolio";
 import { Trust } from "@/components/Trust";
+import { Faq } from "@/components/Faq";
 import { Closing } from "@/components/Closing";
 import { Footer } from "@/components/Footer";
 
@@ -28,6 +29,7 @@ export default async function Home() {
       <LandBanking />
       <Portfolio />
       <Trust />
+      <Faq />
       <Closing />
       <Footer />
     </main>

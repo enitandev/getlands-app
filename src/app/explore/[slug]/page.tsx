@@ -1,9 +1,60 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import ClientCheckoutCard from './ClientCheckoutCard';
+import { ProductJsonLd, BreadcrumbJsonLd } from '@/components/seo/JsonLd';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const opp = await prisma.opportunity.findUnique({
+    where: { slug: resolvedParams.slug }
+  });
+
+  if (!opp) {
+    return {
+      title: 'Opportunity Not Found | Getlands Marketplace',
+    };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://getlands.ng';
+  const title = `${opp.title} | ${opp.location}, ${opp.state} | Getlands`;
+  const description = opp.description 
+    ? opp.description.slice(0, 160) 
+    : `Acquire or participate in ${opp.title} located in ${opp.location}, ${opp.state}. Verified physical real-asset allocation with documented legal deed and structured returns.`;
+  const url = `${baseUrl}/explore/${opp.slug}`;
+  const image = opp.coverImage || `${baseUrl}/assets/images/hero-farmland.jpg`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'article',
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: opp.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function OpportunityDetail({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
@@ -26,8 +77,26 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
     return <div className="min-h-screen grid place-items-center text-ink text-[18px]">Opportunity not found.</div>;
   }
 
+  const price = opp.category === 'land' ? (opp.price || 0) : opp.category === 'farm' ? (opp.slotPrice || 0) : (opp.acquisitionPrice || 0);
+
   return (
     <main className="min-h-screen bg-white font-manrope">
+      <ProductJsonLd 
+        name={opp.title}
+        description={opp.description || `${opp.title} in ${opp.location}, ${opp.state}`}
+        image={opp.coverImage}
+        price={price}
+        category={opp.category}
+        slug={opp.slug}
+      />
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Marketplace', url: '/explore' },
+          { name: opp.title, url: `/explore/${opp.slug}` }
+        ]}
+      />
+
       <header className="fixed z-50 top-[10px] lg:top-[18px] left-1/2 -translate-x-1/2 w-[calc(100%-36px)] lg:w-[min(1480px,calc(100%-72px))] h-[60px] lg:h-[68px] flex items-center justify-between">
         <Link href="/" className="brand block w-[120px] lg:w-[143px]">
           <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />

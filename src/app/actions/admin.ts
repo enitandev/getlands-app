@@ -285,6 +285,11 @@ export async function rejectTransaction(transactionId: string) {
       where: { id: tx.userId },
       data: { walletBalance: { increment: tx.amount } }
     });
+  } else if (tx.type === 'investment') {
+    // If there is an associated pending holding, clean it up so it doesn't linger
+    await prisma.holding.deleteMany({
+      where: { transactionId: tx.id, status: 'pending' }
+    });
   }
 
   await prisma.notification.create({

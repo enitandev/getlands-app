@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatCurrency } from '@/lib/mockData';
 import { checkoutAction } from '@/app/actions/checkout';
 import { toast } from '@/components/ui/Toast';
@@ -9,6 +9,7 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [qty, setQty] = useState(initialQuantity);
   
   // Timer state (25 minutes)
@@ -45,21 +46,38 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
   };
 
   const handleSubmitPayment = async () => {
+    // Synchronous execution guard: drops any rapid double-taps or duplicate events
+    if (isSubmittingRef.current || isSubmitting) return;
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
-    const fd = new FormData();
-    fd.append("opportunityId", opp.id);
-    fd.append("paymentMethod", paymentMethod);
-    fd.append("totalAmount", total.toString());
-    fd.append("units", qty.toString());
-    if (selectedPlan) {
-      fd.append("planId", selectedPlan.id);
-    }
-    
-    // In a real app we would upload the receipt to Supabase Storage here
-    // if (file) { ... upload logic ... fd.append("receiptUrl", url) }
 
-    await checkoutAction(fd);
-    // checkoutAction handles redirect to /checkout/success
+    try {
+      const fd = new FormData();
+      fd.append("opportunityId", opp.id);
+      fd.append("paymentMethod", paymentMethod);
+      fd.append("totalAmount", total.toString());
+      fd.append("units", qty.toString());
+      if (selectedPlan) {
+        fd.append("planId", selectedPlan.id);
+      }
+      if (opp.cohorts?.[0]?.id) {
+        fd.append("cohortId", opp.cohorts[0].id);
+      }
+      if (file) {
+        fd.append("receipt", file);
+      }
+
+      await checkoutAction(fd);
+    } catch (err: any) {
+      if (err?.message?.includes('NEXT_REDIRECT') || err?.digest?.includes('NEXT_REDIRECT')) {
+        // Redirection in progress
+        return;
+      }
+      console.error("Payment submission failed:", err);
+      toast(err?.message || "Failed to record payment. Please try again.", "error");
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
+    }
   };
 
   return (
@@ -272,23 +290,38 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
           {/* Action Buttons */}
           {step === 1 ? (
             paymentMethod === 'transfer' ? (
-              <button onClick={() => setStep(2)} className="w-full h-[54px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-all shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
+              <button 
+                type="button"
+                onClick={() => setStep(2)} 
+                className="w-full h-[54px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-all shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
                 I have made payment
               </button>
             ) : (
               <button 
+                type="button"
                 onClick={handleSubmitPayment}
                 disabled={walletBalance < total || isSubmitting} 
-                className="w-full h-[54px] bg-[#008b45] text-white font-bold rounded-full disabled:opacity-50 hover:bg-[#007339] transition-all shadow-[0_8px_20px_rgba(0,139,69,0.2)]">
-                {isSubmitting ? 'Processing...' : 'Pay from Wallet'}
+                className="w-full h-[54px] bg-[#008b45] text-white font-bold rounded-full disabled:opacity-50 hover:bg-[#007339] transition-all shadow-[0_8px_20px_rgba(0,139,69,0.2)] flex items-center justify-center gap-2">
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Processing Payment...</span>
+                  </>
+                ) : 'Pay from Wallet'}
               </button>
             )
           ) : (
             <button 
+              type="button"
               onClick={handleSubmitPayment}
               disabled={!file || isSubmitting} 
               className="w-full h-[54px] bg-[#008b45] text-white font-bold rounded-full disabled:opacity-50 hover:bg-[#007339] transition-all shadow-[0_8px_20px_rgba(0,139,69,0.2)] flex items-center justify-center gap-2">
-              {isSubmitting ? 'Submitting...' : (
+              {isSubmitting ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Submitting Payment Proof...</span>
+                </>
+              ) : (
                 <>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                   Submit Payment
@@ -303,6 +336,19 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
           </p>
         </div>
       </div>
+
+      {/* Full-screen Loading Overlay to block any interaction while payment/receipt processes */}
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[24px] p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center border border-black/5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 border-3 border-[#008b45]/20 border-t-[#008b45] rounded-full animate-spin mb-4" />
+            <h3 className="font-manrope font-bold text-[18px] text-[#1a1a1a] mb-1.5">Securing Your Asset</h3>
+            <p className="text-[13px] text-[#68736d] leading-relaxed">
+              Recording your payment receipt and locking your allocation. Please do not close or refresh this page...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

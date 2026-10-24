@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { formatCurrency } from '@/lib/mockData';
 import { fundWalletAction } from '@/app/actions/checkout';
 import { requestWithdrawalAction } from '@/app/actions/wallet';
@@ -11,22 +11,51 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawError, setWithdrawError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingWithdrawalRef = useRef(false);
+  const [isSubmittingFund, setIsSubmittingFund] = useState(false);
+  const isSubmittingFundRef = useRef(false);
   
   const activeBank = bankAccounts[0];
 
+  const handleFundSubmit = async (formData: FormData) => {
+    if (isSubmittingFundRef.current || isSubmittingFund) return;
+    isSubmittingFundRef.current = true;
+    setIsSubmittingFund(true);
+    try {
+      await fundWalletAction(formData);
+      setIsFundModalOpen(false);
+    } catch (err: any) {
+      if (err?.message?.includes('NEXT_REDIRECT') || err?.digest?.includes('NEXT_REDIRECT')) {
+        setIsFundModalOpen(false);
+        return;
+      }
+      alert(err?.message || "Failed to submit deposit receipt");
+    } finally {
+      setIsSubmittingFund(false);
+      isSubmittingFundRef.current = false;
+    }
+  };
+
   const handleWithdrawal = async (formData: FormData) => {
+    if (isSubmittingWithdrawalRef.current || isSubmitting) return;
+    isSubmittingWithdrawalRef.current = true;
     setIsSubmitting(true);
     setWithdrawError('');
     
-    const res = await requestWithdrawalAction(formData);
-    
-    if (res.error) {
-      setWithdrawError(res.error);
-    } else {
-      setIsWithdrawModalOpen(false);
-      alert('Withdrawal request submitted successfully! It will be processed shortly.');
+    try {
+      const res = await requestWithdrawalAction(formData);
+      
+      if (res.error) {
+        setWithdrawError(res.error);
+      } else {
+        setIsWithdrawModalOpen(false);
+        setWithdrawAmount('');
+        alert('Withdrawal request submitted successfully! It will be processed shortly.');
+      }
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingWithdrawalRef.current = false;
     }
-    setIsSubmitting(false);
   };
 
   return (
@@ -173,7 +202,7 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
               </button>
             </div>
             
-            <form className="p-[20px] lg:p-[30px] space-y-[20px]" action={async (formData) => { await fundWalletAction(formData); setIsFundModalOpen(false); }}>
+            <form className="p-[20px] lg:p-[30px] space-y-[20px]" action={handleFundSubmit}>
               <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#7a847f] mb-[15px]">Bank Transfer Details</h3>
                 <div className="space-y-[15px]">
@@ -210,8 +239,19 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
               </div>
 
               <div className="pt-[10px]">
-                <button type="submit" className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)]">
-                  Submit Receipt
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingFund}
+                  className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmittingFund ? (
+                    <>
+                      <div className="w-[18px] h-[18px] border-[2px] border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Submitting Receipt...
+                    </>
+                  ) : (
+                    "Submit Receipt"
+                  )}
                 </button>
               </div>
             </form>

@@ -34,6 +34,21 @@ export async function requestWithdrawalAction(formData: FormData) {
       return { error: "Please add a verified bank account in Settings first." };
     }
 
+    // Idempotency Guard: prevent duplicate withdrawal within 30 seconds
+    const existingPendingWithdrawal = await prisma.transaction.findFirst({
+      where: {
+        userId: user.id,
+        type: 'withdrawal',
+        status: 'pending',
+        amount,
+        date: { gte: new Date(Date.now() - 30 * 1000) }
+      }
+    });
+
+    if (existingPendingWithdrawal) {
+      return { success: true, transaction: existingPendingWithdrawal };
+    }
+
     // 2. Calculate Settlement Fee & Net Amount
     const settings = await prisma.platformSetting.findUnique({ where: { id: 'global' } });
     const feeRate = settings?.processingFee ?? 0;
