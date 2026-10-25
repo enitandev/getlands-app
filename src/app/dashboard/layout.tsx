@@ -9,18 +9,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.userId) redirect('/login');
 
   const user = await prisma.user.findUnique({
-    where: { id: session.userId as string },
-    include: {
-      notifications: {
-        orderBy: { createdAt: 'desc' },
-        take: 20
-      }
-    }
+    where: { id: session.userId as string }
   });
 
   if (!user) {
     redirect('/login');
   }
+
+  const notifications = await prisma.notification.findMany({
+    where: {
+      OR: [
+        { userId: user.id },
+        { userId: null }
+      ]
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 30
+  });
 
   const initials = `${user.firstName[0]}${user.lastName[0]}`;
   const fullName = `${user.firstName} ${user.lastName[0]}.`;
@@ -33,9 +38,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <ClientDashboardLayout 
+      userId={user.id}
       initials={initials} 
       fullName={fullName} 
-      notifications={user.notifications} 
+      notifications={notifications} 
       unreadMessageCount={unreadMessageCount} 
       referralBonusPercentage={referralBonusPercentage}
       referralCode={user.referralCode}

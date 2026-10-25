@@ -57,14 +57,39 @@ const Icons = {
       <circle cx="20" cy="21" r="1"></circle>
       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
     </svg>
+  ),
+  Bell: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
   )
 };
 
-export default function ClientAgentLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, commissionRate = 5, isImpersonating = false, hasSignedContract = true }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; commissionRate?: number, isImpersonating?: boolean, hasSignedContract?: boolean }) {
+export default function ClientAgentLayout({ 
+  children, 
+  userId,
+  initials, 
+  fullName, 
+  notifications = [], 
+  unreadMessageCount = 0, 
+  commissionRate = 5, 
+  isImpersonating = false, 
+  hasSignedContract = true 
+}: { 
+  children: React.ReactNode; 
+  userId?: string;
+  initials: string; 
+  fullName: string; 
+  notifications?: any[]; 
+  unreadMessageCount?: number; 
+  commissionRate?: number; 
+  isImpersonating?: boolean; 
+  hasSignedContract?: boolean;
+}) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
   const [isSigning, setIsSigning] = useState(false);
+
+  const unreadNotifsCount = notifications.filter((n: any) => n.unread).length;
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -83,6 +108,7 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
     { name: 'My Team', path: '/agent/team', icon: Icons.Referrals },
     { name: 'Draft Portfolio', path: '/agent/draft', icon: Icons.Holdings },
     { name: 'Wallet', path: '/dashboard/wallet', icon: Icons.Wallet },
+    { name: 'Notifications', path: '/agent/notifications', icon: Icons.Bell, badge: unreadNotifsCount > 0 ? unreadNotifsCount : null },
     { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Personal Account', path: '/dashboard', icon: Icons.Marketplace },
   ];
@@ -251,8 +277,36 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 h-full overflow-hidden">
-        <header className="lg:hidden flex items-center justify-between px-[22px] h-[70px] bg-white border-b border-black/5 sticky top-0 z-40">
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto flex flex-col">
+        {/* Desktop Header */}
+        <header className="hidden lg:flex items-center justify-between px-[60px] h-[72px] bg-white border-b border-black/5 sticky top-0 z-40 shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="font-manrope font-bold text-[18px] text-ink capitalize">
+              {pathname === '/agent' ? 'Overview' : pathname.replace('/agent/', '').replace(/-/g, ' ')}
+            </h2>
+          </div>
+          <div className="flex items-center gap-[18px]">
+            <Link 
+              href="/dashboard" 
+              className="text-[12px] font-bold text-[#008b45] bg-[#008b45]/10 hover:bg-[#008b45]/20 px-[14px] py-[7px] rounded-full transition-colors flex items-center gap-1.5"
+            >
+              Investor Portal &rarr;
+            </Link>
+            <NotificationDropdown notifications={notifications} userId={userId} />
+            <Link href="/dashboard/settings" className="flex items-center gap-2.5 pl-2 group">
+              <div className="w-[36px] h-[36px] rounded-full bg-[#008b45]/10 group-hover:bg-[#008b45] group-hover:text-white transition-colors flex items-center justify-center text-[#008b45] font-manrope font-bold text-[13px]">
+                {initials}
+              </div>
+              <div className="text-left hidden xl:block">
+                <div className="text-[13px] font-bold text-ink leading-tight">{fullName}</div>
+                <div className="text-[11px] text-[#7a847f]">Sales Partner</div>
+              </div>
+            </Link>
+          </div>
+        </header>
+
+        {/* Mobile Header */}
+        <header className="lg:hidden flex items-center justify-between px-[22px] h-[70px] bg-white border-b border-black/5 sticky top-0 z-40 shrink-0">
           <Link href="/agent" className="flex items-center gap-[8px]">
             <div className="w-[32px] h-[32px] bg-[#008b45] rounded-[8px] flex items-center justify-center text-white font-bold text-[14px]">
               AP
@@ -260,11 +314,12 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
             <div className="font-manrope font-bold text-[18px] text-ink tracking-tight">Agent<span className="text-[#008b45]">Portal</span></div>
           </Link>
           <div className="flex items-center gap-[10px]">
+            <NotificationDropdown notifications={notifications} userId={userId} />
             <Link 
               href="/dashboard" 
               className="text-[11px] font-bold text-[#008b45] bg-[#eef3ef] border border-[#008b45]/20 px-[10px] py-[5px] rounded-full"
             >
-              Investor Mode &rarr;
+              Investor &rarr;
             </Link>
             <Link href="/dashboard/settings" className="w-[36px] h-[36px] rounded-full bg-[#f7f9f7] border border-black/5 flex items-center justify-center text-[#18201c] text-[13px] font-bold hover:bg-[#008b45] hover:text-white transition-colors shadow-sm">
               {initials}
@@ -272,7 +327,7 @@ export default function ClientAgentLayout({ children, initials, fullName, notifi
           </div>
         </header>
         
-        <div className="px-[15px] lg:px-[60px] pt-[15px] lg:py-[50px] max-w-[1200px] mx-auto h-full">
+        <div className="px-[15px] lg:px-[60px] pt-[15px] lg:py-[40px] max-w-[1200px] mx-auto w-full flex-1 pb-[100px] lg:pb-[60px]">
           {children}
         </div>
       </main>

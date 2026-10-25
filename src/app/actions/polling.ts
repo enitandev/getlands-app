@@ -34,18 +34,21 @@ export async function getLatestNotifications(userId: string) {
 
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    
-    const whereClause = user?.role === 'admin' 
-      ? { OR: [{ userId }, { userId: null }] } 
-      : { userId };
+    if (!user) return null;
 
     const notifications = await prisma.notification.findMany({
-      where: whereClause,
+      where: {
+        OR: [
+          { userId },
+          { userId: null }
+        ]
+      },
       orderBy: { createdAt: 'desc' },
-      take: 20
+      take: 30
     });
     return notifications;
   } catch (error) {
+    console.error("getLatestNotifications polling error:", error);
     return null;
   }
 }

@@ -142,6 +142,18 @@ export async function assignOpportunityAction(formData: FormData) {
   }
   await sendNewInvestmentEmail(user.email, user.firstName, opportunity.title, units, token);
 
+  // 4. Create In-App Notification for customer
+  await prisma.notification.create({
+    data: {
+      userId,
+      type: 'TRANSACTION',
+      title: `Asset Allocation: ${opportunity.title}`,
+      message: `You have been allocated ${units} unit(s) of ${opportunity.title} (₦${amountPaid.toLocaleString()}). Your investment schedule and legal agreements are now active.`,
+      linkUrl: `/dashboard/holdings/${holding.id}`,
+      actionText: 'View Allocation'
+    }
+  });
+
   revalidatePath('/admin/customers');
   revalidatePath(`/admin/customers/${userId}`);
 

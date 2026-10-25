@@ -20,9 +20,9 @@ export async function broadcastNotificationAction(formData: FormData) {
 
   try {
     if (target === 'all') {
-      // Get all active users
+      // Get all active users (customers and sales agents)
       const users = await prisma.user.findMany({
-        where: { role: 'customer' },
+        where: { role: { in: ['customer', 'sales'] } },
         select: { id: true }
       });
 

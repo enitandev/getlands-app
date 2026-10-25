@@ -109,32 +109,18 @@ export async function createAnnouncementAction(formData: FormData) {
       const notifLink = actionUrl || (targetAudience === 'agents' ? '/agent' : '/dashboard');
       const notifAction = actionText || 'View Details';
 
-      if (targetAudience === 'all') {
-        // Global broadcast
-        await prisma.notification.create({
-          data: {
-            userId: null,
+      const targetUsers = await getTargetUsers(targetAudience);
+      if (targetUsers.length > 0) {
+        await prisma.notification.createMany({
+          data: targetUsers.map(u => ({
+            userId: u.id,
             type: 'SYSTEM',
             title,
             message,
             linkUrl: notifLink,
             actionText: notifAction,
-          },
+          })),
         });
-      } else {
-        const targetUsers = await getTargetUsers(targetAudience);
-        if (targetUsers.length > 0) {
-          await prisma.notification.createMany({
-            data: targetUsers.map(u => ({
-              userId: u.id,
-              type: 'SYSTEM',
-              title,
-              message,
-              linkUrl: notifLink,
-              actionText: notifAction,
-            })),
-          });
-        }
       }
     } catch (broadcastErr) {
       console.error("Failed to broadcast notifications:", broadcastErr);

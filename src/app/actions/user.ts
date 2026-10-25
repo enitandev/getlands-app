@@ -63,6 +63,18 @@ export async function updateBankDetailsAction(formData: FormData) {
       data: { bankName, accountNumber, accountName }
     });
 
+    // 4. In-app confirmation notification for bank update
+    await prisma.notification.create({
+      data: {
+        userId: session.userId as string,
+        type: 'SYSTEM',
+        title: 'Settlement Bank Account Updated',
+        message: `Your withdrawal bank account was updated to ${bankName} (${accountNumber}). All future withdrawal wires will route here.`,
+        linkUrl: '/dashboard/wallet',
+        actionText: 'View Wallet'
+      }
+    });
+
     revalidatePath('/dashboard/settings');
     return { success: true };
   } catch (error) {
@@ -146,6 +158,29 @@ export async function submitKycAction(formData: FormData) {
         kycStatus: 'pending',
         nationalIdUrl: ninUrl,
         utilityBillUrl: utUrl
+      }
+    });
+
+    // Notify customer
+    await prisma.notification.create({
+      data: {
+        userId: session.userId as string,
+        type: 'SYSTEM',
+        title: 'KYC Documents Submitted',
+        message: 'Your identity verification documents have been received and are currently under compliance review.',
+        linkUrl: '/dashboard/settings',
+        actionText: 'View Settings'
+      }
+    });
+
+    // Notify admins of new KYC verification request
+    await prisma.notification.create({
+      data: {
+        userId: null,
+        type: 'SYSTEM',
+        title: 'New KYC Submission',
+        message: 'A customer submitted identity verification documents for review.',
+        linkUrl: `/admin/customers/${session.userId}`
       }
     });
 

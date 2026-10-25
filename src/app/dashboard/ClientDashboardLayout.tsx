@@ -58,16 +58,43 @@ const Icons = {
       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
     </svg>
   ),
+  Bell: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+  ),
   Agent: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
   )
 };
 
-export default function ClientDashboardLayout({ children, initials, fullName, notifications = [], unreadMessageCount = 0, referralBonusPercentage = 5, referralCode = '', isImpersonating = false, isSalesAgent = false }: { children: React.ReactNode; initials: string; fullName: string; notifications?: any[]; unreadMessageCount?: number; referralBonusPercentage?: number, referralCode?: string | null, isImpersonating?: boolean, isSalesAgent?: boolean }) {
+export default function ClientDashboardLayout({ 
+  children, 
+  userId,
+  initials, 
+  fullName, 
+  notifications = [], 
+  unreadMessageCount = 0, 
+  referralBonusPercentage = 5, 
+  referralCode = '', 
+  isImpersonating = false, 
+  isSalesAgent = false 
+}: { 
+  children: React.ReactNode; 
+  userId?: string;
+  initials: string; 
+  fullName: string; 
+  notifications?: any[]; 
+  unreadMessageCount?: number; 
+  referralBonusPercentage?: number; 
+  referralCode?: string | null; 
+  isImpersonating?: boolean; 
+  isSalesAgent?: boolean;
+}) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadMsg, setUnreadMsg] = useState(unreadMessageCount);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const unreadNotifsCount = notifications.filter((n: any) => n.unread).length;
 
   const handleCopyInviteLink = async () => {
     if (!referralCode) {
@@ -105,6 +132,7 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
     { name: 'Marketplace', path: '/dashboard/marketplace', icon: Icons.Marketplace },
     { name: 'Holdings', path: '/dashboard/holdings', icon: Icons.Holdings },
     { name: 'Wallet & transactions', path: '/dashboard/wallet', icon: Icons.Wallet },
+    { name: 'Notifications', path: '/dashboard/notifications', icon: Icons.Bell, badge: unreadNotifsCount > 0 ? unreadNotifsCount : null },
     { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Settings', path: '/dashboard/settings', icon: Icons.Settings },
   ];
@@ -229,8 +257,36 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 h-full overflow-hidden">
-        <header className="lg:hidden flex items-center justify-between px-[22px] h-[70px] bg-white border-b border-black/5 sticky top-0 z-40">
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto flex flex-col">
+        {/* Desktop Header */}
+        <header className="hidden lg:flex items-center justify-between px-[60px] h-[72px] bg-white border-b border-black/5 sticky top-0 z-40 shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="font-manrope font-bold text-[18px] text-ink capitalize">
+              {pathname === '/dashboard' ? 'Overview' : pathname.replace('/dashboard/', '').replace(/-/g, ' ')}
+            </h2>
+          </div>
+          <div className="flex items-center gap-[18px]">
+            {isSalesAgent && (
+              <Link href="/agent" className="bg-[#008b45]/10 text-[#008b45] hover:bg-[#008b45]/20 text-[12px] font-bold px-[14px] py-[7px] rounded-full flex items-center gap-1.5 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Agent Portal
+              </Link>
+            )}
+            <NotificationDropdown notifications={notifications} userId={userId} />
+            <Link href="/dashboard/settings" className="flex items-center gap-2.5 pl-2 group">
+              <div className="w-[36px] h-[36px] rounded-full bg-[#008b45]/10 group-hover:bg-[#008b45] group-hover:text-white transition-colors flex items-center justify-center text-[#008b45] font-manrope font-bold text-[13px]">
+                {initials}
+              </div>
+              <div className="text-left hidden xl:block">
+                <div className="text-[13px] font-bold text-ink leading-tight">{fullName}</div>
+                <div className="text-[11px] text-[#7a847f]">Investor Account</div>
+              </div>
+            </Link>
+          </div>
+        </header>
+
+        {/* Mobile Header */}
+        <header className="lg:hidden flex items-center justify-between px-[22px] h-[70px] bg-white border-b border-black/5 sticky top-0 z-40 shrink-0">
           <Link href="/" className="brand block w-[110px]">
             <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />
           </Link>
@@ -241,14 +297,14 @@ export default function ClientDashboardLayout({ children, initials, fullName, no
                 Portal
               </Link>
             )}
-            <NotificationDropdown notifications={notifications} />
+            <NotificationDropdown notifications={notifications} userId={userId} />
             <Link href="/dashboard/settings" className="w-[32px] h-[32px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#18201c] text-[12px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
               {initials}
             </Link>
           </div>
         </header>
         
-        <div className="px-[15px] lg:px-[60px] pt-[15px] lg:py-[50px] max-w-[1200px] mx-auto h-full">
+        <div className="px-[15px] lg:px-[60px] pt-[15px] lg:py-[40px] max-w-[1200px] mx-auto w-full flex-1 pb-[100px] lg:pb-[60px]">
           {children}
         </div>
       </main>
