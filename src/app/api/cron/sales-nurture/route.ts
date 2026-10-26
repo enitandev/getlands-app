@@ -136,11 +136,78 @@ export async function GET(request: Request) {
       }
     }
 
+    // Pending Payment Recovery: Find transactions created between 6 and 48 hours ago with status 'pending'
+    const pendingSince = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const pendingUntil = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+
+    const pendingTxns = await prisma.transaction.findMany({
+      where: {
+        status: 'pending',
+        date: { gte: pendingSince, lte: pendingUntil },
+        user: { role: 'customer' }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            notifications: {
+              where: { type: 'NURTURE_PENDING_TX' },
+              select: { id: true }
+            }
+          }
+        }
+      }
+    });
+
+    let pendingReminded = 0;
+    for (const tx of pendingTxns) {
+      if (tx.user.notifications.length === 0) {
+        const html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; p: 24px; color: #333; line-height: 1.6;">
+            <div style="background-color: #008b45; padding: 20px; text-align: center; border-radius: 12px 12px 0 0; color: white;">
+              <h2 style="margin: 0; font-size: 22px;">Your Pending Reservation on Getlands</h2>
+            </div>
+            <div style="padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 12px 12px; background-color: #ffffff;">
+              <p>Hello ${tx.user.firstName},</p>
+              <p>We noticed you initiated a transaction of <strong>₦${tx.amount.toLocaleString()}</strong> on Getlands earlier.</p>
+              <p>If you have already made the bank transfer, simply reply to this email with your proof of payment so our operations team can verify and credit your slot right away.</p>
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="https://getlands.ng/dashboard/wallet" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 15px; display: inline-block;">
+                  View Your Transaction
+                </a>
+              </div>
+              <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">
+                If you had any network issues with your bank or have a question, simply reply directly to this email.
+              </p>
+            </div>
+          </div>
+        `;
+
+        await sendResendEmail(tx.user.email, 'Your pending reservation on Getlands', html);
+
+        await prisma.notification.create({
+          data: {
+            userId: tx.user.id,
+            type: 'NURTURE_PENDING_TX',
+            title: 'Pending Transaction Reminder',
+            message: `You have an unconfirmed payment of ₦${tx.amount.toLocaleString()}. Reply with your transfer receipt or check your wallet.`,
+            linkUrl: '/dashboard/wallet',
+            actionText: 'Check Wallet'
+          }
+        });
+
+        pendingReminded++;
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      scanned: recentSignups.length,
+      scannedSignups: recentSignups.length,
       day2Sent,
-      day5Sent
+      day5Sent,
+      pendingReminded
     });
   } catch (error: any) {
     console.error('sales-nurture cron error:', error);
