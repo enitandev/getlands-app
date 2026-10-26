@@ -90,15 +90,34 @@ export async function sendMessageAction(conversationId: string, text: string) {
       // Support Conversation
       if (isCustomer) {
         // User/Agent wrote to Support Desk
-        await prisma.notification.create({
-          data: {
-            userId: conversation.agentId || null,
-            title: `Support query from ${conversation.customer.firstName} ${conversation.customer.lastName}`,
-            message: preview,
-            type: "MESSAGE",
-            linkUrl: `/admin/messages?convId=${conversation.id}`
+        if (conversation.agentId) {
+          await prisma.notification.create({
+            data: {
+              userId: conversation.agentId,
+              title: `Support query from ${conversation.customer.firstName} ${conversation.customer.lastName}`,
+              message: preview,
+              type: "MESSAGE",
+              linkUrl: `/admin/messages?convId=${conversation.id}`
+            }
+          });
+        } else {
+          // If no specific agent is assigned, notify all administrators directly
+          const admins = await prisma.user.findMany({
+            where: { role: 'admin' },
+            select: { id: true }
+          });
+          for (const adm of admins) {
+            await prisma.notification.create({
+              data: {
+                userId: adm.id,
+                title: `Support query from ${conversation.customer.firstName} ${conversation.customer.lastName}`,
+                message: preview,
+                type: "MESSAGE",
+                linkUrl: `/admin/messages?convId=${conversation.id}`
+              }
+            });
           }
-        });
+        }
       } else {
         // Admin or Support desk wrote back to customer
         await prisma.notification.create({

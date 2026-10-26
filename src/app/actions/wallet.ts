@@ -76,16 +76,22 @@ export async function requestWithdrawalAction(formData: FormData) {
       }
     });
 
-    // 5. Send an admin notification
-    await prisma.notification.create({
-      data: {
-        userId: null, // Global/Admin notification
-        type: 'SYSTEM',
-        title: 'New Withdrawal Request',
-        message: `${user.firstName} ${user.lastName} requested a withdrawal of ₦${amount.toLocaleString()} (Net wire: ₦${netAmount.toLocaleString()}, Fee: ₦${fee.toLocaleString()}).`,
-        linkUrl: '/admin/finance'
-      }
+    // 5. Send direct admin notifications
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin' },
+      select: { id: true }
     });
+    for (const adm of admins) {
+      await prisma.notification.create({
+        data: {
+          userId: adm.id,
+          type: 'TRANSACTION',
+          title: 'New Withdrawal Request',
+          message: `${user.firstName} ${user.lastName} requested a withdrawal of ₦${amount.toLocaleString()} (Net wire: ₦${netAmount.toLocaleString()}, Fee: ₦${fee.toLocaleString()}).`,
+          linkUrl: '/admin/finance'
+        }
+      });
+    }
 
     revalidatePath("/dashboard/wallet");
     revalidatePath("/admin/finance");

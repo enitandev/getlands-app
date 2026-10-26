@@ -18,10 +18,7 @@ export default async function DashboardNotificationsPage() {
 
   const notifications = await prisma.notification.findMany({
     where: {
-      OR: [
-        { userId: session.userId as string },
-        { userId: null }
-      ]
+      userId: session.userId as string
     },
     orderBy: { createdAt: 'desc' },
     take: 100

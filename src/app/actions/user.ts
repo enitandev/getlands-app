@@ -174,15 +174,21 @@ export async function submitKycAction(formData: FormData) {
     });
 
     // Notify admins of new KYC verification request
-    await prisma.notification.create({
-      data: {
-        userId: null,
-        type: 'SYSTEM',
-        title: 'New KYC Submission',
-        message: 'A customer submitted identity verification documents for review.',
-        linkUrl: `/admin/customers/${session.userId}`
-      }
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin' },
+      select: { id: true }
     });
+    for (const adm of admins) {
+      await prisma.notification.create({
+        data: {
+          userId: adm.id,
+          type: 'SYSTEM',
+          title: 'New KYC Submission',
+          message: 'A customer submitted identity verification documents for review.',
+          linkUrl: `/admin/customers/${session.userId}`
+        }
+      });
+    }
 
     revalidatePath('/dashboard/settings');
     return { success: true };
