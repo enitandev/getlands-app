@@ -405,8 +405,9 @@ export async function getActiveAnnouncements({
     return dbAnnouncements;
   }
 
-  // Never show auto fallback for modal popups (only top banners and dashboard cards)
-  if (placement === 'modal_popup') {
+  // The smart automated sales engine should ONLY generate in-dashboard cards (placement: 'dashboard_card').
+  // Top global header banners and modal popups should NEVER show automated fallbacks so they do not interfere with the front page.
+  if (placement !== 'dashboard_card') {
     return [];
   }
 

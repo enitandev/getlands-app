@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface AnnouncementProps {
   announcement: {
@@ -16,6 +17,7 @@ interface AnnouncementProps {
 }
 
 export default function GlobalAnnouncementBanner({ announcement }: AnnouncementProps) {
+  const pathname = usePathname();
   const [isDismissed, setIsDismissed] = useState(true); // default hidden until mounted
 
   useEffect(() => {
@@ -30,7 +32,8 @@ export default function GlobalAnnouncementBanner({ announcement }: AnnouncementP
     }
   }, [announcement]);
 
-  if (!announcement || isDismissed) return null;
+  // Never render on the landing page so it doesn't clash with the hero or floating header
+  if (!announcement || isDismissed || pathname === '/') return null;
 
   const handleDismiss = () => {
     setIsDismissed(true);

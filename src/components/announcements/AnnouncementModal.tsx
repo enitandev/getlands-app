@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface ModalProps {
   announcement: {
@@ -16,10 +17,11 @@ interface ModalProps {
 }
 
 export default function AnnouncementModal({ announcement }: ModalProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (!announcement) return;
+    if (!announcement || pathname === '/') return;
     try {
       const dismissed = localStorage.getItem(`getlands_dismissed_modal_${announcement.id}`);
       if (!dismissed) {
@@ -28,9 +30,9 @@ export default function AnnouncementModal({ announcement }: ModalProps) {
     } catch {
       setIsOpen(true);
     }
-  }, [announcement]);
+  }, [announcement, pathname]);
 
-  if (!announcement || !isOpen) return null;
+  if (!announcement || !isOpen || pathname === '/') return null;
 
   const handleClose = () => {
     setIsOpen(false);
