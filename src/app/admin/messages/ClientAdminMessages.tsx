@@ -6,8 +6,14 @@ import { sendMessageAction, assignAgentAction, markMessagesAsRead } from '@/app/
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export default function ClientAdminMessages({ admin, conversations, agents }: { admin: any, conversations: any[], agents: any[] }) {
-  const [activeChatId, setActiveChatId] = useState(conversations[0]?.id || null);
+export default function ClientAdminMessages({ admin, conversations, agents, initialActiveChatId }: { admin: any, conversations: any[], agents: any[], initialActiveChatId?: string }) {
+  const [activeChatId, setActiveChatId] = useState(() => {
+    if (initialActiveChatId) {
+      const found = conversations.find(c => c.id === initialActiveChatId);
+      if (found) return found.id;
+    }
+    return conversations[0]?.id || null;
+  });
   const [localConversations, setLocalConversations] = useState(conversations);
   const [input, setInput] = useState('');
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);

@@ -81,12 +81,21 @@ export default function ClientAgentNetwork({ clients, initialProspects, referral
                       <div className="text-[11px] text-[#7a847f] mt-[2px]">Joined {new Date(c.createdAt).toLocaleDateString()}</div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 flex flex-col items-end">
                     <span className={`inline-flex px-[8px] py-[2px] rounded-full text-[10px] font-bold uppercase tracking-wider mb-[4px] ${c.totalAcquired > 0 ? 'bg-green-100 text-green-700' : 'bg-[#f7f9f7] text-[#68736d]'}`}>
                       {c.status}
                     </span>
                     <div className="text-[13px] font-bold text-ink">{c.totalAcquired > 0 ? formatCurrency(c.totalAcquired) : '—'}</div>
                     {c.earned > 0 && <div className="text-[11px] text-[#008b45] font-bold">You earned {formatCurrency(c.earned)}</div>}
+                    <Link
+                      href={`/agent/messages?clientId=${c.id}`}
+                      className="mt-[6px] inline-flex items-center gap-[5px] px-[10px] py-[3px] bg-[#008b45]/10 hover:bg-[#008b45] text-[#008b45] hover:text-white rounded-full text-[11px] font-bold transition-all shadow-2xs"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      Message
+                    </Link>
                   </div>
                 </div>
               ))

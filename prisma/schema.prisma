@@ -421,8 +421,9 @@ model BankAccount {
 
 model Conversation {
   id          String    @id @default(uuid())
-  customerId  String    @unique
+  customerId  String
   agentId     String?
+  type        String    @default("support") // "support" | "agent_client"
   status      String    @default("open") // open, closed
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -430,6 +431,9 @@ model Conversation {
   customer    User      @relation("CustomerConversations", fields: [customerId], references: [id])
   agent       User?     @relation("AgentConversations", fields: [agentId], references: [id])
   messages    Message[]
+
+  @@index([customerId])
+  @@index([agentId])
 }
 
 model Message {

@@ -290,13 +290,25 @@ export default function ClientDashboardLayout({
           <Link href="/" className="brand block w-[110px]">
             <img src="/assets/getlands-logo.png" alt="Getlands" className="w-full block" />
           </Link>
-          <div className="flex items-center gap-[15px]">
+          <div className="flex items-center gap-[12px]">
             {isSalesAgent && (
               <Link href="/agent" className="bg-amber-100 text-amber-700 text-[10px] font-bold px-[12px] py-[6px] rounded-full flex items-center gap-[4px] border border-amber-200">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 Portal
               </Link>
             )}
+            <Link 
+              href="/dashboard/messages" 
+              className="relative w-[32px] h-[32px] rounded-full bg-[#eef3ef] flex items-center justify-center text-ink hover:text-[#008b45] transition-colors"
+              title="Messages"
+            >
+              <div className="scale-[0.75]">{Icons.Messages}</div>
+              {unreadMsg > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-[#008b45] text-white text-[9px] font-bold w-[15px] h-[15px] rounded-full flex items-center justify-center border-2 border-white">
+                  {unreadMsg}
+                </span>
+              )}
+            </Link>
             <NotificationDropdown notifications={notifications} userId={userId} />
             <Link href="/dashboard/settings" className="w-[32px] h-[32px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#18201c] text-[12px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
               {initials}

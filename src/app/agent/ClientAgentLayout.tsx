@@ -104,20 +104,20 @@ export default function ClientAgentLayout({
   const navItems = [
     { name: 'Overview', path: '/agent', icon: Icons.Overview },
     { name: 'My Clients', path: '/agent/network', icon: Icons.Referrals },
+    { name: 'Messages', path: '/agent/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Earnings', path: '/agent/earnings', icon: Icons.Wallet },
     { name: 'My Team', path: '/agent/team', icon: Icons.Referrals },
     { name: 'Draft Portfolio', path: '/agent/draft', icon: Icons.Holdings },
     { name: 'Wallet', path: '/dashboard/wallet', icon: Icons.Wallet },
     { name: 'Notifications', path: '/agent/notifications', icon: Icons.Bell, badge: unreadNotifsCount > 0 ? unreadNotifsCount : null },
-    { name: 'Messages', path: '/dashboard/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Personal Account', path: '/dashboard', icon: Icons.Marketplace },
   ];
 
   const mobileNavItems = [
     { name: 'Home', path: '/agent', icon: Icons.Overview },
     { name: 'Clients', path: '/agent/network', icon: Icons.Referrals },
+    { name: 'Messages', path: '/agent/messages', icon: Icons.Messages, badge: unreadMsg > 0 ? unreadMsg : null },
     { name: 'Earnings', path: '/agent/earnings', icon: Icons.Wallet },
-    { name: 'Team', path: '/agent/team', icon: Icons.Referrals },
     { name: 'Drafts', path: '/agent/draft', icon: Icons.Holdings },
   ];
 
@@ -314,6 +314,18 @@ export default function ClientAgentLayout({
             <div className="font-manrope font-bold text-[18px] text-ink tracking-tight">Agent<span className="text-[#008b45]">Portal</span></div>
           </Link>
           <div className="flex items-center gap-[10px]">
+            <Link 
+              href="/agent/messages" 
+              className="relative w-[36px] h-[36px] rounded-full bg-[#f7f9f7] border border-black/5 flex items-center justify-center text-ink hover:text-[#008b45] transition-colors"
+              title="Messages"
+            >
+              <div className="scale-[0.8]">{Icons.Messages}</div>
+              {unreadMsg > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-[#008b45] text-white text-[9px] font-bold w-[16px] h-[16px] rounded-full flex items-center justify-center border-2 border-white">
+                  {unreadMsg}
+                </span>
+              )}
+            </Link>
             <NotificationDropdown notifications={notifications} userId={userId} />
             <Link 
               href="/dashboard" 
@@ -357,11 +369,16 @@ export default function ClientAgentLayout({
           <span className="text-[10px] font-bold">Earnings</span>
         </Link>
         
-        <Link href="/dashboard" className="flex flex-col items-center gap-[4px] text-[#a1aba6]">
-          <div className="scale-[0.8]">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <Link href="/agent/messages" className={`relative flex flex-col items-center gap-[4px] ${pathname.startsWith('/agent/messages') ? 'text-[#008b45]' : 'text-[#a1aba6]'}`}>
+          <div className="scale-[0.8] relative">
+            {Icons.Messages}
+            {unreadMsg > 0 && (
+              <span className="absolute -top-1 -right-2 bg-[#008b45] text-white text-[9px] font-bold px-1 rounded-full min-w-[14px] text-center">
+                {unreadMsg}
+              </span>
+            )}
           </div>
-          <span className="text-[10px] font-bold">Personal</span>
+          <span className="text-[10px] font-bold">Messages</span>
         </Link>
       </nav>
       </div>
