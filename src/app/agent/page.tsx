@@ -41,6 +41,7 @@ export default async function AgentOverviewPage() {
 
   const { getActiveAnnouncements } = await import('@/app/actions/announcements');
   const agentAnnouncements = await getActiveAnnouncements({
+    userId,
     userRole: 'sales',
     placement: 'dashboard_card'
   });

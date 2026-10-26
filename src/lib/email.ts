@@ -1,6 +1,6 @@
 const fromEmail = 'Getlands <hello@getlands.ng>';
 
-async function sendResendEmail(to: string, subject: string, html: string) {
+export async function sendResendEmail(to: string, subject: string, html: string) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("Missing RESEND_API_KEY, skipping email.");
     return;
@@ -190,18 +190,35 @@ export async function sendAgentPromotionEmail(email: string, firstName: string, 
 
 export async function sendWalletCreditEmail(to: string, userName: string, amount: number, title: string) {
   const html = `
-    <div style="font-family: sans-serif; color: #333; max-w: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-      <div style="background-color: #008b45; padding: 20px; text-align: center; color: white;">
-        <h2 style="margin: 0;">Wallet Credited!</h2>
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #008b45; padding: 24px 20px; text-align: center; color: white;">
+        <h2 style="margin: 0; font-size: 24px;">Wallet Credited!</h2>
       </div>
-      <div style="padding: 30px;">
+      <div style="padding: 24px;">
         <p>Hello ${userName},</p>
         <p>Your Getlands Wallet has just been credited with <strong>₦${amount.toLocaleString()}</strong> for your <strong>${title}</strong> return.</p>
-        <p>You can keep these funds in your wallet for future acquisitions or withdraw them directly to your verified bank account at any time.</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="https://getlands.ng/dashboard/wallet" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Wallet</a>
+        <p>You can withdraw these funds directly to your verified bank account at any time.</p>
+
+        <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <h3 style="color: #182a20; font-size: 16px; margin: 0 0 10px 0; font-weight: bold;">Put this return back to work:</h3>
+          <p style="color: #4a554f; font-size: 14px; line-height: 1.5; margin: 0 0 14px 0;">
+            Instead of letting these funds sit idle, you can put them right back into action:
+          </p>
+          <ul style="color: #333; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0; padding-left: 20px;">
+            <li><strong>Food Commodities:</strong> Roll your profit into our next fast-moving Garri, Pepper, or Tomato cycle from ₦50,000.</li>
+            <li><strong>Abeokuta Land Banking:</strong> Graduate into land banking in Ilewo Orile, Abeokuta (10 mins from Alamala Barracks) for <strong>40% return in 12 months</strong> with a registered Deed of Assignment and <strong>post-dated cheques</strong> issued to you upfront.</li>
+          </ul>
+          <div style="text-align: center; margin-top: 16px;">
+            <a href="https://getlands.ng/dashboard/marketplace" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block;">
+              Re-invest in 1 Click
+            </a>
+          </div>
         </div>
-        <p style="font-size: 12px; color: #666; margin-top: 40px;">If you have any questions, please contact support.</p>
+
+        <div style="text-align: center; margin: 15px 0;">
+          <a href="https://getlands.ng/dashboard/wallet" style="color: #68736d; font-size: 13px; text-decoration: underline;">Or view your wallet to withdraw</a>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">If you have any questions, simply reply to this email or contact support.</p>
       </div>
     </div>
   `;

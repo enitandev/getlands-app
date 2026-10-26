@@ -66,15 +66,15 @@ export async function GET(request: Request) {
             data: { walletBalance: { increment: payout.amount } }
           });
 
-          // 4. In-app notification
+          // 4. In-app notification with re-investment option
           await tx.notification.create({
             data: {
               userId: payout.userId,
               type: 'TRANSACTION',
               title: 'Payout Matured & Credited',
-              message: `Your ₦${payout.amount.toLocaleString()} return for ${payout.holding.opportunity.title} has matured and is now available in your wallet for withdrawal.`,
-              linkUrl: '/dashboard/wallet',
-              actionText: 'View Wallet'
+              message: `Your ₦${payout.amount.toLocaleString()} return for ${payout.holding.opportunity.title} has matured. You can withdraw to your bank or roll it directly into our next commodity or Abeokuta land banking cycle.`,
+              linkUrl: '/dashboard/marketplace',
+              actionText: 'View Options'
             }
           });
         });

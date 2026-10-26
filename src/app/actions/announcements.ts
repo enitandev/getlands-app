@@ -343,11 +343,13 @@ export async function getActiveAnnouncements({
   kycStatus,
   hasMissingBank,
   placement,
+  userId,
 }: {
   userRole?: string | null;
   kycStatus?: string | null;
   hasMissingBank?: boolean;
   placement?: string;
+  userId?: string | null;
 } = {}) {
   const now = new Date();
 
@@ -390,11 +392,138 @@ export async function getActiveAnnouncements({
     whereClause.placement = placement;
   }
 
-  return await prisma.announcement.findMany({
+  const dbAnnouncements = await prisma.announcement.findMany({
     where: whereClause,
     orderBy: [
       { priority: 'desc' },
       { createdAt: 'desc' },
     ],
   });
+
+  // If there are manual active announcements in database, return them first
+  if (dbAnnouncements.length > 0) {
+    return dbAnnouncements;
+  }
+
+  // Never show auto fallback for modal popups (only top banners and dashboard cards)
+  if (placement === 'modal_popup') {
+    return [];
+  }
+
+  // Dynamic self-driving fallback based on real product truth
+  try {
+    const dayOfMonth = now.getDate();
+    const isPromoWindow = dayOfMonth >= 1 && dayOfMonth <= 7;
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    let walletBalance = 0;
+    let holdingsCount = 0;
+
+    if (userId) {
+      const u = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          walletBalance: true,
+          _count: { select: { holdings: true } }
+        }
+      });
+      if (u) {
+        walletBalance = u.walletBalance || 0;
+        holdingsCount = u._count?.holdings || 0;
+      }
+    }
+
+    const fallbackList: any[] = [];
+
+    if (isPromoWindow) {
+      // Days 1 to 7 Flash Promo
+      if (userRole === 'sales') {
+        fallbackList.push({
+          id: `smart-agent-promo-${monthKey}`,
+          title: '10% First-Month Promo is Live: 100 Units Only',
+          message: 'This is your easiest week to close clients. Share the 10% first-month promo link with your network and earn your 5% cash commission on every unit sold.',
+          type: 'promo',
+          actionText: 'Get Promo Link',
+          actionUrl: '/agent',
+          isDismissible: true,
+          placement: placement || 'dashboard_card',
+          priority: 1,
+          createdAt: now,
+        });
+      } else {
+        fallbackList.push({
+          id: `smart-flash-promo-${monthKey}`,
+          title: '10% First-Month Promo: Pepper, Onions, Tomatoes, Garri',
+          message: 'Earn up to 10% return in your first month on our fast-moving food commodities before standard rates apply. Only 100 promotional units available this week.',
+          type: 'promo',
+          actionText: 'Claim Promo Units from ₦50k',
+          actionUrl: '/dashboard/marketplace',
+          isDismissible: true,
+          placement: placement || 'dashboard_card',
+          priority: 1,
+          createdAt: now,
+        });
+      }
+    } else {
+      // Outside promo window (Days 8 to end of month)
+      if (userRole === 'sales') {
+        fallbackList.push({
+          id: `smart-agent-commodities-${monthKey}`,
+          title: 'Sell Everyday Food Commodities & Earn 5% Instant Commission',
+          message: 'Clients can start with as low as ₦50,000 in Garri or ₦100,000 in Pepper and Tomatoes. Share your referral link to earn 5% cash directly into your wallet.',
+          type: 'info',
+          actionText: 'Copy Referral Link',
+          actionUrl: '/agent',
+          isDismissible: true,
+          placement: placement || 'dashboard_card',
+          priority: 1,
+          createdAt: now,
+        });
+      } else if (walletBalance >= 50000) {
+        fallbackList.push({
+          id: `smart-reinvest-${monthKey}`,
+          title: 'Put Your Idle Wallet Balance to Work',
+          message: `You have ₦${walletBalance.toLocaleString()} available in your wallet. Roll it into our next Garri cycle from ₦50,000 or invest in 40% Abeokuta land banking.`,
+          type: 'promo',
+          actionText: 'Re-invest in 1 Click',
+          actionUrl: '/dashboard/marketplace',
+          isDismissible: true,
+          placement: placement || 'dashboard_card',
+          priority: 1,
+          createdAt: now,
+        });
+      } else if (holdingsCount > 0) {
+        fallbackList.push({
+          id: `smart-abeokuta-landbanking-${monthKey}`,
+          title: 'Abeokuta Land Banking: 40% in 12 Months with Post-Dated Cheques',
+          message: 'Graduate from food commodities to land banking in Ilewo Orile, Abeokuta (10 mins from Alamala Barracks). Receive your Deed of Assignment, official receipt, and post-dated cheques upfront.',
+          type: 'info',
+          actionText: 'View Abeokuta Project',
+          actionUrl: '/dashboard/marketplace',
+          isDismissible: true,
+          placement: placement || 'dashboard_card',
+          priority: 1,
+          createdAt: now,
+        });
+      } else {
+        fallbackList.push({
+          id: `smart-garri-entry-${monthKey}`,
+          title: 'Start Earning Returns from Food Commodities with ₦50,000',
+          message: 'Join hundreds of investors earning 5% monthly or 20% every 3 months on Garri, Pepper, and Tomatoes. Fast payouts directly to your bank account.',
+          type: 'promo',
+          actionText: 'Browse Cycles from ₦50k',
+          actionUrl: '/dashboard/marketplace',
+          isDismissible: true,
+          placement: placement || 'dashboard_card',
+          priority: 1,
+          createdAt: now,
+        });
+      }
+    }
+
+    return fallbackList;
+  } catch (err) {
+    console.error('Error generating smart announcement fallback:', err);
+    return [];
+  }
 }

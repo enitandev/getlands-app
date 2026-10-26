@@ -139,8 +139,8 @@ export default async function RootLayout({
     }
 
     const [banners, modals] = await Promise.all([
-      getActiveAnnouncements({ userRole: role, kycStatus, hasMissingBank, placement: 'top_banner' }),
-      getActiveAnnouncements({ userRole: role, kycStatus, hasMissingBank, placement: 'modal_popup' }),
+      getActiveAnnouncements({ userId: session?.userId as string, userRole: role, kycStatus, hasMissingBank, placement: 'top_banner' }),
+      getActiveAnnouncements({ userId: session?.userId as string, userRole: role, kycStatus, hasMissingBank, placement: 'modal_popup' }),
     ]);
     bannerAnnouncement = banners[0] || null;
     modalAnnouncement = modals[0] || null;

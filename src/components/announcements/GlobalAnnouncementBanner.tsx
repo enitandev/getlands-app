@@ -94,7 +94,7 @@ export default function GlobalAnnouncementBanner({ announcement }: AnnouncementP
             {type}
           </span>
           <span className="font-bold truncate">{title}</span>
-          <span className="opacity-80 hidden md:inline truncate">— {message}</span>
+          <span className="opacity-80 hidden md:inline truncate">: {message}</span>
         </div>
 
         <div className="flex items-center gap-4 shrink-0">

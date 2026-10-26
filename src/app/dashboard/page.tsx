@@ -36,6 +36,7 @@ export default async function DashboardOverviewPage() {
 
   const { getActiveAnnouncements } = await import('@/app/actions/announcements');
   const dashboardAnnouncements = await getActiveAnnouncements({
+    userId: user.id,
     userRole: user.role,
     kycStatus: user.kycStatus,
     hasMissingBank,
