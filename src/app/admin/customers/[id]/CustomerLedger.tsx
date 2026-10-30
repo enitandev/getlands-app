@@ -33,7 +33,7 @@ export default async function CustomerLedger({ userId }: { userId: string }) {
               </thead>
               <tbody className="divide-y divide-black/5">
                 {ledger.commissions.map((comm: any) => (
-                  <ClientCommissionRow key={comm.id} commission={comm} formatCurrency={formatCurrency} />
+                  <ClientCommissionRow key={comm.id} commission={comm} />
                 ))}
               </tbody>
             </table>
@@ -98,7 +98,7 @@ export default async function CustomerLedger({ userId }: { userId: string }) {
                 </thead>
                 <tbody className="divide-y divide-black/5">
                   {ledger.payouts.map((payout: any) => (
-                    <ClientPayoutRow key={payout.id} payout={payout} formatCurrency={formatCurrency} />
+                    <ClientPayoutRow key={payout.id} payout={payout} />
                   ))}
                 </tbody>
               </table>

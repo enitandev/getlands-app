@@ -3,9 +3,17 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { executePayoutAction, executeDirectBankPayoutAction } from '@/app/actions/accounting';
+import { formatCurrency as defaultFormatCurrency } from '@/lib/mockData';
+import { getCustomerProfileUrl } from '@/lib/customerSlug';
 import { toast } from '@/components/ui/Toast';
 
-export default function ClientPayoutRow({ payout, formatCurrency }: { payout: any, formatCurrency: (v: number) => string }) {
+export default function ClientPayoutRow({
+  payout,
+  formatCurrency = defaultFormatCurrency
+}: {
+  payout: any;
+  formatCurrency?: (v: number) => string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [localStatus, setLocalStatus] = useState<string>(payout.status || 'PENDING');
@@ -77,8 +85,8 @@ export default function ClientPayoutRow({ payout, formatCurrency }: { payout: an
           )}
         </td>
         <td className="p-[12px]">
-          {payout.user?.id ? (
-            <Link href={`/admin/customers/${payout.user.id}`} className="font-bold text-ink hover:text-[#008b45] hover:underline block">
+          {payout.user ? (
+            <Link href={getCustomerProfileUrl(payout.user)} className="font-bold text-ink hover:text-[#008b45] hover:underline block">
               {payout.user?.firstName || 'User'} {payout.user?.lastName || ''}
             </Link>
           ) : (

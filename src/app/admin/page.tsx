@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { formatCurrency } from '@/lib/mockData';
+import { getCustomerProfileUrl } from '@/lib/customerSlug';
 import { getAdminReports } from '@/app/actions/reports';
 import RevenueChart from '@/components/ui/RevenueChart';
 import DistributionChart from '@/components/ui/DistributionChart';
@@ -129,7 +130,9 @@ export default async function AdminDashboard() {
             {recentTransactions.map(tx => (
               <div key={tx.id} className="p-[15px_24px] flex items-center justify-between hover:bg-[#f7f9f7] transition-colors">
                 <div>
-                  <strong className="block text-[14px] text-ink">{tx.user.firstName} {tx.user.lastName}</strong>
+                  <Link href={getCustomerProfileUrl(tx.user)} className="block text-[14px] font-bold text-ink hover:text-[#008b45] hover:underline">
+                    {tx.user.firstName} {tx.user.lastName}
+                  </Link>
                   <span className="text-[12px] text-[#68736d] capitalize">{tx.type} • {tx.reference}</span>
                 </div>
                 <div className="text-right">

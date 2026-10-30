@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/mockData';
+import { getCustomerProfileUrl } from '@/lib/customerSlug';
 import { createLeadAction, deleteLeadAction, updateLeadStatusAction } from '@/app/actions/admin-ops';
 import { toast } from '@/components/ui/Toast';
 import ClientCommissionRow from '../finance/ClientCommissionRow';
@@ -206,7 +207,7 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [], 
                       {agent.firstName.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/admin/customers/${agent.id}`} className="font-bold block text-[16px] text-ink hover:text-[#008b45] hover:underline truncate">
+                      <Link href={getCustomerProfileUrl(agent)} className="font-bold block text-[16px] text-ink hover:text-[#008b45] hover:underline truncate">
                         {agent.firstName} {agent.lastName}
                       </Link>
                       <span className="text-[12px] text-[#68736d] block truncate">{agent.email}</span>
@@ -231,7 +232,7 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [], 
                       {openDropdownId === agent.id && (
                         <div className="absolute right-0 top-[100%] mt-[5px] w-[180px] bg-white border border-black/10 shadow-xl rounded-[12px] overflow-hidden z-[50] animate-fade-in text-left">
                           <Link
-                            href={`/admin/customers/${agent.id}`}
+                            href={getCustomerProfileUrl(agent)}
                             className="block w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5"
                           >
                             View Full Profile

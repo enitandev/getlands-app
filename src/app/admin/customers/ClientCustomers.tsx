@@ -14,8 +14,24 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
   const [selectedOppId, setSelectedOppId] = useState("");
   const [loading, setLoading] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'CUSTOMER' | 'SALES' | 'ACTIVE_HOLDINGS'>('ALL');
   const [confirmConfig, setConfirmConfig] = useState<{isOpen: boolean, title: string, message: string, action: (() => void) | null, isDestructive?: boolean}>({
     isOpen: false, title: '', message: '', action: null
+  });
+
+  const filteredUsers = users.filter(c => {
+    if (roleFilter === 'CUSTOMER' && c.role !== 'customer') return false;
+    if (roleFilter === 'SALES' && c.role !== 'sales') return false;
+    if (roleFilter === 'ACTIVE_HOLDINGS' && (c.holdings || 0) === 0) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const fullName = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
+      const email = (c.email || '').toLowerCase();
+      const phone = (c.phoneNumber || '').toLowerCase();
+      if (!fullName.includes(q) && !email.includes(q) && !phone.includes(q)) return false;
+    }
+    return true;
   });
 
   async function handleAddCustomer(e: React.FormEvent<HTMLFormElement>) {
@@ -70,8 +86,47 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
         </div>
       </div>
 
+      {/* Search & Filter Bar */}
+      <div className="bg-white p-[16px_20px] rounded-[20px] shadow-sm border border-black/5 flex flex-col md:flex-row gap-[12px] items-stretch md:items-center justify-between">
+        <div className="relative flex-1 max-w-[420px]">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search customer by name, email, or phone..."
+            className="w-full h-[42px] bg-[#f7f9f7] rounded-[12px] pl-[38px] pr-[15px] text-[13px] outline-none border border-black/5 focus:border-[#008b45] transition-colors"
+          />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a847f" strokeWidth="2" className="absolute left-[13px] top-1/2 -translate-y-1/2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+
+        <div className="flex items-center gap-[8px] overflow-x-auto scrollbar-hide">
+          {([
+            { id: 'ALL', label: `All (${users.length})` },
+            { id: 'ACTIVE_HOLDINGS', label: `Active Investors (${users.filter(u => u.holdings > 0).length})` },
+            { id: 'SALES', label: `Sales Agents (${users.filter(u => u.role === 'sales').length})` },
+            { id: 'CUSTOMER', label: `Customers (${users.filter(u => u.role === 'customer').length})` }
+          ] as const).map(pill => (
+            <button
+              key={pill.id}
+              type="button"
+              onClick={() => setRoleFilter(pill.id)}
+              className={`px-[12px] py-[7px] rounded-full text-[11px] font-bold whitespace-nowrap transition-colors ${
+                roleFilter === pill.id
+                  ? 'bg-[#182a20] text-white'
+                  : 'bg-[#f4f7f5] text-[#68736d] hover:text-ink'
+              }`}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
-        <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_170px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
+        <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_230px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
           <div>Customer Details</div>
           <div>Joined</div>
           <div>Holdings Count</div>
@@ -80,22 +135,29 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
         </div>
         
         <div className="divide-y divide-black/5">
-          {users.map(c => (
-            <div key={c.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_170px] gap-[15px] lg:gap-[20px] p-[20px] lg:p-[16px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors">
+          {filteredUsers.map(c => {
+            const profileHref = `/admin/customers/${c.slug || c.id}`;
+            return (
+            <div key={c.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_230px] gap-[15px] lg:gap-[20px] p-[20px] lg:p-[16px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors">
               <div className="flex gap-[15px] items-center">
-                <div className="w-[40px] h-[40px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#008b45] font-bold text-[14px]">
-                  {c.firstName.charAt(0) + c.lastName.charAt(0)}
-                </div>
-                <div>
-                  <div className="flex items-center gap-[8px]">
-                    <strong className="block text-[14px] text-ink">{c.firstName + ' ' + c.lastName}</strong>
+                <Link href={profileHref} className="w-[40px] h-[40px] rounded-full bg-[#eef3ef] hover:bg-[#008b45] text-[#008b45] hover:text-white flex items-center justify-center font-bold text-[14px] transition-colors shrink-0">
+                  {(c.firstName?.[0] || '') + (c.lastName?.[0] || '')}
+                </Link>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-[8px] flex-wrap">
+                    <Link href={profileHref} className="font-bold block text-[14px] text-ink hover:text-[#008b45] hover:underline">
+                      {c.firstName + ' ' + c.lastName}
+                    </Link>
                     {c.role === 'sales' ? (
                       <span className="bg-[#f5a623]/20 text-[#d89018] text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wider">Agent</span>
                     ) : (
                       <span className="bg-black/5 text-[#7a847f] text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wider">Customer</span>
                     )}
                   </div>
-                  <span className="text-[12px] text-[#68736d] truncate">{c.email}</span>
+                  <span className="text-[12px] text-[#68736d] truncate block">
+                    {c.email}
+                    {c.phoneNumber ? ` • ${c.phoneNumber}` : ''}
+                  </span>
                 </div>
               </div>
               
@@ -115,10 +177,16 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
               </div>
               
               <div className="mt-[10px] lg:mt-0 flex items-center justify-end gap-[8px] relative">
+                <Link
+                  href={profileHref}
+                  className="px-[12px] py-[6px] text-[12px] font-bold text-ink bg-[#f4f7f5] hover:bg-[#008b45] hover:text-white rounded-full transition-colors whitespace-nowrap"
+                >
+                  Manage Profile
+                </Link>
                 {c.role === 'sales' ? (
-                  <span className="hidden sm:inline-flex items-center gap-[4px] text-[11px] font-bold text-[#008b45] bg-[#eef3ef] px-[10px] py-[5px] rounded-full">
+                  <span className="hidden xl:inline-flex items-center gap-[4px] text-[11px] font-bold text-[#008b45] bg-[#eef3ef] px-[10px] py-[5px] rounded-full">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    Sales Agent
+                    Agent
                   </span>
                 ) : (
                   <button 
@@ -139,9 +207,9 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                         }
                       });
                     }}
-                    className="px-[10px] py-[5px] text-[12px] font-bold text-[#008b45] bg-[#eef3ef] hover:bg-[#008b45] hover:text-white rounded-[8px] transition-colors whitespace-nowrap"
+                    className="hidden xl:inline-flex px-[10px] py-[5px] text-[11px] font-bold text-[#008b45] bg-[#eef3ef] hover:bg-[#008b45] hover:text-white rounded-full transition-colors whitespace-nowrap"
                   >
-                    + Appoint Agent
+                    + Agent
                   </button>
                 )}
 
@@ -155,8 +223,8 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
 
                 {openDropdownId === c.id && (
                   <div className="absolute right-0 top-[100%] mt-[5px] w-[200px] bg-white border border-black/10 shadow-xl rounded-[12px] overflow-hidden z-[50] animate-fade-in text-left">
-                    <Link href={`/admin/customers/${c.id}`} className="block w-full px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5">
-                      View Profile
+                    <Link href={profileHref} className="block w-full px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5">
+                      View &amp; Edit Profile
                     </Link>
                     <button 
                       className="w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5" 
@@ -248,7 +316,13 @@ export default function ClientCustomers({ users, opportunities, returnPlans = []
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
+          {filteredUsers.length === 0 && (
+            <div className="p-[40px] text-center text-[#68736d] text-[14px]">
+              No customers match your search or filter.
+            </div>
+          )}
         </div>
       </div>
 

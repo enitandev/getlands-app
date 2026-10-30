@@ -7,14 +7,16 @@ import {
   executeCommissionBankPayoutAction,
   voidCommissionAction
 } from '@/app/actions/accounting';
+import { formatCurrency as defaultFormatCurrency } from '@/lib/mockData';
+import { getCustomerProfileUrl } from '@/lib/customerSlug';
 import { toast } from '@/components/ui/Toast';
 
 export default function ClientCommissionRow({
   commission,
-  formatCurrency
+  formatCurrency = defaultFormatCurrency
 }: {
   commission: any;
-  formatCurrency: (v: number) => string;
+  formatCurrency?: (v: number) => string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -130,9 +132,9 @@ export default function ClientCommissionRow({
         </td>
 
         <td className="p-[12px]">
-          {agent?.id ? (
+          {agent ? (
             <Link
-              href={`/admin/customers/${agent.id}`}
+              href={getCustomerProfileUrl(agent)}
               className="font-bold text-ink hover:text-[#008b45] hover:underline block"
             >
               {agent.firstName} {agent.lastName}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { prisma } from '@/lib/prisma';
+import { toCustomerSlug } from '@/lib/customerSlug';
 import ClientCustomers from './ClientCustomers';
 
 export const dynamic = 'force-dynamic';
@@ -15,9 +16,13 @@ export default async function AdminCustomersPage() {
 
   const users = dbUsers.map(user => ({
     id: user.id,
+    slug: toCustomerSlug(user),
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    phoneNumber: user.phoneNumber,
+    kycStatus: user.kycStatus,
+    walletBalance: user.walletBalance,
     role: user.role,
     joined: new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
     holdings: user.holdings.length,
