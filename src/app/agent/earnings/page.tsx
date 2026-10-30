@@ -15,7 +15,8 @@ export default async function EarningsPage() {
       holding: {
         select: {
           referenceCode: true,
-          opportunity: { select: { title: true } }
+          opportunity: { select: { title: true } },
+          user: { select: { firstName: true, lastName: true } }
         }
       }
     },

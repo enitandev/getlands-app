@@ -12,7 +12,8 @@ export default async function AdminSalesPage() {
   const agentsData = await prisma.user.findMany({
     where: { role: 'sales' },
     include: {
-      commissions: true
+      commissions: true,
+      bankAccounts: { where: { status: 'active' } }
     }
   });
 
@@ -33,8 +34,30 @@ export default async function AdminSalesPage() {
   const commissions = await prisma.commission.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      agent: { select: { firstName: true, lastName: true } },
-      holding: { select: { referenceCode: true } }
+      agent: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+          bankAccounts: { where: { status: 'active' } }
+        }
+      },
+      holding: {
+        select: {
+          id: true,
+          referenceCode: true,
+          totalAmount: true,
+          status: true,
+          dateAcquired: true,
+          opportunity: { select: { id: true, title: true, category: true } },
+          user: { select: { id: true, firstName: true, lastName: true, email: true } }
+        }
+      }
     }
   });
 

@@ -12,8 +12,8 @@ export function RecordReferralModal({ referrerUserId }: { referrerUserId: string
   
   const [holdings, setHoldings] = useState<any[]>([]);
   const [selectedHoldingId, setSelectedHoldingId] = useState<string>('');
-  
-  const [paymentStatus, setPaymentStatus] = useState<'offline' | 'wallet'>('offline');
+  const [ratePercent, setRatePercent] = useState<number>(5);
+  const [paymentStatus, setPaymentStatus] = useState<'escrow' | 'wallet' | 'offline'>('escrow');
 
   useEffect(() => {
     if (searchQuery.length >= 2) {
@@ -49,6 +49,7 @@ export function RecordReferralModal({ referrerUserId }: { referrerUserId: string
     fd.append('referredUserId', selectedUser.id);
     fd.append('holdingId', selectedHoldingId);
     fd.append('paymentStatus', paymentStatus);
+    fd.append('ratePercent', String(ratePercent));
     
     const res = await recordReferralRobustAction(fd);
     setLoading(false);
@@ -56,7 +57,7 @@ export function RecordReferralModal({ referrerUserId }: { referrerUserId: string
     if (res.error) {
       toast(res.error, 'error');
     } else {
-      toast('Referral recorded successfully!', 'success');
+      toast('Commission recorded and notification sent!', 'success');
       setIsOpen(false);
       // Reset form
       setSelectedUser(null);
@@ -67,7 +68,7 @@ export function RecordReferralModal({ referrerUserId }: { referrerUserId: string
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(val);
 
   const selectedHolding = holdings.find(h => h.id === selectedHoldingId);
-  const estimatedBonus = selectedHolding ? selectedHolding.totalAmount * 0.10 : 0;
+  const estimatedBonus = selectedHolding ? selectedHolding.totalAmount * (ratePercent / 100) : 0;
 
   if (!isOpen) {
     return (
@@ -158,27 +159,64 @@ export function RecordReferralModal({ referrerUserId }: { referrerUserId: string
             </div>
           )}
 
-          {/* Field 3: Payment Status */}
+          {/* Field 3: Commission Rate & Payment Status */}
           {selectedUser && holdings.length > 0 && selectedHoldingId && (
-            <div>
-              <label className="block text-[12px] font-bold text-ink uppercase tracking-wider mb-[5px]">3. Payment Status</label>
-              <div className="space-y-[10px]">
-                <label className={`flex items-start gap-[10px] p-[12px] rounded-[12px] border cursor-pointer transition-colors ${paymentStatus === 'offline' ? 'border-[#008b45] bg-[#eef3ef]/50' : 'border-black/5 bg-white'}`}>
-                  <input type="radio" name="paymentStatus" value="offline" checked={paymentStatus === 'offline'} onChange={() => setPaymentStatus('offline')} className="mt-[3px]" />
-                  <div>
-                    <strong className="block text-[13px] text-ink">Already Paid Offline</strong>
-                    <span className="block text-[11px] text-[#68736d]">Records a historical transaction only. Does not add to withdrawable wallet.</span>
-                  </div>
-                </label>
-                <label className={`flex items-start gap-[10px] p-[12px] rounded-[12px] border cursor-pointer transition-colors ${paymentStatus === 'wallet' ? 'border-[#008b45] bg-[#eef3ef]/50' : 'border-black/5 bg-white'}`}>
-                  <input type="radio" name="paymentStatus" value="wallet" checked={paymentStatus === 'wallet'} onChange={() => setPaymentStatus('wallet')} className="mt-[3px]" />
-                  <div>
-                    <strong className="block text-[13px] text-ink">Credit Wallet Now</strong>
-                    <span className="block text-[11px] text-[#68736d]">Adds exactly <span className="font-bold text-[#008b45]">{formatCurrency(estimatedBonus)}</span> (10% bonus) to their active wallet.</span>
-                  </div>
-                </label>
+            <>
+              <div>
+                <label className="block text-[12px] font-bold text-ink uppercase tracking-wider mb-[5px]">3. Commission Rate (%)</label>
+                <div className="flex items-center gap-[8px]">
+                  {[5, 2, 10].map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setRatePercent(preset)}
+                      className={`px-[12px] py-[8px] rounded-[10px] text-[12px] font-bold border transition-colors ${ratePercent === preset ? 'bg-[#008b45] text-white border-[#008b45]' : 'bg-[#f7f9f7] text-ink border-black/5 hover:bg-[#eef3ef]'}`}
+                    >
+                      {preset}%
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    max="50"
+                    value={ratePercent}
+                    onChange={e => setRatePercent(parseFloat(e.target.value) || 0)}
+                    className="w-[80px] bg-[#f7f9f7] border border-black/5 rounded-[10px] p-[8px_12px] outline-none focus:border-[#008b45] text-[13px] font-bold text-ink"
+                  />
+                  <span className="text-[12px] font-bold text-[#008b45] ml-auto">
+                    = {formatCurrency(estimatedBonus)}
+                  </span>
+                </div>
               </div>
-            </div>
+
+              <div>
+                <label className="block text-[12px] font-bold text-ink uppercase tracking-wider mb-[5px]">4. Payment Action</label>
+                <div className="space-y-[10px]">
+                  <label className={`flex items-start gap-[10px] p-[12px] rounded-[12px] border cursor-pointer transition-colors ${paymentStatus === 'escrow' ? 'border-[#008b45] bg-[#eef3ef]/50' : 'border-black/5 bg-white'}`}>
+                    <input type="radio" name="paymentStatus" value="escrow" checked={paymentStatus === 'escrow'} onChange={() => setPaymentStatus('escrow')} className="mt-[3px]" />
+                    <div>
+                      <strong className="block text-[13px] text-ink">Queue in Pending Commissions (Recommended)</strong>
+                      <span className="block text-[11px] text-[#68736d]">Adds {formatCurrency(estimatedBonus)} to Pending Commissions so you can pay via Bank or Wallet from Finance.</span>
+                    </div>
+                  </label>
+                  <label className={`flex items-start gap-[10px] p-[12px] rounded-[12px] border cursor-pointer transition-colors ${paymentStatus === 'wallet' ? 'border-[#008b45] bg-[#eef3ef]/50' : 'border-black/5 bg-white'}`}>
+                    <input type="radio" name="paymentStatus" value="wallet" checked={paymentStatus === 'wallet'} onChange={() => setPaymentStatus('wallet')} className="mt-[3px]" />
+                    <div>
+                      <strong className="block text-[13px] text-ink">Credit Wallet Now</strong>
+                      <span className="block text-[11px] text-[#68736d]">Credits <span className="font-bold text-[#008b45]">{formatCurrency(estimatedBonus)}</span> directly to their Getlands wallet and sends a payment notification.</span>
+                    </div>
+                  </label>
+                  <label className={`flex items-start gap-[10px] p-[12px] rounded-[12px] border cursor-pointer transition-colors ${paymentStatus === 'offline' ? 'border-[#008b45] bg-[#eef3ef]/50' : 'border-black/5 bg-white'}`}>
+                    <input type="radio" name="paymentStatus" value="offline" checked={paymentStatus === 'offline'} onChange={() => setPaymentStatus('offline')} className="mt-[3px]" />
+                    <div>
+                      <strong className="block text-[13px] text-ink">Already Paid to Bank</strong>
+                      <span className="block text-[11px] text-[#68736d]">Marks commission as paid via direct bank transfer and notifies the agent. Does not add to wallet balance.</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </>
           )}
           
           <button type="submit" disabled={loading || !selectedUser || holdings.length === 0} className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)] disabled:opacity-50 mt-[10px]">

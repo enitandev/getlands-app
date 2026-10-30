@@ -22,7 +22,25 @@ export default async function AdminDashboard() {
 
   const activeHoldings = await prisma.holding.count({ where: { status: 'active' } });
   const availableOpps = await prisma.opportunity.count({ where: { status: 'available' } });
-  const pendingActions = await prisma.transaction.count({ where: { status: 'pending' } });
+  const [pendingActions, pendingCommsAgg, pendingPayoutsAgg] = await Promise.all([
+    prisma.transaction.count({ where: { status: 'pending' } }),
+    prisma.commission.aggregate({
+      where: { status: 'PENDING' },
+      _sum: { amount: true },
+      _count: { _all: true }
+    }),
+    prisma.payoutSchedule.aggregate({
+      where: { status: 'PENDING' },
+      _sum: { amount: true },
+      _count: { _all: true }
+    })
+  ]);
+
+  const pendingCommissionsCount = pendingCommsAgg._count._all || 0;
+  const pendingCommissionsAmount = pendingCommsAgg._sum.amount || 0;
+  const pendingPayoutsCount = pendingPayoutsAgg._count._all || 0;
+  const pendingPayoutsAmount = pendingPayoutsAgg._sum.amount || 0;
+  const totalActionItems = pendingActions + pendingCommissionsCount;
 
   // Fetch lists
   const recentTransactions = await prisma.transaction.findMany({
@@ -55,11 +73,24 @@ export default async function AdminDashboard() {
         <div className="bg-white rounded-[16px] p-[24px] shadow-[0_4px_20px_rgba(245,166,35,0.15)] border border-[#f5a623]/30">
           <div className="text-[12px] text-[#d48806] uppercase tracking-[0.05em] font-bold mb-[10px] flex justify-between">
             Pending Actions
-            <span className="w-[18px] h-[18px] bg-[#f5a623] text-white rounded-full flex items-center justify-center text-[10px]">{pendingActions}</span>
+            <span className="px-[7px] h-[18px] bg-[#f5a623] text-white rounded-full flex items-center justify-center text-[10px]">{totalActionItems}</span>
           </div>
-          <div className="space-y-[8px] mt-[15px]">
-            <Link href="/admin/finance" className="block text-[13px] font-bold text-ink hover:text-[#008b45]">
-              {pendingActions} Manual Payment Verifications
+          <div className="space-y-[10px] mt-[12px]">
+            <Link href="/admin/finance?tab=pending" className="flex items-center justify-between text-[13px] font-bold text-ink hover:text-[#008b45] group">
+              <span>{pendingActions} Transfer Verification{pendingActions === 1 ? '' : 's'}</span>
+              <span className="text-[11px] text-[#008b45] group-hover:underline">Review &rarr;</span>
+            </Link>
+            <Link href="/admin/finance?tab=commissions" className="flex items-center justify-between text-[13px] font-bold text-ink hover:text-[#008b45] pt-[8px] border-t border-black/5 group">
+              <span>
+                {pendingCommissionsCount} Agent Commission{pendingCommissionsCount === 1 ? '' : 's'} ({formatCurrency(pendingCommissionsAmount)})
+              </span>
+              <span className="text-[11px] text-amber-600 font-bold group-hover:underline">Pay &rarr;</span>
+            </Link>
+            <Link href="/admin/finance?tab=ledger" className="flex items-center justify-between text-[12px] font-semibold text-[#68736d] hover:text-[#008b45] pt-[8px] border-t border-black/5 group">
+              <span>
+                {pendingPayoutsCount} Scheduled Payout{pendingPayoutsCount === 1 ? '' : 's'} ({formatCurrency(pendingPayoutsAmount)})
+              </span>
+              <span className="text-[11px] text-[#008b45] font-bold group-hover:underline">Ledger &rarr;</span>
             </Link>
           </div>
         </div>

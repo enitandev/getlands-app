@@ -21,21 +21,21 @@ export default function ClientAgentEarnings({ commissions, pendingTotal, paidTot
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px] mb-[30px] shrink-0">
         <div className="bg-[#182a20] rounded-[24px] p-[25px] flex flex-col justify-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-[#008b45] rounded-full blur-[60px] opacity-20 pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
-          <h2 className="text-[#a6baa9] text-[13px] font-bold tracking-wider uppercase mb-[5px] relative z-10">Available (Paid to Wallet)</h2>
+          <h2 className="text-[#a6baa9] text-[13px] font-bold tracking-wider uppercase mb-[5px] relative z-10">Total Commissions Paid</h2>
           <div className="text-[32px] font-manrope font-bold text-white leading-none mb-[15px] relative z-10">
             {formatCurrency(paidTotal)}
           </div>
           <Link href="/dashboard/wallet" className="h-[40px] px-[20px] bg-[#008b45] text-white text-[13px] font-bold rounded-full w-fit flex items-center justify-center hover:bg-[#007339] transition-colors relative z-10 shadow-lg">
-            Withdraw to Bank
+            Open Wallet &amp; Bank Details
           </Link>
         </div>
         
         <div className="bg-amber-50 border border-amber-100 rounded-[24px] p-[25px] flex flex-col justify-center">
-          <h2 className="text-amber-800 text-[13px] font-bold tracking-wider uppercase mb-[5px]">In Escrow (Pending)</h2>
+          <h2 className="text-amber-800 text-[13px] font-bold tracking-wider uppercase mb-[5px]">Pending Commissions</h2>
           <div className="text-[32px] font-manrope font-bold text-amber-600 leading-none mb-[10px]">
             {formatCurrency(pendingTotal)}
           </div>
-          <p className="text-[12px] text-amber-700/70">Commissions unlock 7 days after the client acquires a property.</p>
+          <p className="text-[12px] text-amber-700/70">Commissions are paid to your wallet or directly to your bank account once verified.</p>
         </div>
       </div>
 
@@ -91,10 +91,15 @@ export default function ClientAgentEarnings({ commissions, pendingTotal, paidTot
                       <div>
                         <div className="font-bold text-[14px] text-ink mb-[2px]">
                           Tier {comm.tierLevel} Commission
+                          {comm.holding?.user && (
+                            <span className="font-normal text-[#4a554f]">
+                              {' '}• Client: {comm.holding.user.firstName} {comm.holding.user.lastName}
+                            </span>
+                          )}
                         </div>
                         <div className="text-[12px] text-[#68736d]">
                           Holding: <span className="font-mono text-ink">{comm.holding?.referenceCode || 'N/A'}</span>
-                          {comm.holding?.opportunity?.title && ` - ${comm.holding.opportunity.title}`}
+                          {comm.holding?.opportunity?.title && ` (${comm.holding.opportunity.title})`}
                         </div>
                         <div className="text-[11px] text-[#a1aba6] mt-[4px]">
                           Earned: {date.toLocaleDateString()}

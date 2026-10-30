@@ -5,7 +5,12 @@ import ClientAdminFinance from './ClientAdminFinance';
 
 export const dynamic = 'force-dynamic';
 
-export default async function FinancePage() {
+export default async function FinancePage({
+  searchParams
+}: {
+  searchParams?: Promise<{ tab?: string }>;
+}) {
+  const resolvedParams = searchParams ? await searchParams : {};
   // Execute both the master ledger and transaction feed concurrently
   const [ledger, transactions] = await Promise.all([
     getMasterLedger().catch(e => {
@@ -29,5 +34,11 @@ export default async function FinancePage() {
     })
   ]);
 
-  return <ClientAdminFinance transactions={transactions} ledger={ledger} />;
+  return (
+    <ClientAdminFinance
+      transactions={transactions}
+      ledger={ledger}
+      initialTab={resolvedParams?.tab}
+    />
+  );
 }

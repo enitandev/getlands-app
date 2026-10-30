@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendWalletCreditEmail } from '@/lib/email';
+import { sendCommissionPaidEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,8 +109,8 @@ export async function GET(request: Request) {
             title: "Commission Released!",
             message: `Your ₦${commission.amount.toLocaleString()} commission has exited escrow and is now in your wallet.`,
             type: "TRANSACTION",
-            linkUrl: "/dashboard/wallet",
-            actionText: "View Wallet"
+            linkUrl: "/agent/earnings",
+            actionText: "View Earnings"
           }
         })
       );
@@ -118,11 +118,12 @@ export async function GET(request: Request) {
       await prisma.$transaction(transactions);
       
       // Send Email
-      await sendWalletCreditEmail(
+      await sendCommissionPaidEmail(
         commission.agent.email, 
         commission.agent.firstName, 
         commission.amount, 
-        `Commission payout for holding ${commission.holding.referenceCode}`
+        'wallet',
+        { holdingRef: commission.holding.referenceCode || undefined }
       );
 
       releasedCount++;

@@ -204,13 +204,19 @@ export async function releaseDueCommissionsAction() {
           data: { userId: commission.agentId, type: 'commission_payout', amount: commission.amount, status: 'success', reference: `COMM-${commission.id.substring(0, 8).toUpperCase()}` }
         }),
         prisma.notification.create({
-          data: { userId: commission.agentId, title: "Commission Released!", message: `Your ₦${commission.amount.toLocaleString()} commission has exited escrow and is now in your wallet.`, type: "TRANSACTION", linkUrl: "/dashboard/wallet", actionText: "View Wallet" }
+          data: { userId: commission.agentId, title: "Commission Released!", message: `Your ₦${commission.amount.toLocaleString()} commission has exited escrow and is now in your wallet.`, type: "TRANSACTION", linkUrl: "/agent/earnings", actionText: "View Earnings" }
         })
       ];
       await prisma.$transaction(transactions);
       
-      const { sendWalletCreditEmail } = await import('@/lib/email');
-      await sendWalletCreditEmail(commission.agent.email, commission.agent.firstName, commission.amount, `Commission payout for holding ${commission.holding.referenceCode}`);
+      const { sendCommissionPaidEmail } = await import('@/lib/email');
+      await sendCommissionPaidEmail(
+        commission.agent.email,
+        commission.agent.firstName,
+        commission.amount,
+        'wallet',
+        { holdingRef: commission.holding?.referenceCode || undefined }
+      );
       releasedCount++;
     }
     revalidatePath('/admin/finance');

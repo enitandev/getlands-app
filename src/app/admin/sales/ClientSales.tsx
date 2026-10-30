@@ -1,19 +1,30 @@
 "use client";
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/mockData';
 import { createLeadAction, deleteLeadAction, updateLeadStatusAction } from '@/app/actions/admin-ops';
+import { toast } from '@/components/ui/Toast';
+import ClientCommissionRow from '../finance/ClientCommissionRow';
 
 export default function ClientSales({ initialLeads, agents, pendingDrafts = [], commissions = [] }: { initialLeads: any[], agents: any[], pendingDrafts?: any[], commissions?: any[] }) {
-  const [activeTab, setActiveTab] = useState('drafts');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState(
+    commissions.some(c => c.status === 'PENDING') && pendingDrafts.length === 0 ? 'commissions' : 'drafts'
+  );
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [isReleasing, setIsReleasing] = useState(false);
+  const [commissionStatusFilter, setCommissionStatusFilter] = useState<'PENDING' | 'PAID' | 'VOID' | 'ALL'>('ALL');
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
   const handleCreateLead = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     await createLeadAction(fd);
     setIsAddingLead(false);
+    toast('Lead added successfully!', 'success');
+    router.refresh();
   };
 
   const handleApproveDraft = async (holdingId: string) => {
@@ -22,23 +33,36 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [], 
     fd.append('holdingId', holdingId);
     const { approveDraftHoldingAction } = await import('@/app/actions/admin-ops');
     await approveDraftHoldingAction(fd);
-    alert('Draft approved successfully!');
+    toast('Draft approved and agent commission generated!', 'success');
+    router.refresh();
   };
 
   const handleManualRelease = async () => {
-    if (!confirm("Are you sure you want to release ALL due commissions from escrow to agents' wallets right now?")) return;
+    if (!confirm("Are you sure you want to release all commissions that have completed the 7-day escrow period to agents' wallets right now?")) return;
     setIsReleasing(true);
     try {
       const { releaseDueCommissionsAction } = await import('@/app/actions/admin-ops');
       const res = await releaseDueCommissionsAction();
-      alert(`Successfully released ${res.count} commissions.`);
+      if (res.count > 0) {
+        toast(`Released ${res.count} matured commission(s) to agent wallets.`, 'success');
+      } else {
+        toast('No commissions have passed 7 days yet. Use the row buttons below to pay any commission immediately.', 'info');
+      }
+      router.refresh();
     } catch (e: any) {
-      alert(`Error: ${e.message}`);
+      toast(`Error: ${e.message}`, 'error');
     }
     setIsReleasing(false);
   };
 
   const pendingCommissionsCount = commissions.filter(c => c.status === 'PENDING').length;
+  const selectedAgent = selectedAgentId ? agents.find(a => a.id === selectedAgentId) : null;
+
+  const filteredCommissions = commissions.filter(c => {
+    if (selectedAgentId && c.agentId !== selectedAgentId) return false;
+    if (commissionStatusFilter !== 'ALL' && c.status !== commissionStatusFilter) return false;
+    return true;
+  });
 
   return (
     <div className="space-y-[30px]">
@@ -166,113 +190,219 @@ export default function ClientSales({ initialLeads, agents, pendingDrafts = [], 
 
       {activeTab === 'agents' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[20px]">
-          {agents.map(agent => (
-            <div key={agent.id} className="bg-white rounded-[20px] p-[24px] shadow-sm border border-black/5 flex flex-col justify-between">
-              <div className="flex items-center gap-[15px] mb-[20px] pb-[15px] border-b border-black/5">
-                <div className="w-[48px] h-[48px] rounded-full bg-[#008b45] flex items-center justify-center text-white font-bold text-[16px]">
-                  {agent.firstName.charAt(0)}
-                </div>
-                <div className="flex-1">
-                  <strong className="block text-[16px] text-ink">{agent.firstName} {agent.lastName}</strong>
-                  <span className="text-[12px] text-[#68736d]">{agent.email}</span>
-                </div>
-                <div className="relative">
-                  <button 
-                    onClick={() => setOpenDropdownId(openDropdownId === agent.id ? null : agent.id)} 
-                    className="w-[32px] h-[32px] rounded-full hover:bg-black/5 flex items-center justify-center transition-colors"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                  </button>
+          {agents.map(agent => {
+            const paidAmount = agent.commissions?.filter((c: any) => c.status === 'PAID').reduce((acc: number, cur: any) => acc + cur.amount, 0) || 0;
+            const pendingList = agent.commissions?.filter((c: any) => c.status === 'PENDING') || [];
+            const pendingAmount = pendingList.reduce((acc: number, cur: any) => acc + cur.amount, 0);
+            const activeBank = agent.bankAccounts?.[0];
+            const bankName = activeBank?.bankName || agent.bankName;
+            const accountNumber = activeBank?.accountNumber || agent.accountNumber;
 
-                  {openDropdownId === agent.id && (
-                    <div className="absolute right-0 top-[100%] mt-[5px] w-[180px] bg-white border border-black/10 shadow-xl rounded-[12px] overflow-hidden z-[50] animate-fade-in text-left">
-                      <button 
-                        className="w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5"
-                        onClick={async () => {
-                          setOpenDropdownId(null);
-                          if (!confirm(`Are you sure you want to log in as ${agent.firstName}? You can return to admin later.`)) return;
-                          const { impersonateUserAction } = await import('@/app/actions/admin-customers');
-                          const res = await impersonateUserAction(agent.id);
-                          if (res.success) {
-                            window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
-                          }
-                        }}
-                      >
-                        Login As Agent
-                      </button>
-                      <button 
-                        onClick={async () => {
-                          setOpenDropdownId(null);
-                          if(confirm("Demote this agent to a regular customer?")) {
-                            const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
-                            await removeSalesAgentAction(agent.id);
-                          }
-                        }}
-                        className="w-full text-left px-[15px] py-[10px] text-[13px] text-[#e53935] hover:bg-[#ffebee] font-medium"
-                      >
-                        Demote to Customer
-                      </button>
+            return (
+              <div key={agent.id} className="bg-white rounded-[20px] p-[24px] shadow-sm border border-black/5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-[15px] mb-[16px] pb-[15px] border-b border-black/5">
+                    <div className="w-[48px] h-[48px] rounded-full bg-[#008b45] flex items-center justify-center text-white font-bold text-[16px] shrink-0">
+                      {agent.firstName.charAt(0)}
                     </div>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-[15px]">
-                <div>
-                  <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Paid Comms</div>
-                  <strong className="text-[16px] font-manrope text-[#008b45]">{formatCurrency(agent.commissions?.filter((c:any) => c.status === 'PAID').reduce((acc: number, cur: any) => acc + cur.amount, 0) || 0).replace('.00', '')}</strong>
-                </div>
-                <div>
-                  <div className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[4px]">Pending Escrow</div>
-                  <strong className="text-[16px] font-manrope text-ink">{formatCurrency(agent.commissions?.filter((c:any) => c.status === 'PENDING').reduce((acc: number, cur: any) => acc + cur.amount, 0) || 0).replace('.00', '')}</strong>
-                </div>
-                <div className="col-span-2 pt-[10px] mt-[10px] border-t border-black/5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[12px] text-[#68736d] font-bold">Network Size</span>
-                    <span className="text-[13px] text-ink font-bold">{agent.networkCount} Clients</span>
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/admin/customers/${agent.id}`} className="font-bold block text-[16px] text-ink hover:text-[#008b45] hover:underline truncate">
+                        {agent.firstName} {agent.lastName}
+                      </Link>
+                      <span className="text-[12px] text-[#68736d] block truncate">{agent.email}</span>
+                      {bankName && accountNumber ? (
+                        <span className="text-[11px] font-mono font-bold text-[#008b45] block mt-[2px]">
+                          {bankName} • {accountNumber}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-amber-600 block mt-[2px]">
+                          No bank account saved
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <button 
+                        onClick={() => setOpenDropdownId(openDropdownId === agent.id ? null : agent.id)} 
+                        className="w-[32px] h-[32px] rounded-full hover:bg-black/5 flex items-center justify-center transition-colors"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                      </button>
+
+                      {openDropdownId === agent.id && (
+                        <div className="absolute right-0 top-[100%] mt-[5px] w-[180px] bg-white border border-black/10 shadow-xl rounded-[12px] overflow-hidden z-[50] animate-fade-in text-left">
+                          <Link
+                            href={`/admin/customers/${agent.id}`}
+                            className="block w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5"
+                          >
+                            View Full Profile
+                          </Link>
+                          <button 
+                            className="w-full text-left px-[15px] py-[10px] text-[13px] text-ink hover:bg-[#f7f9f7] font-medium border-b border-black/5"
+                            onClick={async () => {
+                              setOpenDropdownId(null);
+                              if (!confirm(`Are you sure you want to log in as ${agent.firstName}? You can return to admin later.`)) return;
+                              const { impersonateUserAction } = await import('@/app/actions/admin-customers');
+                              const res = await impersonateUserAction(agent.id);
+                              if (res.success) {
+                                window.location.href = res.targetRole === 'sales' ? '/agent' : '/dashboard';
+                              }
+                            }}
+                          >
+                            Login As Agent
+                          </button>
+                          <button 
+                            onClick={async () => {
+                              setOpenDropdownId(null);
+                              if(confirm("Demote this agent to a regular customer?")) {
+                                const { removeSalesAgentAction } = await import('@/app/actions/admin-customers');
+                                await removeSalesAgentAction(agent.id);
+                              }
+                            }}
+                            className="w-full text-left px-[15px] py-[10px] text-[13px] text-[#e53935] hover:bg-[#ffebee] font-medium"
+                          >
+                            Demote to Customer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-[12px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAgentId(agent.id);
+                        setCommissionStatusFilter('PAID');
+                        setActiveTab('commissions');
+                      }}
+                      className="text-left p-[12px] rounded-[12px] bg-[#f7f9f7] hover:bg-[#eef3ef] transition-colors"
+                    >
+                      <div className="text-[10px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[2px]">Paid Comms</div>
+                      <strong className="text-[15px] font-manrope text-[#008b45]">{formatCurrency(paidAmount).replace('.00', '')}</strong>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAgentId(agent.id);
+                        setCommissionStatusFilter('PENDING');
+                        setActiveTab('commissions');
+                      }}
+                      className="text-left p-[12px] rounded-[12px] bg-amber-50/70 hover:bg-amber-100/70 border border-amber-200/50 transition-colors"
+                    >
+                      <div className="text-[10px] text-amber-800 font-bold uppercase tracking-[0.05em] mb-[2px]">Pending Due</div>
+                      <strong className="text-[15px] font-manrope text-amber-700">{formatCurrency(pendingAmount).replace('.00', '')}</strong>
+                    </button>
                   </div>
                 </div>
+
+                <div className="pt-[14px] mt-[14px] border-t border-black/5 flex items-center justify-between gap-[10px]">
+                  <span className="text-[12px] text-[#68736d] font-bold">
+                    {agent.networkCount} Referred Client{agent.networkCount === 1 ? '' : 's'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAgentId(agent.id);
+                      setCommissionStatusFilter(pendingList.length > 0 ? 'PENDING' : 'ALL');
+                      setActiveTab('commissions');
+                    }}
+                    className="px-[14px] py-[7px] bg-[#182a20] hover:bg-[#008b45] text-white text-[11px] font-bold rounded-full transition-colors"
+                  >
+                    {pendingList.length > 0 ? `Pay Due (${pendingList.length}) →` : 'View Ledger →'}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {agents.length === 0 && (
             <div className="col-span-full p-[40px] text-center bg-white border border-black/5 rounded-[20px] text-[#68736d] text-[14px]">
-              No users have the "sales" role yet. You can assign this role in the database.
+              No users have the "sales" role yet. You can promote any customer from their Customer Profile.
             </div>
           )}
         </div>
       )}
 
-      {/* Drafts Content */}
-            {activeTab === 'commissions' && (
+      {/* Commissions Content */}
+      {activeTab === 'commissions' && (
         <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
-          <div className="hidden lg:grid grid-cols-[1.5fr_2fr_1fr_1fr_120px] gap-[20px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">
-            <div>Date</div>
-            <div>Agent</div>
-            <div>Holding Ref</div>
-            <div>Amount</div>
-            <div>Status</div>
+          <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[12px]">
+            <div className="flex items-center gap-[10px] flex-wrap">
+              <h3 className="font-manrope text-[16px] font-bold text-ink">
+                Sales Agent Commissions
+              </h3>
+              {selectedAgent && (
+                <span className="inline-flex items-center gap-[6px] px-[10px] py-[4px] rounded-full bg-[#eef3ef] text-[#008b45] text-[11px] font-bold">
+                  Agent: {selectedAgent.firstName} {selectedAgent.lastName}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAgentId(null)}
+                    className="hover:text-ink font-extrabold"
+                    title="Clear agent filter"
+                  >
+                    &times;
+                  </button>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-[8px] flex-wrap">
+              {([
+                { id: 'ALL', label: `All (${commissions.length})` },
+                { id: 'PENDING', label: `Pending (${commissions.filter(c => c.status === 'PENDING').length})` },
+                { id: 'PAID', label: `Paid (${commissions.filter(c => c.status === 'PAID').length})` },
+                { id: 'VOID', label: `Cancelled (${commissions.filter(c => c.status === 'VOID').length})` }
+              ] as const).map(pill => (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => setCommissionStatusFilter(pill.id)}
+                  className={`px-[12px] py-[6px] rounded-full text-[11px] font-bold transition-colors ${
+                    commissionStatusFilter === pill.id
+                      ? 'bg-[#182a20] text-white'
+                      : 'bg-[#f4f7f5] text-[#68736d] hover:text-ink'
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
           </div>
-          {commissions.length === 0 ? (
-            <div className="p-[40px] text-center text-[#68736d] text-[14px]">No commissions recorded yet.</div>
-          ) : (
-            commissions.map((comm: any) => (
-              <div key={comm.id} className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr_1fr_1fr_120px] gap-[12px] lg:gap-[20px] p-[20px_24px] border-b border-black/5 last:border-0 items-center">
-                <div className="text-[13px] text-[#68736d]">{new Date(comm.createdAt).toLocaleDateString()}</div>
-                <div className="font-bold text-[14px] text-ink">{comm.agent?.firstName} {comm.agent?.lastName}</div>
-                <div className="text-[13px] text-ink font-mono">{comm.holding?.referenceCode || 'N/A'}</div>
-                <div className="font-bold text-[14px] text-[#008b45]">{formatCurrency(comm.amount)}</div>
-                <div>
-                  <span className={`inline-flex px-[8px] py-[4px] rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    comm.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                    comm.status === 'PAID' ? 'bg-green-100 text-green-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {comm.status}
-                  </span>
-                </div>
+
+          <div className="p-[20px]">
+            {filteredCommissions.length === 0 ? (
+              <div className="p-[40px] text-center text-[#68736d] text-[14px] bg-[#f7f9f7] rounded-[16px]">
+                No commissions match the selected filter.
+                {selectedAgentId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAgentId(null)}
+                    className="block mx-auto mt-[10px] text-[#008b45] font-bold text-[12px] hover:underline"
+                  >
+                    Show all agents
+                  </button>
+                )}
               </div>
-            ))
-          )}
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[850px]">
+                  <thead>
+                    <tr className="border-b border-black/5 text-[11px] text-[#7a847f] uppercase tracking-wider">
+                      <th className="p-[10px_0] font-bold w-[130px]">Date & Escrow</th>
+                      <th className="p-[10px] font-bold">Sales Agent & Bank</th>
+                      <th className="p-[10px] font-bold">Client & Deal</th>
+                      <th className="p-[10px] font-bold">Commission</th>
+                      <th className="p-[10px] font-bold text-right">Action / Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {filteredCommissions.map((comm: any) => (
+                      <ClientCommissionRow key={comm.id} commission={comm} formatCurrency={formatCurrency} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

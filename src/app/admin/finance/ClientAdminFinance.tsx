@@ -2,26 +2,93 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { approveTransaction, rejectTransaction, bulkApproveTransactions, bulkRejectTransactions } from '@/app/actions/admin';
+import { releaseDueCommissionsAction } from '@/app/actions/admin-ops';
 import { formatCurrency } from '@/lib/mockData';
 import { toast } from '@/components/ui/Toast';
 import ClientPayoutRow from './ClientPayoutRow';
+import ClientCommissionRow from './ClientCommissionRow';
 import ClientWithdrawalRow from './ClientWithdrawalRow';
 import ClientWalletLiabilityRow from './ClientWalletLiabilityRow';
 
-export default function ClientAdminFinance({ transactions = [], ledger }: { transactions: any[], ledger?: any }) {
+type FinanceTab = 'pending' | 'commissions' | 'ledger' | 'history';
+
+export default function ClientAdminFinance({
+  transactions = [],
+  ledger,
+  initialTab
+}: {
+  transactions: any[];
+  ledger?: any;
+  initialTab?: string;
+}) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'pending' | 'history' | 'ledger'>('pending');
+  const resolveTab = (t?: string): FinanceTab => {
+    if (t === 'commissions' || t === 'ledger' || t === 'history' || t === 'pending') return t;
+    if (t === 'payouts') return 'ledger';
+    return 'pending';
+  };
+
+  const [activeTab, setActiveTab] = useState<FinanceTab>(resolveTab(initialTab));
   const [txList, setTxList] = useState<any[]>(transactions);
   const [selectedTx, setSelectedTx] = useState<any | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [commissionFilter, setCommissionFilter] = useState<'PENDING' | 'PAID' | 'VOID' | 'ALL'>('PENDING');
+  const [payoutFilter, setPayoutFilter] = useState<'MONTH' | 'ALL_PENDING' | 'PAID'>('ALL_PENDING');
+  const [isReleasingComms, setIsReleasingComms] = useState(false);
 
   useEffect(() => {
     setTxList(transactions);
   }, [transactions]);
 
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(resolveTab(initialTab));
+    }
+  }, [initialTab]);
+
   const pendingTxs = txList.filter(t => t.status === 'pending');
   const historyTxs = txList.filter(t => t.status !== 'pending');
+
+  const allCommissions: any[] = ledger?.commissions || [];
+  const pendingCommissions = allCommissions.filter(c => c.status === 'PENDING');
+  const paidCommissions = allCommissions.filter(c => c.status === 'PAID');
+  const voidCommissions = allCommissions.filter(c => c.status === 'VOID');
+
+  const filteredCommissions =
+    commissionFilter === 'ALL'
+      ? allCommissions
+      : allCommissions.filter(c => c.status === commissionFilter);
+
+  const displayedPayouts: any[] =
+    payoutFilter === 'MONTH'
+      ? ledger?.upcomingPayouts || []
+      : payoutFilter === 'PAID'
+        ? ledger?.recentPaidPayouts || []
+        : ledger?.allPendingPayouts || ledger?.upcomingPayouts || [];
+
+  const handleReleaseMaturedCommissions = async () => {
+    if (
+      !confirm(
+        "Release all commissions that have completed the 7-day escrow period into agents' wallets now?"
+      )
+    )
+      return;
+    setIsReleasingComms(true);
+    try {
+      const res = await releaseDueCommissionsAction();
+      if (res.count > 0) {
+        toast(`Released ${res.count} matured commission(s) to agent wallets!`, 'success');
+      } else {
+        toast('No commissions have passed 7 days yet. Use the row buttons below to pay any commission immediately.', 'info');
+      }
+      router.refresh();
+    } catch (e: any) {
+      toast(e.message || 'Failed to release commissions', 'error');
+    } finally {
+      setIsReleasingComms(false);
+    }
+  };
 
   const selectedTotal = pendingTxs
     .filter(t => selectedIds.includes(t.id))
@@ -130,7 +197,7 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
       <div className="flex justify-between items-end">
         <div>
           <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[10px]">Finance & Verifications</h1>
-          <p className="text-[13px] lg:text-[14px] text-[#68736d]">Verify customer bank transfers, view history, and manage ROI payouts.</p>
+          <p className="text-[13px] lg:text-[14px] text-[#68736d]">Verify customer bank transfers, pay sales agent commissions, and manage ROI payouts.</p>
         </div>
       </div>
 
@@ -139,16 +206,30 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
           Pending Verifications <span className="ml-[8px] px-[6px] py-[2px] bg-[#f5a623] text-white text-[10px] rounded-full">{pendingTxs.length}</span>
           {activeTab === 'pending' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
+        {ledger && (
+          <button onClick={() => setActiveTab('commissions')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'commissions' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
+            Agent Commissions
+            <span className={`ml-[8px] px-[6px] py-[2px] text-[10px] rounded-full ${pendingCommissions.length > 0 ? 'bg-amber-500 text-white' : 'bg-[#eef3ef] text-[#008b45]'}`}>
+              {pendingCommissions.length}
+            </span>
+            {activeTab === 'commissions' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
+          </button>
+        )}
+        {ledger && (
+          <button onClick={() => setActiveTab('ledger')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'ledger' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
+            Master Ledger & Payouts
+            {(ledger.allPendingPayouts?.length || 0) > 0 && (
+              <span className="ml-[8px] px-[6px] py-[2px] bg-[#008b45] text-white text-[10px] rounded-full">
+                {ledger.allPendingPayouts.length}
+              </span>
+            )}
+            {activeTab === 'ledger' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
+          </button>
+        )}
         <button onClick={() => setActiveTab('history')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'history' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
           Transaction History
           {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
-        {ledger && (
-          <button onClick={() => setActiveTab('ledger')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'ledger' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-            Master Ledger & Payouts
-            {activeTab === 'ledger' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
-          </button>
-        )}
       </div>
 
       {activeTab === 'pending' && (
@@ -316,6 +397,130 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
         </div>
       )}
 
+      {activeTab === 'commissions' && ledger && (
+        <div className="space-y-[30px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[20px]">
+            <div className="bg-white p-[24px] rounded-[24px] border border-black/5 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-[12px] text-[#7a847f] font-bold uppercase tracking-[0.05em] block mb-[6px]">
+                  Pending Agent Commissions
+                </span>
+                <strong className="font-manrope text-[28px] font-bold text-amber-600 leading-none block">
+                  {formatCurrency(ledger.escrowLiabilities || 0)}
+                </strong>
+              </div>
+              <p className="text-[12px] text-[#68736d] mt-[10px]">
+                {pendingCommissions.length} pending commission{pendingCommissions.length === 1 ? '' : 's'} waiting for payout.
+              </p>
+            </div>
+
+            <div className="bg-white p-[24px] rounded-[24px] border border-black/5 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-[12px] text-[#7a847f] font-bold uppercase tracking-[0.05em] block mb-[6px]">
+                  Total Commissions Paid
+                </span>
+                <strong className="font-manrope text-[28px] font-bold text-[#008b45] leading-none block">
+                  {formatCurrency(ledger.paidCommissionsTotal || 0)}
+                </strong>
+              </div>
+              <p className="text-[12px] text-[#68736d] mt-[10px]">
+                {paidCommissions.length} commission{paidCommissions.length === 1 ? '' : 's'} settled via bank or wallet.
+              </p>
+            </div>
+
+            <div className="bg-[#182a20] text-white p-[24px] rounded-[24px] flex flex-col justify-between">
+              <div>
+                <span className="text-[12px] text-[#a6baa9] font-bold uppercase tracking-[0.05em] block mb-[6px]">
+                  Batch Escrow Release
+                </span>
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  Release all commissions that have completed the 7-day cooling-off period to agent wallets, or pay any commission below immediately.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleReleaseMaturedCommissions}
+                disabled={isReleasingComms}
+                className="mt-[14px] px-[18px] py-[10px] bg-[#008b45] hover:bg-[#007339] text-white text-[12px] font-bold rounded-full transition-colors w-fit disabled:opacity-50"
+              >
+                {isReleasingComms ? 'Releasing...' : 'Release Matured (7d+) to Wallets'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[12px]">
+              <div>
+                <h3 className="font-manrope text-[16px] font-bold text-ink">
+                  Sales Agent Commission Disbursements
+                </h3>
+                <p className="text-[13px] text-[#68736d]">
+                  Pay sales agents directly to their bank account or credit their Getlands digital wallet. Agents receive an immediate notification and email.
+                </p>
+              </div>
+              <div className="flex items-center gap-[8px] flex-wrap">
+                {([
+                  { id: 'PENDING', label: `Pending (${pendingCommissions.length})` },
+                  { id: 'PAID', label: `Paid (${paidCommissions.length})` },
+                  { id: 'VOID', label: `Cancelled (${voidCommissions.length})` },
+                  { id: 'ALL', label: `All (${allCommissions.length})` }
+                ] as const).map(pill => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => setCommissionFilter(pill.id)}
+                    className={`px-[12px] py-[6px] rounded-full text-[11px] font-bold transition-colors ${
+                      commissionFilter === pill.id
+                        ? 'bg-[#182a20] text-white'
+                        : 'bg-[#f4f7f5] text-[#68736d] hover:text-ink'
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-[20px]">
+              {filteredCommissions.length === 0 ? (
+                <div className="text-center p-[40px] bg-[#f7f9f7] rounded-[16px]">
+                  <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-[15px]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                  </div>
+                  <h3 className="font-manrope text-[16px] font-bold text-ink mb-[5px]">
+                    No {commissionFilter === 'ALL' ? '' : commissionFilter.toLowerCase()} commissions found
+                  </h3>
+                  <p className="text-[13px] text-[#68736d]">
+                    {commissionFilter === 'PENDING'
+                      ? 'All sales agent commissions have been paid out.'
+                      : 'Switch filters above to view other commission records.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[850px]">
+                    <thead>
+                      <tr className="border-b border-black/5 text-[11px] text-[#7a847f] uppercase tracking-wider">
+                        <th className="p-[10px_0] font-bold w-[130px]">Date & Escrow</th>
+                        <th className="p-[10px] font-bold">Sales Agent & Bank</th>
+                        <th className="p-[10px] font-bold">Client & Deal</th>
+                        <th className="p-[10px] font-bold">Commission</th>
+                        <th className="p-[10px] font-bold text-right">Action / Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/5">
+                      {filteredCommissions.map((comm: any) => (
+                        <ClientCommissionRow key={comm.id} commission={comm} formatCurrency={formatCurrency} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'ledger' && ledger && (
         <div className="space-y-[40px]">
           {/* AUM & Overview Stats */}
@@ -329,23 +534,44 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
               <strong className="font-manrope text-[28px] font-bold text-ink leading-none">{formatCurrency(ledger.aum || 0)}</strong>
             </div>
 
-            {/* Liabilities */}
-            <div className="bg-white p-[24px] rounded-[24px] border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden">
+            {/* Liabilities - Clickable */}
+            <button
+              type="button"
+              onClick={() => document.getElementById('wallet-liabilities-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-left bg-white p-[24px] rounded-[24px] border border-black/5 hover:border-red-500/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden transition-all group"
+            >
               <div className="w-[40px] h-[40px] rounded-full bg-red-500/10 flex items-center justify-center text-red-600 mb-[15px]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
               </div>
               <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Total Wallet Liabilities</span>
               <strong className="font-manrope text-[28px] font-bold text-red-600 leading-none">{formatCurrency(ledger.walletLiabilities || 0)}</strong>
-            </div>
+              <span className="text-[11px] font-bold text-red-600/80 group-hover:underline mt-[8px]">
+                View balances &rarr;
+              </span>
+            </button>
 
-            {/* Escrow Liabilities */}
-            <div className="bg-white p-[24px] rounded-[24px] border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden">
+            {/* Escrow Liabilities - Clickable to view & pay sales agents */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('agent-commissions-section');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  setActiveTab('commissions');
+                }
+              }}
+              className="text-left bg-white p-[24px] rounded-[24px] border border-amber-500/30 hover:border-amber-500 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden transition-all group"
+            >
               <div className="w-[40px] h-[40px] rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 mb-[15px]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
               </div>
               <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Agent Escrow (Pending)</span>
               <strong className="font-manrope text-[28px] font-bold text-amber-600 leading-none">{formatCurrency(ledger.escrowLiabilities || 0)}</strong>
-            </div>
+              <span className="text-[11px] font-bold text-amber-700 group-hover:underline mt-[8px]">
+                Click to view &amp; pay ({pendingCommissions.length}) &rarr;
+              </span>
+            </button>
 
             {/* Capital Inflow */}
             <div className="bg-white p-[24px] rounded-[24px] border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-center">
@@ -366,8 +592,80 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
             </div>
           </div>
 
+          {/* Sales Agent Commissions Due Section right inside Master Ledger */}
+          <div id="agent-commissions-section" className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[12px]">
+              <div>
+                <h3 className="font-manrope text-[16px] font-bold text-ink">
+                  Payments Due to Sales Agents (Commissions)
+                </h3>
+                <p className="text-[13px] text-[#68736d]">
+                  Pay sales agents directly to their bank account or credit their Getlands wallet. Notifications and emails are sent automatically.
+                </p>
+              </div>
+              <div className="flex items-center gap-[8px] flex-wrap">
+                {([
+                  { id: 'PENDING', label: `Pending (${pendingCommissions.length})` },
+                  { id: 'PAID', label: `Paid (${paidCommissions.length})` },
+                  { id: 'VOID', label: `Cancelled (${voidCommissions.length})` },
+                  { id: 'ALL', label: `All (${allCommissions.length})` }
+                ] as const).map(pill => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => setCommissionFilter(pill.id)}
+                    className={`px-[12px] py-[6px] rounded-full text-[11px] font-bold transition-colors ${
+                      commissionFilter === pill.id
+                        ? 'bg-[#182a20] text-white'
+                        : 'bg-[#f4f7f5] text-[#68736d] hover:text-ink'
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-[20px]">
+              {filteredCommissions.length === 0 ? (
+                <div className="text-center p-[40px] bg-[#f7f9f7] rounded-[16px]">
+                  <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-[15px]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                  </div>
+                  <h3 className="font-manrope text-[16px] font-bold text-ink mb-[5px]">
+                    No {commissionFilter === 'ALL' ? '' : commissionFilter.toLowerCase()} agent commissions
+                  </h3>
+                  <p className="text-[13px] text-[#68736d]">
+                    {commissionFilter === 'PENDING'
+                      ? 'All sales agent commissions are currently settled.'
+                      : 'Switch filters above to view other commission records.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[850px]">
+                    <thead>
+                      <tr className="border-b border-black/5 text-[11px] text-[#7a847f] uppercase tracking-wider">
+                        <th className="p-[10px_0] font-bold w-[130px]">Date & Escrow</th>
+                        <th className="p-[10px] font-bold">Sales Agent & Bank</th>
+                        <th className="p-[10px] font-bold">Client & Deal</th>
+                        <th className="p-[10px] font-bold">Commission</th>
+                        <th className="p-[10px] font-bold text-right">Action / Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/5">
+                      {filteredCommissions.map((comm: any) => (
+                        <ClientCommissionRow key={comm.id} commission={comm} formatCurrency={formatCurrency} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Active Wallet Liabilities & Settlement Reconciliation */}
-          <div className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
+          <div id="wallet-liabilities-section" className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
             <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[10px]">
               <div>
                 <h3 className="font-manrope text-[16px] font-bold text-ink">Active Wallet Liabilities & Customer Balances</h3>
@@ -412,26 +710,42 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
           </div>
 
           {/* Due Payouts */}
-          <div className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex justify-between items-center">
+          <div id="payouts-section" className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[12px]">
               <div>
-                <h3 className="font-manrope text-[16px] font-bold text-ink">Upcoming Payouts (This Month)</h3>
-                <p className="text-[13px] text-[#68736d]">Payments due to customers before the end of the current month.</p>
+                <h3 className="font-manrope text-[16px] font-bold text-ink">Customer Investment Payouts</h3>
+                <p className="text-[13px] text-[#68736d]">Pay customer ROI and principal returns directly to their bank or credit their Getlands wallet.</p>
               </div>
-              <div className="text-right">
-                <span className="block text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[2px]">Total Due</span>
-                <strong className="text-[18px] text-[#008b45]">{formatCurrency(ledger.totalUpcomingPayouts || 0)}</strong>
+              <div className="flex items-center gap-[8px] flex-wrap">
+                {([
+                  { id: 'ALL_PENDING', label: `All Pending (${ledger.allPendingPayouts?.length || 0})` },
+                  { id: 'MONTH', label: `Due This Month (${ledger.upcomingPayouts?.length || 0})` },
+                  { id: 'PAID', label: `Recently Paid (${ledger.recentPaidPayouts?.length || 0})` }
+                ] as const).map(pill => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => setPayoutFilter(pill.id)}
+                    className={`px-[12px] py-[6px] rounded-full text-[11px] font-bold transition-colors ${
+                      payoutFilter === pill.id
+                        ? 'bg-[#008b45] text-white'
+                        : 'bg-[#f4f7f5] text-[#68736d] hover:text-ink'
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
               </div>
             </div>
             
             <div className="p-[20px]">
-              {(!ledger.upcomingPayouts || ledger.upcomingPayouts.length === 0) ? (
+              {displayedPayouts.length === 0 ? (
                 <div className="text-center p-[40px] bg-[#f7f9f7] rounded-[16px]">
                   <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-[15px]">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                   </div>
                   <h3 className="font-manrope text-[16px] font-bold text-ink mb-[5px]">All Caught Up</h3>
-                  <p className="text-[13px] text-[#68736d]">There are no pending payouts due this month.</p>
+                  <p className="text-[13px] text-[#68736d]">There are no payouts matching this filter.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -442,11 +756,11 @@ export default function ClientAdminFinance({ transactions = [], ledger }: { tran
                         <th className="p-[10px] font-bold">Customer</th>
                         <th className="p-[10px] font-bold">Investment</th>
                         <th className="p-[10px] font-bold">Amount</th>
-                        <th className="p-[10px] font-bold text-right">Action</th>
+                        <th className="p-[10px] font-bold text-right">Action / Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/5">
-                      {ledger.upcomingPayouts.map((payout: any) => (
+                      {displayedPayouts.map((payout: any) => (
                         <ClientPayoutRow key={payout.id} payout={payout} formatCurrency={formatCurrency} />
                       ))}
                     </tbody>

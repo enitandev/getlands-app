@@ -22,6 +22,14 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
 
     const isFirstPurchase = !user.hasTriggeredReferralReward;
     const transactions = [];
+    const holdingDetails = holdingId
+      ? await prisma.holding.findUnique({
+          where: { id: holdingId },
+          include: { opportunity: true }
+        })
+      : null;
+    const opportunityTitle = holdingDetails?.opportunity?.title;
+    const clientName = `${user.firstName} ${user.lastName}`.trim();
 
     // --- AGENT COMMISSION ENGINE ---
     if (referrer.role === 'sales') {
@@ -42,22 +50,28 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
           prisma.notification.create({
             data: {
               userId: referrer.id,
-              title: "New Commission Pending",
-              message: `You earned ₦${tier1Amount.toLocaleString()} on your client's acquisition. It is now in escrow.`,
+              title: "New Sales Commission Earned",
+              message: `You earned ₦${tier1Amount.toLocaleString()} on ${clientName}'s investment${opportunityTitle ? ` in ${opportunityTitle}` : ''}. It is now in your Commission Ledger.`,
               type: "TRANSACTION",
-              linkUrl: "/agent",
-              actionText: "View Pipeline"
+              linkUrl: "/agent/earnings",
+              actionText: "View Earnings"
             }
           })
         );
       }
 
       // Check for Tier 2 (Recruiter) - ONLY ON FIRST PURCHASE
+      let grandReferrerToNotify: { email: string; firstName: string; amount: number } | null = null;
       if (isFirstPurchase && referrer.referredById) {
         const grandReferrer = await prisma.user.findUnique({ where: { id: referrer.referredById } });
         if (grandReferrer && grandReferrer.role === 'sales') {
           const tier2Amount = (investmentAmount * settings.agentTier2Commission) / 100;
           if (tier2Amount > 0) {
+            grandReferrerToNotify = {
+              email: grandReferrer.email,
+              firstName: grandReferrer.firstName,
+              amount: tier2Amount
+            };
             transactions.push(
               prisma.commission.create({
                 data: {
@@ -71,17 +85,48 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
               prisma.notification.create({
                 data: {
                   userId: grandReferrer.id,
-                  title: "Tier-2 Commission Pending",
-                  message: `You earned a ₦${tier2Amount.toLocaleString()} recruiter bonus from your sub-agent's sale.`,
+                  title: "Tier 2 Commission Earned",
+                  message: `You earned a ₦${tier2Amount.toLocaleString()} recruiter bonus from ${referrer.firstName}'s sale.`,
                   type: "TRANSACTION",
-                  linkUrl: "/agent",
-                  actionText: "View Pipeline"
+                  linkUrl: "/agent/earnings",
+                  actionText: "View Earnings"
                 }
               })
             );
           }
         }
       }
+
+      if (isFirstPurchase) {
+        transactions.push(
+          prisma.user.update({
+            where: { id: user.id },
+            data: { hasTriggeredReferralReward: true }
+          })
+        );
+      }
+
+      if (transactions.length > 0) {
+        await prisma.$transaction(transactions);
+      }
+
+      // Send email notifications to agents
+      const { sendCommissionEarnedEmail } = await import('./email');
+      if (tier1Amount > 0) {
+        await sendCommissionEarnedEmail(referrer.email, referrer.firstName, tier1Amount, 1, clientName, opportunityTitle);
+      }
+      if (grandReferrerToNotify) {
+        await sendCommissionEarnedEmail(
+          grandReferrerToNotify.email,
+          grandReferrerToNotify.firstName,
+          grandReferrerToNotify.amount,
+          2,
+          clientName,
+          opportunityTitle
+        );
+      }
+
+      return true;
     } 
     // --- STANDARD CUSTOMER REFERRAL ENGINE ---
     else {
@@ -109,7 +154,7 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
             data: {
               userId: referrer.id,
               title: "Referral Bonus Received!",
-              message: `You earned ₦${bonusAmount.toLocaleString()} (${bonusRate}%) because your friend made their first acquisition.`,
+              message: `You earned ₦${bonusAmount.toLocaleString()} (${bonusRate}%) because ${clientName} made their first investment.`,
               type: "TRANSACTION",
               linkUrl: "/dashboard/wallet",
               actionText: "View Wallet"
@@ -117,23 +162,27 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
           })
         );
       }
-    }
 
-    // Mark user as having completed their first purchase (so future purchases trigger the 'Future' tier for agents)
-    if (isFirstPurchase) {
-      transactions.push(
-        prisma.user.update({
-          where: { id: user.id },
-          data: { hasTriggeredReferralReward: true }
-        })
-      );
-    }
+      if (isFirstPurchase) {
+        transactions.push(
+          prisma.user.update({
+            where: { id: user.id },
+            data: { hasTriggeredReferralReward: true }
+          })
+        );
+      }
 
-    if (transactions.length > 0) {
-      await prisma.$transaction(transactions);
-    }
+      if (transactions.length > 0) {
+        await prisma.$transaction(transactions);
+      }
 
-    return true;
+      if (bonusAmount > 0) {
+        const { sendWalletCreditEmail } = await import('./email');
+        await sendWalletCreditEmail(referrer.email, referrer.firstName, bonusAmount, `Referral Bonus (${clientName})`);
+      }
+
+      return true;
+    }
   } catch (error) {
     console.error("Referral bonus error:", error);
     return false;

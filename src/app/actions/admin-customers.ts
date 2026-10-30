@@ -120,6 +120,9 @@ export async function assignOpportunityAction(formData: FormData) {
   // Generate schedule
   await generatePayoutSchedule(holding.id);
 
+  // Trigger Referral / Sales Agent Commission Engine if customer was referred
+  await triggerReferralBonus(userId, amountPaid, holding.id);
+
   // 3. Update Cohort funding progress if it exists
   if (activeCohort) {
     await prisma.cohort.update({

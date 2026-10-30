@@ -22,10 +22,13 @@ export async function getMasterLedger() {
     activeHoldings,
     wallets,
     escrow,
+    paidCommsAgg,
     deposits,
     directInvestments,
     outgoing,
-    upcomingPayouts,
+    allPendingPayouts,
+    recentPaidPayouts,
+    commissions,
     pendingWithdrawals,
     usersWithBalance
   ] = await Promise.all([
@@ -40,6 +43,10 @@ export async function getMasterLedger() {
       where: { status: 'PENDING' },
       _sum: { amount: true }
     }),
+    prisma.commission.aggregate({
+      where: { status: 'PAID' },
+      _sum: { amount: true }
+    }),
     prisma.transaction.aggregate({
       where: { status: 'success', type: 'deposit' },
       _sum: { amount: true }
@@ -49,13 +56,12 @@ export async function getMasterLedger() {
       _sum: { amount: true }
     }),
     prisma.transaction.aggregate({
-      where: { status: 'success', type: 'withdrawal' },
+      where: { status: 'success', type: { in: ['withdrawal', 'direct_bank_payout', 'commission_bank_payout'] } },
       _sum: { amount: true }
     }),
     prisma.payoutSchedule.findMany({
       where: { 
-        status: 'PENDING',
-        dueDate: { lte: endOfMonth }
+        status: 'PENDING'
       },
       include: {
         user: { 
@@ -64,6 +70,7 @@ export async function getMasterLedger() {
             firstName: true, 
             lastName: true, 
             email: true,
+            phoneNumber: true,
             bankName: true,
             accountNumber: true,
             accountName: true,
@@ -73,6 +80,58 @@ export async function getMasterLedger() {
         holding: { include: { opportunity: true } }
       },
       orderBy: { dueDate: 'asc' }
+    }),
+    prisma.payoutSchedule.findMany({
+      where: {
+        status: 'PAID'
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            bankAccounts: { where: { status: 'active' } }
+          }
+        },
+        holding: { include: { opportunity: true } }
+      },
+      orderBy: { paidAt: 'desc' },
+      take: 30
+    }),
+    prisma.commission.findMany({
+      include: {
+        agent: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            bankAccounts: { where: { status: 'active' } }
+          }
+        },
+        holding: {
+          select: {
+            id: true,
+            referenceCode: true,
+            totalAmount: true,
+            status: true,
+            dateAcquired: true,
+            opportunity: { select: { id: true, title: true, category: true } },
+            user: { select: { id: true, firstName: true, lastName: true, email: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
     }),
     prisma.transaction.findMany({
       where: { type: 'withdrawal', status: 'pending' },
@@ -106,17 +165,24 @@ export async function getMasterLedger() {
     })
   ]);
 
+  const upcomingPayouts = allPendingPayouts.filter(p => new Date(p.dueDate) <= endOfMonth);
   const totalIncoming = (deposits._sum.amount || 0) + (directInvestments._sum.amount || 0);
   const totalUpcomingPayouts = upcomingPayouts.reduce((sum, p) => sum + p.amount, 0);
+  const totalAllPendingPayouts = allPendingPayouts.reduce((sum, p) => sum + p.amount, 0);
 
   return {
     aum: activeHoldings._sum.totalAmount || 0,
     walletLiabilities: wallets._sum.walletBalance || 0,
     escrowLiabilities: escrow._sum.amount || 0,
+    paidCommissionsTotal: paidCommsAgg._sum.amount || 0,
     totalIncoming,
     totalOutgoing: outgoing._sum.amount || 0,
     upcomingPayouts,
+    allPendingPayouts,
+    recentPaidPayouts,
     totalUpcomingPayouts,
+    totalAllPendingPayouts,
+    commissions,
     pendingWithdrawals,
     usersWithBalance
   };
@@ -158,11 +224,58 @@ export async function getCustomerLedger(userId: string) {
     _sum: { amount: true }
   });
 
-  const payouts = await prisma.payoutSchedule.findMany({
-    where: { userId },
-    include: { holding: { include: { opportunity: true } } },
-    orderBy: { dueDate: 'asc' }
-  });
+  const [payouts, commissions] = await Promise.all([
+    prisma.payoutSchedule.findMany({
+      where: { userId },
+      include: {
+        holding: { include: { opportunity: true } },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            bankAccounts: { where: { status: 'active' } }
+          }
+        }
+      },
+      orderBy: { dueDate: 'asc' }
+    }),
+    prisma.commission.findMany({
+      where: { agentId: userId },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            bankAccounts: { where: { status: 'active' } }
+          }
+        },
+        holding: {
+          select: {
+            id: true,
+            referenceCode: true,
+            totalAmount: true,
+            status: true,
+            dateAcquired: true,
+            opportunity: { select: { id: true, title: true, category: true } },
+            user: { select: { id: true, firstName: true, lastName: true, email: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  ]);
 
   const totalExpectedROI = payouts.filter(p => ['ROI', 'DIVIDEND'].includes(p.type)).reduce((sum, p) => sum + p.amount, 0);
   const totalExpectedPrincipal = payouts.filter(p => ['PRINCIPAL_RETURN', 'MATURITY_PAYOUT'].includes(p.type)).reduce((sum, p) => sum + p.amount, 0);
@@ -174,6 +287,7 @@ export async function getCustomerLedger(userId: string) {
     activePrincipal: activeHoldings._sum.totalAmount || 0,
     totalReturnsEarned: totalReturns._sum.amount || 0,
     payouts,
+    commissions,
     totalExpectedROI,
     totalExpectedPrincipal
   };
@@ -228,6 +342,8 @@ export async function executePayoutAction(payoutId: string) {
           type: 'TRANSACTION',
           title: 'Payout Received!',
           message: `Your wallet has been credited with ₦${payout.amount.toLocaleString()} for your ${payout.holding.opportunity.title} investment.`,
+          linkUrl: '/dashboard/wallet',
+          actionText: 'View Wallet'
         }
       });
     });
@@ -235,8 +351,12 @@ export async function executePayoutAction(payoutId: string) {
     const { sendWalletCreditEmail } = await import('@/lib/email');
     await sendWalletCreditEmail(payout.user.email, payout.user.firstName, payout.amount, payout.holding.opportunity.title);
 
+    revalidatePath('/admin');
     revalidatePath('/admin/finance');
+    revalidatePath(`/admin/customers/${payout.userId}`);
+    revalidatePath('/dashboard');
     revalidatePath('/dashboard/wallet');
+    revalidatePath('/dashboard/notifications');
     return { success: true };
   } catch (err: any) {
     return { error: err.message || 'Failed to execute payout' };
@@ -291,8 +411,10 @@ export async function executeDirectBankPayoutAction(payoutId: string, bankRefere
         data: {
           userId: payout.userId,
           type: 'TRANSACTION',
-          title: 'Payout Transferred to Bank',
+          title: 'Payout Sent to Your Bank',
           message: `Your payout of ₦${payout.amount.toLocaleString()} for ${payout.holding.opportunity.title} has been transferred directly to your bank account.`,
+          linkUrl: '/dashboard/holdings',
+          actionText: 'View Portfolio'
         }
       });
     });
@@ -300,11 +422,263 @@ export async function executeDirectBankPayoutAction(payoutId: string, bankRefere
     const { sendDirectBankPayoutEmail } = await import('@/lib/email');
     await sendDirectBankPayoutEmail(payout.user.email, payout.user.firstName, payout.amount, payout.holding.opportunity.title, bankName || undefined, accountNumber || undefined);
 
+    revalidatePath('/admin');
     revalidatePath('/admin/finance');
+    revalidatePath(`/admin/customers/${payout.userId}`);
+    revalidatePath('/dashboard');
     revalidatePath('/dashboard/holdings');
+    revalidatePath('/dashboard/notifications');
     return { success: true };
   } catch (err: any) {
     return { error: err.message || 'Failed to record direct bank payout' };
+  }
+}
+
+export async function executeCommissionWalletPayoutAction(commissionId: string) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const commission = await prisma.commission.findUnique({
+    where: { id: commissionId },
+    include: {
+      agent: true,
+      holding: {
+        include: {
+          opportunity: true,
+          user: true
+        }
+      }
+    }
+  });
+
+  if (!commission || commission.status !== 'PENDING') {
+    return { error: 'Commission is invalid or has already been processed.' };
+  }
+
+  try {
+    const clientName = commission.holding?.user
+      ? `${commission.holding.user.firstName} ${commission.holding.user.lastName}`.trim()
+      : undefined;
+    const opportunityTitle = commission.holding?.opportunity?.title;
+    const holdingRef = commission.holding?.referenceCode || undefined;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Mark commission as PAID
+      await tx.commission.update({
+        where: { id: commissionId },
+        data: { status: 'PAID' }
+      });
+
+      // 2. Credit sales agent's wallet balance
+      await tx.user.update({
+        where: { id: commission.agentId },
+        data: { walletBalance: { increment: commission.amount } }
+      });
+
+      // 3. Log transaction
+      await tx.transaction.create({
+        data: {
+          userId: commission.agentId,
+          type: 'commission_payout',
+          amount: commission.amount,
+          status: 'success',
+          reference: `COMM-WAL-${commission.id.substring(0, 8).toUpperCase()}-${Date.now().toString().slice(-4)}`
+        }
+      });
+
+      // 4. Create in-app notification for the sales agent
+      const dealDesc = clientName
+        ? ` for ${clientName}'s investment${opportunityTitle ? ` in ${opportunityTitle}` : ''}`
+        : opportunityTitle
+          ? ` for ${opportunityTitle}`
+          : '';
+
+      await tx.notification.create({
+        data: {
+          userId: commission.agentId,
+          type: 'TRANSACTION',
+          title: 'Commission Paid to Wallet!',
+          message: `Your ₦${commission.amount.toLocaleString()} commission${dealDesc} has been approved and credited to your wallet.`,
+          linkUrl: '/agent/earnings',
+          actionText: 'View Earnings'
+        }
+      });
+    });
+
+    const { sendCommissionPaidEmail } = await import('@/lib/email');
+    await sendCommissionPaidEmail(
+      commission.agent.email,
+      commission.agent.firstName,
+      commission.amount,
+      'wallet',
+      {
+        clientName,
+        opportunityTitle,
+        holdingRef
+      }
+    );
+
+    revalidatePath('/admin');
+    revalidatePath('/admin/finance');
+    revalidatePath('/admin/sales');
+    revalidatePath(`/admin/customers/${commission.agentId}`);
+    revalidatePath('/agent');
+    revalidatePath('/agent/earnings');
+    revalidatePath('/agent/notifications');
+    revalidatePath('/dashboard/wallet');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to credit commission to wallet' };
+  }
+}
+
+export async function executeCommissionBankPayoutAction(commissionId: string, bankReference?: string) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const commission = await prisma.commission.findUnique({
+    where: { id: commissionId },
+    include: {
+      agent: {
+        include: {
+          bankAccounts: { where: { status: 'active' } }
+        }
+      },
+      holding: {
+        include: {
+          opportunity: true,
+          user: true
+        }
+      }
+    }
+  });
+
+  if (!commission || commission.status !== 'PENDING') {
+    return { error: 'Commission is invalid or has already been processed.' };
+  }
+
+  try {
+    const activeBank = commission.agent.bankAccounts?.[0];
+    const bankName = activeBank?.bankName || commission.agent.bankName || undefined;
+    const accountNumber = activeBank?.accountNumber || commission.agent.accountNumber || undefined;
+
+    const clientName = commission.holding?.user
+      ? `${commission.holding.user.firstName} ${commission.holding.user.lastName}`.trim()
+      : undefined;
+    const opportunityTitle = commission.holding?.opportunity?.title;
+    const holdingRef = commission.holding?.referenceCode || undefined;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Mark commission as PAID
+      await tx.commission.update({
+        where: { id: commissionId },
+        data: { status: 'PAID' }
+      });
+
+      // 2. Create audit transaction for direct bank commission payout (does not touch walletBalance)
+      await tx.transaction.create({
+        data: {
+          userId: commission.agentId,
+          type: 'commission_bank_payout',
+          amount: commission.amount,
+          status: 'success',
+          reference: bankReference?.trim()
+            ? `COMM-BNK-${bankReference.trim().toUpperCase()}`
+            : `COMM-BNK-${commission.id.substring(0, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`
+        }
+      });
+
+      // 3. Create in-app notification for the sales agent
+      const dealDesc = clientName
+        ? ` for ${clientName}'s investment${opportunityTitle ? ` in ${opportunityTitle}` : ''}`
+        : opportunityTitle
+          ? ` for ${opportunityTitle}`
+          : '';
+
+      await tx.notification.create({
+        data: {
+          userId: commission.agentId,
+          type: 'TRANSACTION',
+          title: 'Commission Sent to Your Bank',
+          message: `Your ₦${commission.amount.toLocaleString()} commission${dealDesc} has been transferred directly to your bank account.`,
+          linkUrl: '/agent/earnings',
+          actionText: 'View Earnings'
+        }
+      });
+    });
+
+    const { sendCommissionPaidEmail } = await import('@/lib/email');
+    await sendCommissionPaidEmail(
+      commission.agent.email,
+      commission.agent.firstName,
+      commission.amount,
+      'bank',
+      {
+        clientName,
+        opportunityTitle,
+        holdingRef,
+        bankName,
+        accountNumber
+      }
+    );
+
+    revalidatePath('/admin');
+    revalidatePath('/admin/finance');
+    revalidatePath('/admin/sales');
+    revalidatePath(`/admin/customers/${commission.agentId}`);
+    revalidatePath('/agent');
+    revalidatePath('/agent/earnings');
+    revalidatePath('/agent/notifications');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to record direct bank commission payout' };
+  }
+}
+
+export async function voidCommissionAction(commissionId: string, reason?: string) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const commission = await prisma.commission.findUnique({
+    where: { id: commissionId },
+    include: {
+      agent: true,
+      holding: { include: { opportunity: true, user: true } }
+    }
+  });
+
+  if (!commission || commission.status !== 'PENDING') {
+    return { error: 'Commission is invalid or already processed.' };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.commission.update({
+        where: { id: commissionId },
+        data: { status: 'VOID' }
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: commission.agentId,
+          type: 'SYSTEM',
+          title: 'Commission Cancelled',
+          message: `A pending commission of ₦${commission.amount.toLocaleString()} was cancelled${reason ? ` (${reason})` : ' because the underlying order was cancelled'}.`,
+          linkUrl: '/agent/earnings',
+          actionText: 'View Ledger'
+        }
+      });
+    });
+
+    revalidatePath('/admin');
+    revalidatePath('/admin/finance');
+    revalidatePath('/admin/sales');
+    revalidatePath(`/admin/customers/${commission.agentId}`);
+    revalidatePath('/agent');
+    revalidatePath('/agent/earnings');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to void commission' };
   }
 }
 

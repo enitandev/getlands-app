@@ -264,23 +264,137 @@ export async function sendWithdrawalProcessedEmail(to: string, userName: string,
 }
 
 export async function sendDirectBankPayoutEmail(to: string, userName: string, amount: number, title: string, bankName?: string, accountNumber?: string) {
+  const bankDetailsText = bankName && accountNumber ? ` (${bankName}, Account: ${accountNumber})` : '';
   const html = `
-    <div style="font-family: sans-serif; color: #333; max-w: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-      <div style="background-color: #008b45; padding: 20px; text-align: center; color: white;">
-        <h2 style="margin: 0;">Payout Transferred to Bank</h2>
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #008b45; padding: 24px 20px; text-align: center; color: white;">
+        <h2 style="margin: 0; font-size: 24px;">Payout Sent to Your Bank</h2>
       </div>
-      <div style="padding: 30px;">
+      <div style="padding: 24px;">
         <p>Hello ${userName},</p>
-        <p>Your investment return of <strong>₦${amount.toLocaleString()}</strong> for <strong>${title}</strong> has been transferred directly to your bank account${bankName && accountNumber ? ` (${bankName} - ${accountNumber})` : ''}.</p>
-        <p>Depending on your bank's network processing, your credit alert will reflect shortly.</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="https://getlands.ng/dashboard/holdings" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold;">View Holdings</a>
+        <p>Your return of <strong>₦${amount.toLocaleString()}</strong> for <strong>${title}</strong> has been transferred directly to your bank account${bankDetailsText}.</p>
+        <p>Depending on your bank's network, your credit alert will reflect shortly.</p>
+
+        <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <h3 style="color: #182a20; font-size: 16px; margin: 0 0 10px 0; font-weight: bold;">Ready for your next cycle?</h3>
+          <p style="color: #4a554f; font-size: 14px; line-height: 1.5; margin: 0 0 14px 0;">
+            Want to keep your money working for you? Here is what is open right now:
+          </p>
+          <ul style="color: #333; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0; padding-left: 20px;">
+            <li><strong>Food Commodities:</strong> Start a new Garri cycle from ₦50,000 or Pepper, Onions, and Tomatoes from ₦100,000 (5% monthly, 12% every 2 months, or 20% every 3 months).</li>
+            <li><strong>Abeokuta Land Banking:</strong> Earn <strong>20% in 6 months</strong> or <strong>40% in 12 months</strong> in Ilewo Orile, Abeokuta (10 mins from Alamala Barracks) with a Deed of Assignment, receipt, and post-dated cheques.</li>
+          </ul>
+          <div style="text-align: center; margin-top: 16px;">
+            <a href="https://getlands.ng/dashboard/marketplace" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block;">
+              Browse Open Opportunities
+            </a>
+          </div>
         </div>
-        <p style="font-size: 12px; color: #666; margin-top: 40px;">Thank you for investing with Getlands.</p>
+
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="https://getlands.ng/dashboard/holdings" style="color: #008b45; font-size: 13px; font-weight: bold; text-decoration: underline;">View Your Portfolio</a>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">Thank you for growing your wealth with Getlands.</p>
       </div>
     </div>
   `;
-  await sendResendEmail(to, "Your Getlands Investment Payout has been Sent", html);
+  await sendResendEmail(to, "Your Getlands Payout Has Been Sent to Your Bank", html);
+}
+
+export async function sendCommissionEarnedEmail(
+  to: string,
+  agentName: string,
+  amount: number,
+  tierLevel: number,
+  clientName: string,
+  opportunityTitle?: string
+) {
+  const dealText = opportunityTitle ? ` in <strong>${opportunityTitle}</strong>` : '';
+  const tierLabel = tierLevel === 2 ? 'Tier 2 Sub-Agent Referral Commission' : 'Direct Sales Commission';
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #182a20; padding: 24px 20px; text-align: center; color: white; border-bottom: 3px solid #008b45;">
+        <h2 style="margin: 0; font-size: 22px;">New Sales Commission Earned!</h2>
+      </div>
+      <div style="padding: 24px;">
+        <p>Hello ${agentName},</p>
+        <p>Well done! You just earned a <strong>₦${amount.toLocaleString()}</strong> ${tierLabel} from <strong>${clientName}</strong>'s investment${dealText}.</p>
+        <p>Your commission is currently recorded in your Commission Ledger and will be paid out to you once verified.</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="https://getlands.ng/agent/earnings" style="background-color: #008b45; color: white; padding: 12px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block;">
+            View Commission Ledger
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">Keep sharing your referral link on your WhatsApp status to close more deals this week.</p>
+      </div>
+    </div>
+  `;
+  await sendResendEmail(to, `You earned a ₦${amount.toLocaleString()} commission on Getlands`, html);
+}
+
+export async function sendCommissionPaidEmail(
+  to: string,
+  agentName: string,
+  amount: number,
+  method: 'wallet' | 'bank',
+  details?: {
+    clientName?: string;
+    opportunityTitle?: string;
+    holdingRef?: string;
+    bankName?: string;
+    accountNumber?: string;
+  }
+) {
+  const clientInfo = details?.clientName
+    ? ` for referring <strong>${details.clientName}</strong>${details.opportunityTitle ? ` (${details.opportunityTitle})` : ''}`
+    : details?.opportunityTitle
+      ? ` for <strong>${details.opportunityTitle}</strong>`
+      : '';
+
+  const bankInfo = details?.bankName && details?.accountNumber
+    ? ` (${details.bankName}, Account: ${details.accountNumber})`
+    : '';
+
+  const destinationParagraph = method === 'bank'
+    ? `<p>Your sales commission of <strong>₦${amount.toLocaleString()}</strong>${clientInfo} has been transferred directly to your bank account${bankInfo}.</p>
+       <p>Depending on your bank's network, your credit alert will reflect shortly.</p>`
+    : `<p>Your sales commission of <strong>₦${amount.toLocaleString()}</strong>${clientInfo} has been approved and credited to your Getlands Wallet.</p>
+       <p>You can withdraw this money to your bank account anytime or use it to start your own commodity or land banking cycle.</p>`;
+
+  const subject = method === 'bank'
+    ? `Your ₦${amount.toLocaleString()} Sales Commission Has Been Sent to Your Bank`
+    : `Your ₦${amount.toLocaleString()} Sales Commission Has Been Paid`;
+
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #008b45; padding: 24px 20px; text-align: center; color: white;">
+        <h2 style="margin: 0; font-size: 24px;">Sales Commission Paid!</h2>
+      </div>
+      <div style="padding: 24px;">
+        <p>Hello ${agentName},</p>
+        ${destinationParagraph}
+        <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 12px; padding: 18px 20px; margin: 24px 0;">
+          <div style="font-size: 13px; color: #68736d; margin-bottom: 6px;">Commission Summary</div>
+          <div style="font-size: 20px; font-weight: bold; color: #008b45; margin-bottom: 6px;">₦${amount.toLocaleString()}</div>
+          <div style="font-size: 13px; color: #333;">
+            Payment Method: <strong>${method === 'bank' ? 'Direct Bank Transfer' : 'Getlands Wallet Credit'}</strong>
+            ${details?.holdingRef ? `<br/>Deal Reference: <strong>${details.holdingRef}</strong>` : ''}
+          </div>
+        </div>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="https://getlands.ng/agent/earnings" style="background-color: #008b45; color: white; padding: 12px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block;">
+            View Earnings & Ledger
+          </a>
+        </div>
+        <p style="font-size: 13px; color: #4a554f; line-height: 1.5;">
+          Want to earn more commissions this month? Copy our ready-to-use WhatsApp status scripts from your Agent Portal and share them with your contacts today.
+        </p>
+        <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">Thank you for partnering with Getlands.</p>
+      </div>
+    </div>
+  `;
+
+  await sendResendEmail(to, subject, html);
 }
 
 export async function sendWalletReconciliationEmail(to: string, userName: string, amount: number, reason: string) {

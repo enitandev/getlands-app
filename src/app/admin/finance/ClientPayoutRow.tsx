@@ -1,10 +1,14 @@
 "use client";
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { executePayoutAction, executeDirectBankPayoutAction } from '@/app/actions/accounting';
 import { toast } from '@/components/ui/Toast';
 
 export default function ClientPayoutRow({ payout, formatCurrency }: { payout: any, formatCurrency: (v: number) => string }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [localStatus, setLocalStatus] = useState<string>(payout.status || 'PENDING');
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [bankRef, setBankRef] = useState('');
   const [copied, setCopied] = useState(false);
@@ -15,7 +19,7 @@ export default function ClientPayoutRow({ payout, formatCurrency }: { payout: an
   const accountName = activeBank?.accountName || payout.user?.accountName || `${payout.user?.firstName || ''} ${payout.user?.lastName || ''}`.trim();
 
   const handleCreditWallet = async () => {
-    if (!confirm(`Credit ${formatCurrency(payout.amount)} directly to ${payout.user?.firstName || 'this user'}'s Getlands digital wallet?\n\nNote: The customer will receive a wallet credit notification and must submit a withdrawal request to transfer it to their bank.`)) return;
+    if (!confirm(`Credit ${formatCurrency(payout.amount)} directly to ${payout.user?.firstName || 'this user'}'s Getlands digital wallet?\n\nNote: The customer will receive a wallet credit notification and email.`)) return;
 
     setLoading(true);
     const res = await executePayoutAction(payout.id);
@@ -24,7 +28,9 @@ export default function ClientPayoutRow({ payout, formatCurrency }: { payout: an
     if (res?.error) {
       toast(res.error, 'error');
     } else {
-      toast('Payout credited to customer wallet successfully!', 'success');
+      setLocalStatus('PAID');
+      toast('Payout credited to customer wallet and notification sent!', 'success');
+      router.refresh();
     }
   };
 
@@ -37,8 +43,10 @@ export default function ClientPayoutRow({ payout, formatCurrency }: { payout: an
     if (res?.error) {
       toast(res.error, 'error');
     } else {
-      toast('Payout marked as sent directly to bank!', 'success');
+      setLocalStatus('PAID');
+      toast('Payout marked as sent directly to bank and customer notified!', 'success');
       setIsBankModalOpen(false);
+      router.refresh();
     }
   };
 
@@ -50,7 +58,7 @@ export default function ClientPayoutRow({ payout, formatCurrency }: { payout: an
     toast('Account number copied to clipboard', 'success');
   };
 
-  const isOverdue = new Date(payout.dueDate) < new Date();
+  const isOverdue = localStatus === 'PENDING' && new Date(payout.dueDate) < new Date();
 
   return (
     <>
@@ -62,44 +70,65 @@ export default function ClientPayoutRow({ payout, formatCurrency }: { payout: an
             </span>
             {isOverdue && <span className="bg-red-100 text-red-600 text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase">Overdue</span>}
           </div>
-        </td>
-        <td className="p-[12px]">
-          <div className="font-bold text-ink">{payout.user?.firstName || 'User'} {payout.user?.lastName || ''}</div>
-          <div className="text-[11px] text-[#68736d]">{payout.user?.email || 'N/A'}</div>
-          {bankName && accountNumber && (
-            <div className="text-[11px] text-[#7a847f] font-mono mt-[2px]">
-              {bankName} • {accountNumber}
+          {localStatus === 'PAID' && payout.paidAt && (
+            <div className="text-[10px] text-[#008b45] font-medium mt-[2px]">
+              Paid {new Date(payout.paidAt).toLocaleDateString()}
             </div>
           )}
         </td>
         <td className="p-[12px]">
-          <div className="text-[#4a554f]">{payout.holding?.opportunity?.title || 'General Investment'}</div>
+          {payout.user?.id ? (
+            <Link href={`/admin/customers/${payout.user.id}`} className="font-bold text-ink hover:text-[#008b45] hover:underline block">
+              {payout.user?.firstName || 'User'} {payout.user?.lastName || ''}
+            </Link>
+          ) : (
+            <div className="font-bold text-ink">{payout.user?.firstName || 'User'} {payout.user?.lastName || ''}</div>
+          )}
+          <div className="text-[11px] text-[#68736d]">{payout.user?.email || 'N/A'}</div>
+          {bankName && accountNumber ? (
+            <div className="text-[11px] text-[#008b45] font-mono font-bold mt-[2px]">
+              {bankName} • {accountNumber}
+            </div>
+          ) : (
+            <div className="text-[10px] text-amber-600 font-bold mt-[2px]">
+              No bank on file
+            </div>
+          )}
+        </td>
+        <td className="p-[12px]">
+          <div className="text-[#4a554f] font-medium">{payout.holding?.opportunity?.title || 'General Investment'}</div>
           <div className="text-[11px] text-[#68736d] font-mono">{payout.type}</div>
         </td>
-        <td className="p-[12px] font-bold text-[#008b45] text-[15px]">
+        <td className="p-[12px] font-bold text-[#008b45] text-[15px] font-manrope">
           {formatCurrency(payout.amount)}
         </td>
         <td className="p-[12px] text-right">
-          <div className="flex items-center justify-end gap-[8px]">
-            <button 
-              type="button"
-              onClick={() => setIsBankModalOpen(true)}
-              disabled={loading}
-              className="px-[12px] py-[6px] bg-[#008b45] text-white text-[11px] font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors whitespace-nowrap shadow-sm"
-              title="Record that you sent payment directly from your bank account"
-            >
-              Pay Direct to Bank
-            </button>
-            <button 
-              type="button"
-              onClick={handleCreditWallet} 
-              disabled={loading}
-              className="px-[10px] py-[6px] bg-white border border-black/10 hover:border-[#008b45] text-ink hover:text-[#008b45] text-[11px] font-bold rounded-full disabled:opacity-50 transition-colors whitespace-nowrap"
-              title="Deposit funds into customer's Getlands digital wallet"
-            >
-              Credit to Wallet
-            </button>
-          </div>
+          {localStatus === 'PENDING' ? (
+            <div className="flex items-center justify-end gap-[8px]">
+              <button 
+                type="button"
+                onClick={() => setIsBankModalOpen(true)}
+                disabled={loading}
+                className="px-[12px] py-[6px] bg-[#008b45] text-white text-[11px] font-bold rounded-full hover:bg-[#007339] disabled:opacity-50 transition-colors whitespace-nowrap shadow-sm"
+                title="Record that you sent payment directly from your bank account"
+              >
+                Pay Direct to Bank
+              </button>
+              <button 
+                type="button"
+                onClick={handleCreditWallet} 
+                disabled={loading}
+                className="px-[10px] py-[6px] bg-white border border-black/10 hover:border-[#008b45] text-ink hover:text-[#008b45] text-[11px] font-bold rounded-full disabled:opacity-50 transition-colors whitespace-nowrap"
+                title="Deposit funds into customer's Getlands digital wallet"
+              >
+                Credit to Wallet
+              </button>
+            </div>
+          ) : (
+            <span className="inline-flex px-[10px] py-[4px] rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#eef3ef] text-[#008b45]">
+              {localStatus}
+            </span>
+          )}
         </td>
       </tr>
 
