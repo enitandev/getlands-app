@@ -144,10 +144,13 @@ const dateAcquired = new Date(holding.dateAcquired);
           <div className="bg-[#102218] rounded-[24px] p-[30px] text-white shadow-xl relative overflow-hidden">
             <div className="absolute -top-[50px] -right-[50px] w-[150px] h-[150px] bg-[#008b45] rounded-full blur-[60px] opacity-30 pointer-events-none"></div>
             
-            <h3 className="font-manrope text-[18px] font-bold mb-[10px]">Maturity & Exit</h3>
-            <p className="text-[13px] text-[#8ea096] mb-[20px] leading-[1.6]">
-              This {holding.opportunity.category.replace('_', ' ')} holding has a lock-in period. You can request a payout or rollover upon maturity.
+            <h3 className="font-manrope text-[18px] font-bold mb-[10px]">Maturity &amp; Payouts</h3>
+            <p className="text-[13px] text-[#8ea096] mb-[16px] leading-[1.6]">
+              When returns or matured capital from this {holding.opportunity.category.replace('_', ' ')} holding are credited to your Getlands Wallet, submit a withdrawal request from your Wallet to receive the money in your bank account.
             </p>
+            <div className="bg-white/10 border border-white/10 rounded-[12px] p-[12px_14px] mb-[16px] text-[12px] text-[#a9e7bd] leading-relaxed">
+              <strong>24 to 48 Hours Payout Policy:</strong> Bank payouts are made within 24 to 48 hours after you submit a withdrawal request in your Wallet.
+            </div>
             
             <div className="bg-white/10 rounded-[12px] p-[15px] mb-[20px]">
               <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#8ea096] mb-[4px]">Maturity Date</div>
@@ -156,9 +159,12 @@ const dateAcquired = new Date(holding.dateAcquired);
               </strong>
             </div>
 
-            <button className="w-full py-[14px] bg-white text-ink font-bold text-[14px] rounded-full hover:bg-[#eef3ef] transition-colors">
-              Request Exit / Payout
-            </button>
+            <Link
+              href="/dashboard/wallet?withdraw=true"
+              className="block text-center w-full py-[14px] bg-white text-ink font-bold text-[14px] rounded-full hover:bg-[#eef3ef] transition-colors"
+            >
+              Withdraw from Wallet to Bank
+            </Link>
           </div>
 
           {/* Support Widget */}

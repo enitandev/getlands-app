@@ -153,11 +153,11 @@ export async function triggerReferralBonus(userId: string, investmentAmount: num
           prisma.notification.create({
             data: {
               userId: referrer.id,
-              title: "Referral Bonus Received!",
-              message: `You earned ₦${bonusAmount.toLocaleString()} (${bonusRate}%) because ${clientName} made their first investment.`,
+              title: "Referral Bonus Credited to Wallet!",
+              message: `You earned ₦${bonusAmount.toLocaleString()} (${bonusRate}%) because ${clientName} made their first investment. To receive these funds in your bank account, submit a withdrawal request from your Wallet (payouts take 24 to 48 hours).`,
               type: "TRANSACTION",
-              linkUrl: "/dashboard/wallet",
-              actionText: "View Wallet"
+              linkUrl: "/dashboard/wallet?withdraw=true",
+              actionText: "Withdraw to Bank"
             }
           })
         );

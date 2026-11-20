@@ -1,21 +1,46 @@
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/mockData';
 import { fundWalletAction } from '@/app/actions/checkout';
 import { requestWithdrawalAction } from '@/app/actions/wallet';
+import { toast } from '@/components/ui/Toast';
 import Link from 'next/link';
 
-export default function ClientWallet({ balance, transactions, bankAccounts, settlementFeePercent = 1.5 }: { balance: number, transactions: any[], bankAccounts: any[], settlementFeePercent?: number }) {
+export default function ClientWallet({
+  balance,
+  transactions,
+  bankAccounts,
+  settlementFeePercent = 1.5,
+  autoOpenWithdraw = false
+}: {
+  balance: number;
+  transactions: any[];
+  bankAccounts: any[];
+  settlementFeePercent?: number;
+  autoOpenWithdraw?: boolean;
+}) {
+  const router = useRouter();
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
-  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(autoOpenWithdraw);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawError, setWithdrawError] = useState('');
+  const [justSubmittedWithdrawal, setJustSubmittedWithdrawal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingWithdrawalRef = useRef(false);
   const [isSubmittingFund, setIsSubmittingFund] = useState(false);
   const isSubmittingFundRef = useRef(false);
-  
+
+  useEffect(() => {
+    if (autoOpenWithdraw) {
+      setIsWithdrawModalOpen(true);
+    }
+  }, [autoOpenWithdraw]);
+
   const activeBank = bankAccounts[0];
+  const pendingWithdrawals = transactions.filter(
+    t => t.type?.toLowerCase() === 'withdrawal' && t.status === 'pending'
+  );
 
   const handleFundSubmit = async (formData: FormData) => {
     if (isSubmittingFundRef.current || isSubmittingFund) return;
@@ -29,7 +54,7 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
         setIsFundModalOpen(false);
         return;
       }
-      alert(err?.message || "Failed to submit deposit receipt");
+      toast(err?.message || "Failed to submit deposit receipt", 'error');
     } finally {
       setIsSubmittingFund(false);
       isSubmittingFundRef.current = false;
@@ -50,7 +75,9 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
       } else {
         setIsWithdrawModalOpen(false);
         setWithdrawAmount('');
-        alert('Withdrawal request submitted successfully! It will be processed shortly.');
+        setJustSubmittedWithdrawal(true);
+        toast('Withdrawal request submitted! Payouts are processed to your bank account within 24 to 48 hours.', 'success');
+        router.refresh();
       }
     } finally {
       setIsSubmitting(false);
@@ -59,36 +86,165 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
   };
 
   return (
-    <div className="space-y-[40px] max-w-[1000px] mx-auto">
+    <div className="space-y-[30px] max-w-[1000px] mx-auto pb-[40px]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[20px]">
         <div>
           <div className="text-[12px] tracking-[0.14em] font-extrabold text-[#64706a] uppercase mb-[10px]">MY GETLANDS</div>
           <h1 className="font-manrope text-[40px] lg:text-[48px] tracking-[-0.05em] leading-none mb-[10px]">
             Wallet
           </h1>
-          <p className="text-[14px] text-[#68736d]">Manage your liquid funds for instant acquisitions.</p>
+          <p className="text-[14px] text-[#68736d]">Manage your liquid funds for instant acquisitions or bank withdrawals.</p>
         </div>
       </div>
 
+      {/* Important Payout & Withdrawal Instructions Banner */}
+      <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[20px] p-[20px] lg:p-[24px] flex flex-col md:flex-row md:items-center justify-between gap-[16px] shadow-sm">
+        <div className="flex items-start gap-[14px]">
+          <div className="w-[40px] h-[40px] rounded-full bg-amber-500/15 text-amber-800 flex items-center justify-center shrink-0 mt-[2px]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div>
+            <strong className="block text-[15px] text-[#78350f] font-manrope mb-[4px]">
+              How to Receive Money in Your Bank Account (24 to 48 Hours Payout Policy)
+            </strong>
+            <p className="text-[13px] text-[#92400e] leading-relaxed">
+              When your investment returns (ROI), matured capital, or referral commissions are paid to your Getlands Wallet, they stay in your wallet until you initiate a withdrawal (or reinvest them). <strong>To receive money in your personal bank account, you must click Withdraw and submit a withdrawal request.</strong> Bank payouts are made within <strong>24 to 48 hours</strong> after your withdrawal request is submitted.
+            </p>
+          </div>
+        </div>
+        {balance > 0 && (
+          <button
+            type="button"
+            onClick={() => setIsWithdrawModalOpen(true)}
+            className="px-[20px] py-[11px] bg-[#182a20] hover:bg-[#008b45] text-white text-[13px] font-bold rounded-full transition-colors whitespace-nowrap shrink-0 self-start md:self-center shadow-sm"
+          >
+            Withdraw to Bank &rarr;
+          </button>
+        )}
+      </div>
+
+      {justSubmittedWithdrawal && (
+        <div className="bg-[#eef3ef] border-2 border-[#008b45] rounded-[20px] p-[20px] flex items-start justify-between gap-[15px] animate-fade-in">
+          <div className="flex items-start gap-[12px]">
+            <div className="w-[36px] h-[36px] rounded-full bg-[#008b45] text-white flex items-center justify-center shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <strong className="block text-[15px] text-[#182a20] font-manrope">
+                Withdrawal Request Received
+              </strong>
+              <p className="text-[13px] text-[#4a554f] mt-[2px]">
+                Your withdrawal request is now queued with our finance team. Your funds will be transferred directly to your verified bank account within <strong>24 to 48 hours</strong>.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setJustSubmittedWithdrawal(false)}
+            className="text-[12px] font-bold text-[#68736d] hover:text-ink"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Hero Balance Card */}
       <div className="bg-[#102218] rounded-[24px] p-[30px] lg:p-[40px] text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-[30px]">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#008b45] rounded-full blur-[100px] opacity-20 pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
         
         <div className="relative z-10">
-          <div className="text-[13px] text-[#8ea096] mb-[5px] font-bold uppercase tracking-[0.05em]">Available Balance</div>
+          <div className="text-[13px] text-[#8ea096] mb-[5px] font-bold uppercase tracking-[0.05em]">Available Wallet Balance</div>
           <div className="font-manrope text-[48px] lg:text-[64px] tracking-[-0.03em] font-bold text-[#a9e7bd] leading-none">
             {formatCurrency(balance)}
           </div>
+          <p className="text-[12px] text-[#a6baa9] mt-[10px]">
+            {balance > 0
+              ? 'Click "Withdraw to Bank" to request a payout to your bank account (processed in 24 to 48 hours).'
+              : 'Returns credited to your wallet can be withdrawn to your bank account or reinvested.'}
+          </p>
         </div>
 
         <div className="relative z-10 flex flex-col sm:flex-row gap-[15px] w-full md:w-auto">
-          <button onClick={() => setIsFundModalOpen(true)} className="px-[30px] py-[16px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.3)] whitespace-nowrap">
-            Fund Wallet
+          <button
+            type="button"
+            onClick={() => setIsWithdrawModalOpen(true)}
+            className="px-[30px] py-[16px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.3)] whitespace-nowrap"
+          >
+            Withdraw to Bank
           </button>
-          <button onClick={() => setIsWithdrawModalOpen(true)} className="px-[30px] py-[16px] bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors whitespace-nowrap">
-            Withdraw
+          <button
+            type="button"
+            onClick={() => setIsFundModalOpen(true)}
+            className="px-[30px] py-[16px] bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors whitespace-nowrap"
+          >
+            Fund Wallet
           </button>
         </div>
       </div>
+
+      {/* Active Pending Withdrawal Requests Tracker */}
+      {pendingWithdrawals.length > 0 && (
+        <div className="bg-white rounded-[24px] border-2 border-[#008b45]/25 shadow-sm overflow-hidden">
+          <div className="p-[20px] lg:p-[24px_30px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row sm:items-center justify-between gap-[10px]">
+            <div>
+              <div className="flex items-center gap-[8px]">
+                <span className="w-[8px] h-[8px] rounded-full bg-[#008b45] animate-pulse"></span>
+                <h2 className="font-manrope text-[17px] font-bold text-ink">
+                  Active Withdrawal Request{pendingWithdrawals.length === 1 ? '' : 's'} ({pendingWithdrawals.length})
+                </h2>
+              </div>
+              <p className="text-[13px] text-[#68736d] mt-[2px]">
+                Your withdrawal request is being processed. Payouts are wired to your bank account within <strong>24 to 48 hours</strong> of your request.
+              </p>
+            </div>
+            <span className="px-[12px] py-[5px] rounded-full bg-[#eef3ef] text-[#008b45] text-[11px] font-bold uppercase tracking-wider w-fit">
+              24 to 48h Processing Window
+            </span>
+          </div>
+          <div className="divide-y divide-black/5">
+            {pendingWithdrawals.map(w => {
+              const fee = w.fee ?? 0;
+              const net = w.netAmount ?? (w.amount - fee);
+              return (
+                <div key={w.id} className="p-[20px] lg:p-[20px_30px] flex flex-col sm:flex-row sm:items-center justify-between gap-[15px]">
+                  <div>
+                    <div className="flex items-center gap-[8px] flex-wrap">
+                      <strong className="text-[15px] text-ink font-manrope">
+                        Bank Payout Request: {formatCurrency(w.amount)}
+                      </strong>
+                      <span className="px-[8px] py-[2px] rounded-full bg-[#fff8e1] text-[#d48806] text-[10px] font-bold uppercase tracking-wider">
+                        Queued for Bank Wire
+                      </span>
+                    </div>
+                    <div className="text-[12px] text-[#68736d] mt-[4px]">
+                      Requested on {new Date(w.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {activeBank ? ` • Destination: ${activeBank.bankName} (${activeBank.accountNumber})` : ''}
+                    </div>
+                    <span className="text-[11px] text-[#7a847f] font-mono block mt-[2px]">
+                      Ref: {w.reference || w.id.slice(0, 8)}
+                    </span>
+                  </div>
+                  <div className="sm:text-right">
+                    <span className="text-[11px] text-[#7a847f] uppercase font-bold block">Net Bank Payout</span>
+                    <strong className="text-[18px] font-manrope font-bold text-[#008b45]">
+                      {formatCurrency(net)}
+                    </strong>
+                    {fee > 0 && (
+                      <span className="block text-[11px] text-[#68736d]">
+                        (Fee: {formatCurrency(fee)})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden">
         <div className="p-[20px] lg:p-[30px] border-b border-black/5 bg-[#fcfdfc]">
@@ -159,7 +315,7 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
                     </div>
                     <div>
                       <div className="flex items-center gap-[8px] flex-wrap">
-                        <strong className="text-[14px] text-ink capitalize">{label} {tx.status === 'pending' ? '(Pending)' : ''}</strong>
+                        <strong className="text-[14px] text-ink capitalize">{label} {tx.status === 'pending' ? '(Pending • 24-48h)' : ''}</strong>
                         {badge && (
                           <span className={`text-[10px] font-bold px-[8px] py-[2px] rounded-full uppercase tracking-wider ${badgeClass}`}>
                             {badge}
@@ -216,7 +372,16 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
                   </div>
                   <div className="flex justify-between items-center bg-white p-[10px] rounded-[8px] border border-black/5">
                     <strong className="text-[20px] font-mono text-ink tracking-widest">9133485636</strong>
-                    <button type="button" className="text-[12px] font-bold text-[#008b45] hover:underline" onClick={() => alert('Account number copied!')}>Copy</button>
+                    <button
+                      type="button"
+                      className="text-[12px] font-bold text-[#008b45] hover:underline"
+                      onClick={() => {
+                        navigator.clipboard.writeText('9133485636');
+                        toast('Account number copied!', 'success');
+                      }}
+                    >
+                      Copy
+                    </button>
                   </div>
                 </div>
               </div>
@@ -262,9 +427,12 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
       {/* Withdraw Modal */}
       {isWithdrawModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in">
-          <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden">
-            <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
-              <h2 className="font-manrope text-[18px] lg:text-[20px] font-bold text-ink">Withdraw Funds</h2>
+          <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto">
+            <div className="p-[20px] lg:p-[24px_30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
+              <div>
+                <h2 className="font-manrope text-[18px] lg:text-[20px] font-bold text-ink">Withdraw Funds to Bank</h2>
+                <p className="text-[12px] text-[#68736d]">Payouts are processed within 24 to 48 hours of your request.</p>
+              </div>
               <button onClick={() => { setIsWithdrawModalOpen(false); setWithdrawAmount(''); }} className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
@@ -276,6 +444,10 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
                   {withdrawError}
                 </div>
               )}
+
+              <div className="bg-[#eef3ef] border border-[#008b45]/20 rounded-[14px] p-[14px_16px] text-[12px] text-[#182a20] leading-relaxed">
+                <strong>24 to 48 Hours Payout Schedule:</strong> Once you submit this withdrawal request, our finance team will transfer your funds directly to your verified bank account within <strong>24 to 48 hours</strong>.
+              </div>
 
               <div className="bg-[#f7f9f7] rounded-[16px] p-[20px] border border-black/5">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#7a847f] mb-[15px]">Withdraw To</h3>
@@ -296,7 +468,7 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
                   </div>
                 ) : (
                   <div className="text-center py-4 space-y-3">
-                    <p className="text-[13px] text-[#68736d]">You have no verified bank accounts.</p>
+                    <p className="text-[13px] text-[#68736d]">You have no verified bank accounts on file.</p>
                     <Link href="/dashboard/settings" className="inline-block px-4 py-2 bg-white border border-black/10 rounded-full text-[13px] font-bold text-ink hover:bg-[#f7f9f7]">
                       Add Bank Account in Settings
                     </Link>
@@ -305,7 +477,18 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
               </div>
 
               <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Amount to Withdraw</label>
+                <div className="flex items-center justify-between mb-[8px]">
+                  <label className="block text-[13px] font-bold text-ink">Amount to Withdraw</label>
+                  {balance > 0 && activeBank && (
+                    <button
+                      type="button"
+                      onClick={() => setWithdrawAmount(String(balance))}
+                      className="text-[11px] font-bold text-[#008b45] hover:underline"
+                    >
+                      Withdraw Full Balance ({formatCurrency(balance)})
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <span className="absolute left-[15px] top-1/2 -translate-y-1/2 font-manrope font-bold text-[#68736d]">₦</span>
                   <input 
@@ -347,7 +530,7 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
                     </strong>
                   </div>
                   <p className="text-[11px] text-[#7a847f] pt-1 leading-relaxed">
-                    Your Getlands wallet will be debited {formatCurrency(parseFloat(withdrawAmount) || 0)}. The net amount of {formatCurrency(Math.max(0, (parseFloat(withdrawAmount) || 0) - (Math.round((((parseFloat(withdrawAmount) || 0) * settlementFeePercent) / 100) * 100) / 100)))} will be transferred directly to your bank account.
+                    Your Getlands wallet will be debited {formatCurrency(parseFloat(withdrawAmount) || 0)}. The net amount of {formatCurrency(Math.max(0, (parseFloat(withdrawAmount) || 0) - (Math.round((((parseFloat(withdrawAmount) || 0) * settlementFeePercent) / 100) * 100) / 100)))} will be transferred directly to your bank account within 24 to 48 hours.
                   </p>
                 </div>
               )}
@@ -355,16 +538,16 @@ export default function ClientWallet({ balance, transactions, bankAccounts, sett
               <div className="pt-[10px]">
                 <button 
                   type="submit" 
-                  disabled={isSubmitting || !activeBank}
+                  disabled={isSubmitting || !activeBank || balance <= 0}
                   className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
                       <div className="w-[18px] h-[18px] border-[2px] border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Processing...
+                      Submitting Request...
                     </>
                   ) : (
-                    "Request Withdrawal"
+                    "Submit Withdrawal Request"
                   )}
                 </button>
               </div>

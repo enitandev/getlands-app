@@ -33,10 +33,12 @@ export default function ClientAgentOverview({ user, networkCount, pendingCommiss
             </div>
             
             <div className="flex flex-col gap-[8px]">
-              <Link href="/dashboard/wallet" className="h-[45px] px-[24px] bg-[#008b45] hover:bg-[#007339] text-white font-bold text-[14px] rounded-full transition-colors shadow-lg flex items-center justify-center w-fit">
+              <Link href="/dashboard/wallet?withdraw=true" className="h-[45px] px-[24px] bg-[#008b45] hover:bg-[#007339] text-white font-bold text-[14px] rounded-full transition-colors shadow-lg flex items-center justify-center w-fit">
                 Withdraw to Bank
               </Link>
-              <p className="text-[12px] text-[#a6baa9]">Commissions are paid directly to your main wallet.</p>
+              <p className="text-[12px] text-[#a6baa9] leading-relaxed max-w-[460px]">
+                To receive wallet-credited commissions in your bank account, submit a withdrawal request from your Wallet. Bank payouts are made within <strong>24 to 48 hours</strong> after your withdrawal request.
+              </p>
             </div>
           </div>
         </div>

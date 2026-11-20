@@ -25,9 +25,12 @@ export default function ClientAgentEarnings({ commissions, pendingTotal, paidTot
           <div className="text-[32px] font-manrope font-bold text-white leading-none mb-[15px] relative z-10">
             {formatCurrency(paidTotal)}
           </div>
-          <Link href="/dashboard/wallet" className="h-[40px] px-[20px] bg-[#008b45] text-white text-[13px] font-bold rounded-full w-fit flex items-center justify-center hover:bg-[#007339] transition-colors relative z-10 shadow-lg">
-            Open Wallet &amp; Bank Details
+          <Link href="/dashboard/wallet?withdraw=true" className="h-[40px] px-[20px] bg-[#008b45] text-white text-[13px] font-bold rounded-full w-fit flex items-center justify-center hover:bg-[#007339] transition-colors relative z-10 shadow-lg">
+            Withdraw from Wallet to Bank
           </Link>
+          <p className="text-[11px] text-[#a6baa9] mt-[10px] relative z-10 leading-relaxed">
+            Submit a withdrawal request in your Wallet to get money in your bank account. Payouts are processed within 24 to 48 hours after your request.
+          </p>
         </div>
         
         <div className="bg-amber-50 border border-amber-100 rounded-[24px] p-[25px] flex flex-col justify-center">

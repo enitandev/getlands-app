@@ -17,6 +17,23 @@ export default function ClientHoldings({ holdings }: { holdings: any[] }) {
         <Button href="/explore" variant="primary">Acquire more</Button>
       </section>
 
+      <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[18px] p-[18px_22px] flex flex-col sm:flex-row sm:items-center justify-between gap-[14px] shadow-sm">
+        <div>
+          <strong className="block text-[14px] text-[#78350f] font-manrope mb-[2px]">
+            How to Receive Your Payouts in Your Bank Account
+          </strong>
+          <p className="text-[13px] text-[#92400e] leading-relaxed">
+            When your investment returns are credited to your Getlands Wallet, please go to your <strong>Wallet</strong> and submit a withdrawal request to get the money in your bank account. Payouts are processed within <strong>24 to 48 hours</strong> after a withdrawal request is made.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/wallet?withdraw=true"
+          className="px-[18px] py-[10px] bg-[#182a20] hover:bg-[#008b45] text-white text-[12px] font-bold rounded-full transition-colors whitespace-nowrap shrink-0 self-start sm:self-center"
+        >
+          Open Wallet to Withdraw &rarr;
+        </Link>
+      </div>
+
       <div className="bg-white border border-black/5 rounded-[24px] overflow-hidden">
         {/* Desktop Table Header */}
         <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_100px] gap-[20px] p-[20px_30px] bg-[#fcfdfc] border-b border-black/5 text-[12px] font-bold text-[#7a847f] uppercase tracking-[0.05em]">

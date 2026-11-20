@@ -29,7 +29,7 @@ export async function getMasterLedger() {
     allPendingPayouts,
     recentPaidPayouts,
     commissions,
-    pendingWithdrawals,
+    allWithdrawals,
     usersWithBalance
   ] = await Promise.all([
     prisma.holding.aggregate({
@@ -134,13 +134,13 @@ export async function getMasterLedger() {
       orderBy: { createdAt: 'desc' }
     }),
     prisma.transaction.findMany({
-      where: { type: 'withdrawal', status: 'pending' },
+      where: { type: 'withdrawal' },
       include: {
         user: {
           include: { bankAccounts: { where: { status: 'active' } } }
         }
       },
-      orderBy: { date: 'asc' }
+      orderBy: { date: 'desc' }
     }),
     prisma.user.findMany({
       where: { walletBalance: { gt: 0 } },
@@ -170,6 +170,19 @@ export async function getMasterLedger() {
   const totalUpcomingPayouts = upcomingPayouts.reduce((sum, p) => sum + p.amount, 0);
   const totalAllPendingPayouts = allPendingPayouts.reduce((sum, p) => sum + p.amount, 0);
 
+  const pendingWithdrawals = allWithdrawals
+    .filter(w => w.status === 'pending')
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const paidWithdrawals = allWithdrawals.filter(w => w.status === 'success');
+  const rejectedWithdrawals = allWithdrawals.filter(w => w.status === 'failed');
+
+  const pendingWithdrawalsGross = pendingWithdrawals.reduce((sum, w) => sum + (w.amount || 0), 0);
+  const pendingWithdrawalsNet = pendingWithdrawals.reduce(
+    (sum, w) => sum + (w.netAmount ?? ((w.amount || 0) - (w.fee || 0))),
+    0
+  );
+  const paidWithdrawalsTotal = paidWithdrawals.reduce((sum, w) => sum + (w.amount || 0), 0);
+
   return {
     aum: activeHoldings._sum.totalAmount || 0,
     walletLiabilities: wallets._sum.walletBalance || 0,
@@ -184,6 +197,12 @@ export async function getMasterLedger() {
     totalAllPendingPayouts,
     commissions,
     pendingWithdrawals,
+    paidWithdrawals,
+    rejectedWithdrawals,
+    allWithdrawals,
+    pendingWithdrawalsGross,
+    pendingWithdrawalsNet,
+    paidWithdrawalsTotal,
     usersWithBalance
   };
 }
@@ -340,10 +359,10 @@ export async function executePayoutAction(payoutId: string) {
         data: {
           userId: payout.userId,
           type: 'TRANSACTION',
-          title: 'Payout Received!',
-          message: `Your wallet has been credited with ₦${payout.amount.toLocaleString()} for your ${payout.holding.opportunity.title} investment.`,
-          linkUrl: '/dashboard/wallet',
-          actionText: 'View Wallet'
+          title: 'Payout Credited to Your Wallet!',
+          message: `Your wallet has been credited with ₦${payout.amount.toLocaleString()} for your ${payout.holding.opportunity.title} investment. To receive these funds in your bank account, go to your Wallet and submit a withdrawal request (processed within 24 to 48 hours).`,
+          linkUrl: '/dashboard/wallet?withdraw=true',
+          actionText: 'Withdraw to Bank'
         }
       });
     });
@@ -498,9 +517,9 @@ export async function executeCommissionWalletPayoutAction(commissionId: string) 
           userId: commission.agentId,
           type: 'TRANSACTION',
           title: 'Commission Paid to Wallet!',
-          message: `Your ₦${commission.amount.toLocaleString()} commission${dealDesc} has been approved and credited to your wallet.`,
-          linkUrl: '/agent/earnings',
-          actionText: 'View Earnings'
+          message: `Your ₦${commission.amount.toLocaleString()} commission${dealDesc} has been approved and credited to your wallet. To receive these funds in your bank account, go to your Wallet and submit a withdrawal request (processed within 24 to 48 hours).`,
+          linkUrl: '/dashboard/wallet?withdraw=true',
+          actionText: 'Withdraw to Bank'
         }
       });
     });

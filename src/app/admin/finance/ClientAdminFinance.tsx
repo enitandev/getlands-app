@@ -10,7 +10,7 @@ import ClientCommissionRow from './ClientCommissionRow';
 import ClientWithdrawalRow from './ClientWithdrawalRow';
 import ClientWalletLiabilityRow from './ClientWalletLiabilityRow';
 
-type FinanceTab = 'pending' | 'commissions' | 'ledger' | 'history';
+type FinanceTab = 'pending' | 'withdrawals' | 'commissions' | 'ledger' | 'history';
 
 export default function ClientAdminFinance({
   transactions = [],
@@ -23,7 +23,7 @@ export default function ClientAdminFinance({
 }) {
   const router = useRouter();
   const resolveTab = (t?: string): FinanceTab => {
-    if (t === 'commissions' || t === 'ledger' || t === 'history' || t === 'pending') return t;
+    if (t === 'withdrawals' || t === 'commissions' || t === 'ledger' || t === 'history' || t === 'pending') return t;
     if (t === 'payouts') return 'ledger';
     return 'pending';
   };
@@ -34,6 +34,7 @@ export default function ClientAdminFinance({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [commissionFilter, setCommissionFilter] = useState<'PENDING' | 'PAID' | 'VOID' | 'ALL'>('PENDING');
+  const [withdrawalFilter, setWithdrawalFilter] = useState<'PENDING' | 'PAID' | 'REJECTED' | 'ALL'>('PENDING');
   const [payoutFilter, setPayoutFilter] = useState<'MONTH' | 'ALL_PENDING' | 'PAID'>('ALL_PENDING');
   const [isReleasingComms, setIsReleasingComms] = useState(false);
 
@@ -47,8 +48,24 @@ export default function ClientAdminFinance({
     }
   }, [initialTab]);
 
-  const pendingTxs = txList.filter(t => t.status === 'pending');
+  // Pending incoming deposit / investment transfers
+  const pendingTxs = txList.filter(t => t.status === 'pending' && t.type !== 'withdrawal');
   const historyTxs = txList.filter(t => t.status !== 'pending');
+
+  // Actual withdrawal requests from customer wallets
+  const allWithdrawals: any[] = ledger?.allWithdrawals || txList.filter(t => t.type === 'withdrawal');
+  const pendingWithdrawals: any[] = ledger?.pendingWithdrawals || allWithdrawals.filter(w => w.status === 'pending');
+  const paidWithdrawals: any[] = ledger?.paidWithdrawals || allWithdrawals.filter(w => w.status === 'success');
+  const rejectedWithdrawals: any[] = ledger?.rejectedWithdrawals || allWithdrawals.filter(w => w.status === 'failed');
+
+  const filteredWithdrawals =
+    withdrawalFilter === 'PENDING'
+      ? pendingWithdrawals
+      : withdrawalFilter === 'PAID'
+        ? paidWithdrawals
+        : withdrawalFilter === 'REJECTED'
+          ? rejectedWithdrawals
+          : allWithdrawals;
 
   const allCommissions: any[] = ledger?.commissions || [];
   const pendingCommissions = allCommissions.filter(c => c.status === 'PENDING');
@@ -197,13 +214,20 @@ export default function ClientAdminFinance({
       <div className="flex justify-between items-end">
         <div>
           <h1 className="font-manrope text-[24px] lg:text-[32px] tracking-[-0.03em] font-bold text-ink leading-none mb-[10px]">Finance & Verifications</h1>
-          <p className="text-[13px] lg:text-[14px] text-[#68736d]">Verify customer bank transfers, pay sales agent commissions, and manage ROI payouts.</p>
+          <p className="text-[13px] lg:text-[14px] text-[#68736d]">Process customer withdrawal requests (24 to 48h SLA), verify bank transfers, pay agent commissions, and manage ROI payouts.</p>
         </div>
       </div>
 
       <div className="flex gap-[20px] lg:gap-[30px] border-b border-black/10 overflow-x-auto scrollbar-hide">
+        <button onClick={() => setActiveTab('withdrawals')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'withdrawals' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
+          Withdrawal Requests
+          <span className={`ml-[8px] px-[6px] py-[2px] text-[10px] rounded-full ${pendingWithdrawals.length > 0 ? 'bg-red-600 text-white' : 'bg-[#eef3ef] text-[#008b45]'}`}>
+            {pendingWithdrawals.length}
+          </span>
+          {activeTab === 'withdrawals' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
+        </button>
         <button onClick={() => setActiveTab('pending')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'pending' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-          Pending Verifications <span className="ml-[8px] px-[6px] py-[2px] bg-[#f5a623] text-white text-[10px] rounded-full">{pendingTxs.length}</span>
+          Deposit &amp; Transfer Verifications <span className="ml-[8px] px-[6px] py-[2px] bg-[#f5a623] text-white text-[10px] rounded-full">{pendingTxs.length}</span>
           {activeTab === 'pending' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#008b45]"></div>}
         </button>
         {ledger && (
@@ -217,7 +241,7 @@ export default function ClientAdminFinance({
         )}
         {ledger && (
           <button onClick={() => setActiveTab('ledger')} className={`whitespace-nowrap pb-[15px] text-[13px] lg:text-[14px] font-bold relative ${activeTab === 'ledger' ? 'text-ink' : 'text-[#68736d] hover:text-ink'}`}>
-            Master Ledger & Payouts
+            Master Ledger &amp; Payouts
             {(ledger.allPendingPayouts?.length || 0) > 0 && (
               <span className="ml-[8px] px-[6px] py-[2px] bg-[#008b45] text-white text-[10px] rounded-full">
                 {ledger.allPendingPayouts.length}
@@ -232,8 +256,193 @@ export default function ClientAdminFinance({
         </button>
       </div>
 
+      {activeTab === 'withdrawals' && (
+        <div className="space-y-[30px]">
+          {/* Summary Cards distinguishing Actual Withdrawal Requests from Unrequested Wallet Balances */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[20px]">
+            <div className="bg-white p-[24px] rounded-[24px] border-2 border-[#008b45]/25 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-[6px]">
+                  <span className="text-[11px] text-[#008b45] font-bold uppercase tracking-[0.05em]">
+                    Actual Withdrawal Requests (Pending)
+                  </span>
+                  <span className="px-[8px] py-[2px] rounded-full bg-[#eef3ef] text-[#008b45] text-[10px] font-bold">
+                    24-48h SLA
+                  </span>
+                </div>
+                <strong className="font-manrope text-[28px] font-extrabold text-ink leading-none block">
+                  {formatCurrency(
+                    ledger?.pendingWithdrawalsNet ??
+                      pendingWithdrawals.reduce((s, w) => s + (w.netAmount ?? ((w.amount || 0) - (w.fee || 0))), 0)
+                  )}
+                </strong>
+                <span className="text-[11px] text-[#68736d] font-bold block mt-[4px]">
+                  Net Bank Wire Required (Gross Requested: {formatCurrency(
+                    ledger?.pendingWithdrawalsGross ??
+                      pendingWithdrawals.reduce((s, w) => s + (w.amount || 0), 0)
+                  )})
+                </span>
+              </div>
+              <p className="text-[12px] text-[#68736d] mt-[12px] pt-[10px] border-t border-black/5">
+                <strong>{pendingWithdrawals.length}</strong> active withdrawal request{pendingWithdrawals.length === 1 ? '' : 's'} initiated by customers from their wallets.
+              </p>
+            </div>
+
+            <div className="bg-white p-[24px] rounded-[24px] border border-black/5 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] block mb-[6px]">
+                  Completed Bank Withdrawals
+                </span>
+                <strong className="font-manrope text-[28px] font-bold text-[#008b45] leading-none block">
+                  {formatCurrency(
+                    ledger?.paidWithdrawalsTotal ??
+                      paidWithdrawals.reduce((s, w) => s + (w.amount || 0), 0)
+                  )}
+                </strong>
+              </div>
+              <p className="text-[12px] text-[#68736d] mt-[12px] pt-[10px] border-t border-black/5">
+                <strong>{paidWithdrawals.length}</strong> withdrawal request{paidWithdrawals.length === 1 ? '' : 's'} wired to customer bank accounts.
+              </p>
+            </div>
+
+            <div className="bg-[#182a20] text-white p-[24px] rounded-[24px] flex flex-col justify-between">
+              <div>
+                <span className="text-[11px] text-[#a6baa9] font-bold uppercase tracking-[0.05em] block mb-[6px]">
+                  Unrequested Wallet Balances (Passive)
+                </span>
+                <strong className="font-manrope text-[28px] font-bold text-[#a9e7bd] leading-none block mb-[8px]">
+                  {formatCurrency(ledger?.walletLiabilities || 0)}
+                </strong>
+                <p className="text-[12px] text-white/80 leading-relaxed">
+                  Funds currently sitting in customer wallets that have <strong>not</strong> been requested for withdrawal yet. Customers see a notice instructing them to request a withdrawal from their wallet to get paid in 24 to 48 hours.
+                </p>
+              </div>
+              {ledger && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('ledger');
+                    setTimeout(() => {
+                      document.getElementById('wallet-liabilities-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  }}
+                  className="mt-[12px] text-[12px] font-bold text-[#a9e7bd] hover:underline text-left"
+                >
+                  View passive wallet balances ({ledger?.usersWithBalance?.length || 0} users) &rarr;
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Main Withdrawal Requests Table */}
+          <div className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[12px]">
+              <div>
+                <h3 className="font-manrope text-[16px] font-bold text-ink">
+                  Customer Wallet Withdrawal Requests
+                </h3>
+                <p className="text-[13px] text-[#68736d]">
+                  Customers who have actively clicked Withdraw in their wallet to receive funds in their bank account. Process within 24 to 48 hours of request.
+                </p>
+              </div>
+              <div className="flex items-center gap-[8px] flex-wrap">
+                {([
+                  { id: 'PENDING', label: `Pending Requests (${pendingWithdrawals.length})` },
+                  { id: 'PAID', label: `Paid to Bank (${paidWithdrawals.length})` },
+                  { id: 'REJECTED', label: `Rejected & Refunded (${rejectedWithdrawals.length})` },
+                  { id: 'ALL', label: `All Requests (${allWithdrawals.length})` }
+                ] as const).map(pill => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => setWithdrawalFilter(pill.id)}
+                    className={`px-[12px] py-[6px] rounded-full text-[11px] font-bold transition-colors ${
+                      withdrawalFilter === pill.id
+                        ? 'bg-[#182a20] text-white'
+                        : 'bg-[#f4f7f5] text-[#68736d] hover:text-ink'
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-[20px]">
+              {filteredWithdrawals.length === 0 ? (
+                <div className="text-center p-[40px] bg-[#f7f9f7] rounded-[16px]">
+                  <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-[15px]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                  </div>
+                  <h3 className="font-manrope text-[16px] font-bold text-ink mb-[5px]">
+                    {withdrawalFilter === 'PENDING'
+                      ? 'No Pending Withdrawal Requests'
+                      : `No ${withdrawalFilter.toLowerCase()} withdrawal requests`}
+                  </h3>
+                  <p className="text-[13px] text-[#68736d] max-w-[460px] mx-auto">
+                    {withdrawalFilter === 'PENDING'
+                      ? 'No customers are currently waiting for a wallet withdrawal. When a customer requests a withdrawal from their wallet, it will appear here immediately.'
+                      : 'Switch the filter pills above to view other withdrawal request records.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[850px]">
+                    <thead>
+                      <tr className="border-b border-black/5 text-[11px] text-[#7a847f] uppercase tracking-wider">
+                        <th className="p-[10px_10px_10px_0] font-bold w-[170px]">Requested &amp; 24-48h SLA</th>
+                        <th className="p-[10px] font-bold">Customer</th>
+                        <th className="p-[10px] font-bold">Destination Bank</th>
+                        <th className="p-[10px] font-bold">Requested</th>
+                        <th className="p-[10px] font-bold">Fee</th>
+                        <th className="p-[10px] font-bold">Net Bank Wire</th>
+                        <th className="p-[10px_0_10px_10px] font-bold text-right">Action / Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/5">
+                      {filteredWithdrawals.map((withdrawal: any) => (
+                        <ClientWithdrawalRow
+                          key={withdrawal.id}
+                          withdrawal={withdrawal}
+                          formatCurrency={formatCurrency}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'pending' && (
         <div className="space-y-4">
+          {pendingWithdrawals.length > 0 && (
+            <div className="bg-white border-2 border-[#008b45]/30 rounded-[16px] p-[16px_20px] flex flex-col sm:flex-row sm:items-center justify-between gap-[12px] shadow-sm">
+              <div className="flex items-center gap-[12px]">
+                <span className="w-[36px] h-[36px] rounded-full bg-[#eef3ef] text-[#008b45] flex items-center justify-center font-bold text-[13px] shrink-0">
+                  {pendingWithdrawals.length}
+                </span>
+                <div>
+                  <strong className="block text-[14px] text-ink">
+                    {pendingWithdrawals.length} Customer Withdrawal Request{pendingWithdrawals.length === 1 ? '' : 's'} Pending Bank Payout
+                  </strong>
+                  <span className="text-[12px] text-[#68736d]">
+                    Customers have requested to withdraw {formatCurrency(ledger?.pendingWithdrawalsNet ?? pendingWithdrawals.reduce((s, w) => s + (w.netAmount ?? ((w.amount || 0) - (w.fee || 0))), 0))} to their bank accounts (24 to 48h SLA).
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('withdrawals')}
+                className="px-[16px] py-[9px] bg-[#008b45] hover:bg-[#007339] text-white text-[12px] font-bold rounded-full transition-colors whitespace-nowrap w-fit"
+              >
+                Open Withdrawal Requests &rarr;
+              </button>
+            </div>
+          )}
+
           {/* Bulk Action Banner */}
           {selectedIds.length > 0 && (
             <div className="bg-[#18201c] text-white p-4 rounded-[16px] flex flex-wrap items-center justify-between gap-4 shadow-lg animate-fade-in">
@@ -524,17 +733,35 @@ export default function ClientAdminFinance({
       {activeTab === 'ledger' && ledger && (
         <div className="space-y-[40px]">
           {/* AUM & Overview Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-[20px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-[20px]">
             {/* AUM */}
             <div className="bg-white p-[24px] rounded-[24px] border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-center">
               <div className="w-[40px] h-[40px] rounded-full bg-[#008b45]/10 flex items-center justify-center text-[#008b45] mb-[15px]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
               </div>
-              <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Assets Under Mgt.</span>
-              <strong className="font-manrope text-[28px] font-bold text-ink leading-none">{formatCurrency(ledger.aum || 0)}</strong>
+              <span className="text-[12px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Assets Under Mgt.</span>
+              <strong className="font-manrope text-[24px] font-bold text-ink leading-none">{formatCurrency(ledger.aum || 0)}</strong>
             </div>
 
-            {/* Liabilities - Clickable */}
+            {/* Actual Withdrawal Requests - Clickable */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('withdrawals')}
+              className="text-left bg-white p-[24px] rounded-[24px] border-2 border-[#008b45]/30 hover:border-[#008b45] shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-center relative overflow-hidden transition-all group"
+            >
+              <div className="w-[40px] h-[40px] rounded-full bg-[#008b45]/10 flex items-center justify-center text-[#008b45] mb-[15px]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+              </div>
+              <span className="text-[12px] text-[#008b45] font-bold tracking-[0.03em] uppercase mb-[5px]">Withdrawal Requests</span>
+              <strong className="font-manrope text-[24px] font-bold text-ink leading-none">
+                {formatCurrency(ledger.pendingWithdrawalsNet || 0)}
+              </strong>
+              <span className="text-[11px] font-bold text-[#008b45] group-hover:underline mt-[8px]">
+                {pendingWithdrawals.length} request{pendingWithdrawals.length === 1 ? '' : 's'} to wire &rarr;
+              </span>
+            </button>
+
+            {/* Unwithdrawn Wallet Balances - Clickable */}
             <button
               type="button"
               onClick={() => document.getElementById('wallet-liabilities-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -543,10 +770,10 @@ export default function ClientAdminFinance({
               <div className="w-[40px] h-[40px] rounded-full bg-red-500/10 flex items-center justify-center text-red-600 mb-[15px]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
               </div>
-              <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Total Wallet Liabilities</span>
-              <strong className="font-manrope text-[28px] font-bold text-red-600 leading-none">{formatCurrency(ledger.walletLiabilities || 0)}</strong>
+              <span className="text-[12px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Unrequested Wallets</span>
+              <strong className="font-manrope text-[24px] font-bold text-red-600 leading-none">{formatCurrency(ledger.walletLiabilities || 0)}</strong>
               <span className="text-[11px] font-bold text-red-600/80 group-hover:underline mt-[8px]">
-                View balances &rarr;
+                Passive balances &rarr;
               </span>
             </button>
 
@@ -566,8 +793,8 @@ export default function ClientAdminFinance({
               <div className="w-[40px] h-[40px] rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 mb-[15px]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
               </div>
-              <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Agent Escrow (Pending)</span>
-              <strong className="font-manrope text-[28px] font-bold text-amber-600 leading-none">{formatCurrency(ledger.escrowLiabilities || 0)}</strong>
+              <span className="text-[12px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Agent Escrow (Pending)</span>
+              <strong className="font-manrope text-[24px] font-bold text-amber-600 leading-none">{formatCurrency(ledger.escrowLiabilities || 0)}</strong>
               <span className="text-[11px] font-bold text-amber-700 group-hover:underline mt-[8px]">
                 Click to view &amp; pay ({pendingCommissions.length}) &rarr;
               </span>
@@ -578,8 +805,8 @@ export default function ClientAdminFinance({
               <div className="w-[40px] h-[40px] rounded-full bg-[#008b45]/10 flex items-center justify-center text-[#008b45] mb-[15px]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
               </div>
-              <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Total Inflow</span>
-              <strong className="font-manrope text-[28px] font-bold text-ink leading-none">{formatCurrency(ledger.totalIncoming || 0)}</strong>
+              <span className="text-[12px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Total Inflow</span>
+              <strong className="font-manrope text-[24px] font-bold text-ink leading-none">{formatCurrency(ledger.totalIncoming || 0)}</strong>
             </div>
 
             {/* Capital Outflow */}
@@ -587,8 +814,8 @@ export default function ClientAdminFinance({
               <div className="w-[40px] h-[40px] rounded-full bg-orange-500/10 flex items-center justify-center text-orange-600 mb-[15px]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M19 12l-7 7-7-7"></path></svg>
               </div>
-              <span className="text-[13px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Total Outflow</span>
-              <strong className="font-manrope text-[28px] font-bold text-ink leading-none">{formatCurrency(ledger.totalOutgoing || 0)}</strong>
+              <span className="text-[12px] text-[#7a847f] font-bold tracking-[0.03em] uppercase mb-[5px]">Total Outflow</span>
+              <strong className="font-manrope text-[24px] font-bold text-ink leading-none">{formatCurrency(ledger.totalOutgoing || 0)}</strong>
             </div>
           </div>
 

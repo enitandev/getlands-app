@@ -127,16 +127,59 @@ export default function ClientDashboardOverview({ user, dashboardAnnouncements =
           <div className="text-[11px] text-[#68736d] font-bold mb-[2px]">Portfolio</div>
           <div className="font-manrope font-bold text-[18px] tracking-tight">{formatCurrency(totalValue)}</div>
         </div>
-        <div className="flex-1 pl-[15px] flex items-center justify-between">
+        <div className="flex-1 pl-[15px] flex items-center justify-between gap-[8px]">
           <div>
             <div className="text-[11px] text-[#68736d] font-bold mb-[2px]">Wallet</div>
             <div className="font-manrope font-bold text-[18px] tracking-tight">{formatCurrency(user.walletBalance)}</div>
           </div>
-          <Link href="/dashboard/wallet" className="bg-[#eef3ef] text-[#008b45] px-[10px] py-[4px] rounded-full text-[10px] font-bold">
-            Fund
-          </Link>
+          <div className="flex items-center gap-[5px]">
+            {user.walletBalance > 0 && (
+              <Link href="/dashboard/wallet?withdraw=true" className="bg-[#008b45] text-white px-[10px] py-[4px] rounded-full text-[10px] font-bold">
+                Withdraw
+              </Link>
+            )}
+            <Link href="/dashboard/wallet" className="bg-[#eef3ef] text-[#008b45] px-[10px] py-[4px] rounded-full text-[10px] font-bold">
+              Fund
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* Wallet Withdrawal & 24-48h Payout Policy Banner */}
+      {user.walletBalance > 0 ? (
+        <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[18px] p-[16px] lg:p-[20px_24px] mb-[16px] lg:mb-[24px] flex flex-col md:flex-row md:items-center justify-between gap-[14px] shadow-sm shrink-0">
+          <div className="flex items-start gap-[12px]">
+            <div className="w-[36px] h-[36px] rounded-full bg-amber-500/15 text-amber-800 flex items-center justify-center shrink-0 mt-[2px]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+            </div>
+            <div>
+              <strong className="block text-[14px] lg:text-[15px] text-[#78350f] font-manrope">
+                You have {formatCurrency(user.walletBalance)} available in your Getlands Wallet
+              </strong>
+              <p className="text-[12px] lg:text-[13px] text-[#92400e] mt-[2px] leading-relaxed">
+                To receive your money in your personal bank account, please go to your <strong>Wallet</strong> and submit a withdrawal request. Bank payouts are made within <strong>24 to 48 hours</strong> after a withdrawal request is submitted.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-[10px] shrink-0">
+            <Link
+              href="/dashboard/wallet?withdraw=true"
+              className="px-[18px] py-[10px] bg-[#182a20] hover:bg-[#008b45] text-white text-[12px] font-bold rounded-full transition-colors whitespace-nowrap shadow-sm"
+            >
+              Withdraw to Bank &rarr;
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white border border-black/5 rounded-[16px] p-[12px_18px] mb-[14px] lg:mb-[20px] flex flex-col sm:flex-row sm:items-center justify-between gap-[8px] text-[12px] text-[#4a554f] shadow-sm shrink-0">
+          <span>
+            <strong className="text-ink">Payout Notice:</strong> When investment returns or commissions are credited to your Wallet, submit a withdrawal request in your Wallet to receive the funds in your bank account within <strong>24 to 48 hours</strong>.
+          </span>
+          <Link href="/dashboard/wallet" className="text-[#008b45] font-bold hover:underline whitespace-nowrap">
+            Open Wallet &rarr;
+          </Link>
+        </div>
+      )}
 
       <div className="lg:hidden flex items-center justify-between mb-[8px] shrink-0">
         <div className="flex items-center gap-[5px] text-[10px] font-bold uppercase tracking-wider text-[#008b45]">
@@ -331,14 +374,26 @@ export default function ClientDashboardOverview({ user, dashboardAnnouncements =
             </div>
           )}
 
-          <div className="mt-auto flex items-center justify-between border-t border-black/5 pt-[20px]">
-            <div>
-              <div className="text-[12px] text-[#68736d] font-bold mb-[2px]">Wallet balance</div>
-              <div className="font-manrope font-bold text-[20px]">{formatCurrency(user.walletBalance)}</div>
+          <div className="mt-auto border-t border-black/5 pt-[20px]">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[12px] text-[#68736d] font-bold mb-[2px]">Wallet balance</div>
+                <div className="font-manrope font-bold text-[20px]">{formatCurrency(user.walletBalance)}</div>
+              </div>
+              <div className="flex items-center gap-[8px]">
+                {user.walletBalance > 0 && (
+                  <Link href="/dashboard/wallet?withdraw=true" className="bg-[#008b45] text-white px-[16px] py-[10px] rounded-full text-[12px] font-bold hover:bg-[#007339] transition-colors">
+                    Withdraw
+                  </Link>
+                )}
+                <Link href="/dashboard/wallet" className="bg-[#eef3ef] text-[#008b45] px-[16px] py-[10px] rounded-full text-[12px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
+                  Fund
+                </Link>
+              </div>
             </div>
-            <Link href="/dashboard/wallet" className="bg-[#eef3ef] text-[#008b45] px-[20px] py-[10px] rounded-full text-[13px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
-              Fund
-            </Link>
+            <p className="text-[11px] text-[#7a847f] mt-[10px] leading-relaxed">
+              Withdraw from your wallet to get money in your bank account. Payouts are made in 24 to 48 hours after withdrawal requests are made.
+            </p>
           </div>
         </div>
       </div>

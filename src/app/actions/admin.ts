@@ -250,17 +250,30 @@ export async function approveTransaction(transactionId: string) {
       }
     }
   } else if (tx.type === 'withdrawal') {
-    // Wallet was already deducted. Just notify user of success.
+    // Wallet was already deducted. Notify user of success and send email.
+    const user = await prisma.user.findUnique({ where: { id: tx.userId } });
+    const fee = tx.fee ?? 0;
+    const netAmount = tx.netAmount ?? (tx.amount - fee);
     await prisma.notification.create({
       data: {
         userId: tx.userId,
-        title: "Withdrawal Successful",
-        message: `Your withdrawal of ₦${tx.amount.toLocaleString()} has been processed and sent to your bank.`,
+        title: "Withdrawal Sent to Your Bank",
+        message: fee > 0
+          ? `Your withdrawal of ₦${tx.amount.toLocaleString()} (Net payout: ₦${netAmount.toLocaleString()} after ₦${fee.toLocaleString()} settlement fee) has been processed and sent to your bank.`
+          : `Your withdrawal of ₦${tx.amount.toLocaleString()} has been processed and sent to your bank.`,
         type: "TRANSACTION",
         linkUrl: "/dashboard/wallet",
         actionText: "View Wallet"
       }
     });
+    if (user?.email) {
+      try {
+        const { sendWithdrawalProcessedEmail } = await import('@/lib/email');
+        await sendWithdrawalProcessedEmail(user.email, user.firstName, tx.amount, netAmount, fee);
+      } catch (e) {
+        console.error("Failed to send withdrawal processed email:", e);
+      }
+    }
   }
 
   return { success: true };

@@ -23,8 +23,13 @@ export default async function AdminDashboard() {
 
   const activeHoldings = await prisma.holding.count({ where: { status: 'active' } });
   const availableOpps = await prisma.opportunity.count({ where: { status: 'available' } });
-  const [pendingActions, pendingCommsAgg, pendingPayoutsAgg] = await Promise.all([
-    prisma.transaction.count({ where: { status: 'pending' } }),
+  const [pendingVerifications, pendingWithdrawalsAgg, pendingCommsAgg, pendingPayoutsAgg] = await Promise.all([
+    prisma.transaction.count({ where: { status: 'pending', type: { not: 'withdrawal' } } }),
+    prisma.transaction.aggregate({
+      where: { status: 'pending', type: 'withdrawal' },
+      _sum: { amount: true, netAmount: true },
+      _count: { _all: true }
+    }),
     prisma.commission.aggregate({
       where: { status: 'PENDING' },
       _sum: { amount: true },
@@ -37,11 +42,13 @@ export default async function AdminDashboard() {
     })
   ]);
 
+  const pendingWithdrawalsCount = pendingWithdrawalsAgg._count._all || 0;
+  const pendingWithdrawalsAmount = pendingWithdrawalsAgg._sum.netAmount || pendingWithdrawalsAgg._sum.amount || 0;
   const pendingCommissionsCount = pendingCommsAgg._count._all || 0;
   const pendingCommissionsAmount = pendingCommsAgg._sum.amount || 0;
   const pendingPayoutsCount = pendingPayoutsAgg._count._all || 0;
   const pendingPayoutsAmount = pendingPayoutsAgg._sum.amount || 0;
-  const totalActionItems = pendingActions + pendingCommissionsCount;
+  const totalActionItems = pendingVerifications + pendingWithdrawalsCount + pendingCommissionsCount;
 
   // Fetch lists
   const recentTransactions = await prisma.transaction.findMany({
@@ -77,8 +84,14 @@ export default async function AdminDashboard() {
             <span className="px-[7px] h-[18px] bg-[#f5a623] text-white rounded-full flex items-center justify-center text-[10px]">{totalActionItems}</span>
           </div>
           <div className="space-y-[10px] mt-[12px]">
-            <Link href="/admin/finance?tab=pending" className="flex items-center justify-between text-[13px] font-bold text-ink hover:text-[#008b45] group">
-              <span>{pendingActions} Transfer Verification{pendingActions === 1 ? '' : 's'}</span>
+            <Link href="/admin/finance?tab=withdrawals" className="flex items-center justify-between text-[13px] font-bold text-ink hover:text-[#008b45] group">
+              <span>
+                {pendingWithdrawalsCount} Withdrawal Request{pendingWithdrawalsCount === 1 ? '' : 's'} ({formatCurrency(pendingWithdrawalsAmount)})
+              </span>
+              <span className="text-[11px] text-red-600 font-bold group-hover:underline">Pay Out &rarr;</span>
+            </Link>
+            <Link href="/admin/finance?tab=pending" className="flex items-center justify-between text-[13px] font-bold text-ink hover:text-[#008b45] pt-[8px] border-t border-black/5 group">
+              <span>{pendingVerifications} Deposit / Transfer{pendingVerifications === 1 ? '' : 's'}</span>
               <span className="text-[11px] text-[#008b45] group-hover:underline">Review &rarr;</span>
             </Link>
             <Link href="/admin/finance?tab=commissions" className="flex items-center justify-between text-[13px] font-bold text-ink hover:text-[#008b45] pt-[8px] border-t border-black/5 group">

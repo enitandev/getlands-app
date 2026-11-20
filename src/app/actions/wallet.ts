@@ -76,7 +76,22 @@ export async function requestWithdrawalAction(formData: FormData) {
       }
     });
 
-    // 5. Send direct admin notifications
+    // 5. Create customer confirmation notification
+    const bankName = activeBank?.bankName || user.bankName || undefined;
+    const accountNumber = activeBank?.accountNumber || user.accountNumber || undefined;
+
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        type: 'TRANSACTION',
+        title: 'Withdrawal Request Submitted',
+        message: `Your withdrawal request of ₦${amount.toLocaleString()} (Net bank payout: ₦${netAmount.toLocaleString()}) has been received. Bank payouts are processed within 24 to 48 hours after your request.`,
+        linkUrl: '/dashboard/wallet',
+        actionText: 'View Wallet'
+      }
+    });
+
+    // 6. Send direct admin notifications
     const admins = await prisma.user.findMany({
       where: { role: 'admin' },
       select: { id: true }
@@ -88,12 +103,32 @@ export async function requestWithdrawalAction(formData: FormData) {
           type: 'TRANSACTION',
           title: 'New Withdrawal Request',
           message: `${user.firstName} ${user.lastName} requested a withdrawal of ₦${amount.toLocaleString()} (Net wire: ₦${netAmount.toLocaleString()}, Fee: ₦${fee.toLocaleString()}).`,
-          linkUrl: '/admin/finance'
+          linkUrl: '/admin/finance?tab=withdrawals',
+          actionText: 'Process Withdrawal'
         }
       });
     }
 
+    // 7. Send confirmation email to customer
+    try {
+      const { sendWithdrawalRequestedEmail } = await import('@/lib/email');
+      await sendWithdrawalRequestedEmail(
+        user.email,
+        user.firstName,
+        amount,
+        netAmount,
+        fee,
+        transaction.reference || `WDL-${transaction.id.slice(0, 8)}`,
+        bankName,
+        accountNumber
+      );
+    } catch (emailErr) {
+      console.error("Failed to send withdrawal request confirmation email:", emailErr);
+    }
+
+    revalidatePath("/dashboard");
     revalidatePath("/dashboard/wallet");
+    revalidatePath("/admin");
     revalidatePath("/admin/finance");
 
     return { success: true, transaction };

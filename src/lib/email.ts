@@ -197,12 +197,23 @@ export async function sendWalletCreditEmail(to: string, userName: string, amount
       <div style="padding: 24px;">
         <p>Hello ${userName},</p>
         <p>Your Getlands Wallet has just been credited with <strong>₦${amount.toLocaleString()}</strong> for your <strong>${title}</strong> return.</p>
-        <p>You can withdraw these funds directly to your verified bank account at any time.</p>
+
+        <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
+          <h3 style="color: #92400e; font-size: 15px; margin: 0 0 8px 0; font-weight: bold;">How to Receive This Money in Your Bank Account</h3>
+          <p style="color: #78350f; font-size: 14px; line-height: 1.55; margin: 0 0 14px 0;">
+            Please note that funds credited to your Getlands Wallet remain in your wallet until you initiate a withdrawal. <strong>To receive this money in your bank account, you must log in to your dashboard, go to your Wallet, and submit a withdrawal request.</strong> Payouts to your bank account are processed within <strong>24 to 48 hours</strong> after your withdrawal request is made.
+          </p>
+          <div style="text-align: center;">
+            <a href="https://getlands.ng/dashboard/wallet?withdraw=true" style="background-color: #182a20; color: white; padding: 11px 22px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 13px; display: inline-block;">
+              Request Bank Withdrawal Now
+            </a>
+          </div>
+        </div>
 
         <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 12px; padding: 20px; margin: 24px 0;">
-          <h3 style="color: #182a20; font-size: 16px; margin: 0 0 10px 0; font-weight: bold;">Put this return back to work:</h3>
+          <h3 style="color: #182a20; font-size: 16px; margin: 0 0 10px 0; font-weight: bold;">Or put this return back to work:</h3>
           <p style="color: #4a554f; font-size: 14px; line-height: 1.5; margin: 0 0 14px 0;">
-            Instead of letting these funds sit idle, you can put them right back into action:
+            Instead of withdrawing, you can also reinvest directly from your wallet in 1 click:
           </p>
           <ul style="color: #333; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0; padding-left: 20px;">
             <li><strong>Food Commodities:</strong> Roll your profit into our next fast-moving Garri, Pepper, or Tomato cycle from ₦50,000.</li>
@@ -216,13 +227,104 @@ export async function sendWalletCreditEmail(to: string, userName: string, amount
         </div>
 
         <div style="text-align: center; margin: 15px 0;">
-          <a href="https://getlands.ng/dashboard/wallet" style="color: #68736d; font-size: 13px; text-decoration: underline;">Or view your wallet to withdraw</a>
+          <a href="https://getlands.ng/dashboard/wallet?withdraw=true" style="color: #008b45; font-size: 13px; font-weight: bold; text-decoration: underline;">Open your Wallet to withdraw to your bank account</a>
         </div>
         <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">If you have any questions, simply reply to this email or contact support.</p>
       </div>
     </div>
   `;
-  await sendResendEmail(to, "Your Getlands Wallet has been credited", html);
+  await sendResendEmail(to, "Your Getlands Wallet has been credited (Action Required to Withdraw)", html);
+}
+
+export async function sendWithdrawalRequestedEmail(
+  to: string,
+  userName: string,
+  amount: number,
+  netAmount: number,
+  fee: number,
+  reference: string,
+  bankName?: string,
+  accountNumber?: string
+) {
+  const bankLine = bankName && accountNumber ? `${bankName} (${accountNumber})` : 'Your verified bank account on file';
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #182a20; padding: 24px 20px; text-align: center; color: white; border-bottom: 3px solid #008b45;">
+        <h2 style="margin: 0; font-size: 22px;">Withdrawal Request Received</h2>
+      </div>
+      <div style="padding: 24px;">
+        <p>Hello ${userName},</p>
+        <p>We have received your request to withdraw <strong>₦${amount.toLocaleString()}</strong> from your Getlands Wallet to your bank account.</p>
+
+        <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 12px; padding: 18px 20px; margin: 20px 0; font-size: 14px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #68736d;">Reference:</span>
+            <strong style="font-family: monospace;">${reference}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #68736d;">Requested Amount:</span>
+            <strong>₦${amount.toLocaleString()}</strong>
+          </div>
+          ${fee > 0 ? `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #68736d;">Settlement Fee:</span>
+            <span style="color: #c53030;">-₦${fee.toLocaleString()}</span>
+          </div>
+          ` : ''}
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #68736d;">Destination Bank:</span>
+            <strong>${bankLine}</strong>
+          </div>
+          <div style="border-top: 1px solid #e0e0e0; padding-top: 10px; margin-top: 8px; display: flex; justify-content: space-between;">
+            <strong style="color: #182a20;">Net Payout to Bank:</strong>
+            <strong style="color: #008b45; font-size: 16px;">₦${netAmount.toLocaleString()}</strong>
+          </div>
+        </div>
+
+        <div style="background-color: #eef3ef; border-left: 4px solid #008b45; padding: 14px 16px; border-radius: 6px; margin: 20px 0;">
+          <strong style="color: #182a20; font-size: 14px; display: block; margin-bottom: 4px;">Payout Timeline (24 to 48 Hours)</strong>
+          <p style="color: #333; font-size: 13px; line-height: 1.5; margin: 0;">
+            Your withdrawal request is now queued with our finance team. Payouts are processed and transferred to your bank account within <strong>24 to 48 hours</strong> after a withdrawal request is made. You will receive an email confirmation as soon as the transfer is completed.
+          </p>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="https://getlands.ng/dashboard/wallet" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block;">
+            View Wallet Status
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">Thank you for investing with Getlands.</p>
+      </div>
+    </div>
+  `;
+  await sendResendEmail(to, `Withdrawal Request Received (₦${amount.toLocaleString()})`, html);
+}
+
+export async function sendWithdrawalRejectedEmail(
+  to: string,
+  userName: string,
+  amount: number,
+  reason?: string
+) {
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #182a20; padding: 24px 20px; text-align: center; color: white;">
+        <h2 style="margin: 0; font-size: 22px;">Withdrawal Request Returned to Wallet</h2>
+      </div>
+      <div style="padding: 24px;">
+        <p>Hello ${userName},</p>
+        <p>Your recent withdrawal request of <strong>₦${amount.toLocaleString()}</strong> could not be completed and the full amount has been refunded back to your Getlands Wallet balance.</p>
+        ${reason ? `<p style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 14px;"><strong>Note from Finance Team:</strong> ${reason}</p>` : ''}
+        <p style="font-size: 14px; line-height: 1.5;">Please verify that your bank account details in Settings are accurate, or contact support if you need assistance before submitting a new withdrawal request.</p>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="https://getlands.ng/dashboard/wallet" style="background-color: #008b45; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block;">
+            Open Your Wallet
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  await sendResendEmail(to, "Update on Your Getlands Withdrawal Request", html);
 }
 
 export async function sendWithdrawalProcessedEmail(to: string, userName: string, amount: number, netAmount?: number, fee?: number) {
@@ -359,7 +461,12 @@ export async function sendCommissionPaidEmail(
     ? `<p>Your sales commission of <strong>₦${amount.toLocaleString()}</strong>${clientInfo} has been transferred directly to your bank account${bankInfo}.</p>
        <p>Depending on your bank's network, your credit alert will reflect shortly.</p>`
     : `<p>Your sales commission of <strong>₦${amount.toLocaleString()}</strong>${clientInfo} has been approved and credited to your Getlands Wallet.</p>
-       <p>You can withdraw this money to your bank account anytime or use it to start your own commodity or land banking cycle.</p>`;
+       <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 16px; margin: 16px 0;">
+         <strong style="color: #92400e; font-size: 14px; display: block; margin-bottom: 4px;">How to Receive This Money in Your Bank Account:</strong>
+         <p style="color: #78350f; font-size: 13px; line-height: 1.5; margin: 0;">
+           To get this commission paid into your personal bank account, log in to your dashboard, open your <strong>Wallet</strong>, and submit a withdrawal request. Bank payouts are processed within <strong>24 to 48 hours</strong> after your withdrawal request is submitted. You can also use your wallet balance to start your own commodity or land banking cycle.
+         </p>
+       </div>`;
 
   const subject = method === 'bank'
     ? `Your ₦${amount.toLocaleString()} Sales Commission Has Been Sent to Your Bank`

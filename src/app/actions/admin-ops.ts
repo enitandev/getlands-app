@@ -125,7 +125,7 @@ export async function deleteHoldingAction(holdingId: string) {
   return { success: true };
 }
 
-export async function approveWithdrawalAction(transactionId: string) {
+export async function approveWithdrawalAction(transactionId: string, bankReference?: string) {
   const session = await getSession();
   if (!session || session.role !== 'admin') throw new Error("Unauthorized");
 
@@ -140,20 +140,28 @@ export async function approveWithdrawalAction(transactionId: string) {
 
   const fee = transaction.fee ?? 0;
   const netAmount = transaction.netAmount ?? (transaction.amount - fee);
+  const updatedRef = bankReference?.trim()
+    ? `${transaction.reference || 'WDL'} (${bankReference.trim().toUpperCase()})`
+    : transaction.reference;
 
   await prisma.$transaction([
     prisma.transaction.update({
       where: { id: transactionId },
-      data: { status: 'success' }
+      data: {
+        status: 'success',
+        reference: updatedRef
+      }
     }),
     prisma.notification.create({
       data: {
         userId: transaction.userId,
         type: 'TRANSACTION',
-        title: 'Withdrawal Successful',
+        title: 'Withdrawal Sent to Your Bank',
         message: fee > 0 
-          ? `Your withdrawal of ₦${transaction.amount.toLocaleString()} (Net payout: ₦${netAmount.toLocaleString()} after ₦${fee.toLocaleString()} settlement fee) has been sent to your bank.`
-          : `Your withdrawal of ₦${transaction.amount.toLocaleString()} has been processed and sent to your bank.`,
+          ? `Your withdrawal request of ₦${transaction.amount.toLocaleString()} (Net payout: ₦${netAmount.toLocaleString()} after ₦${fee.toLocaleString()} settlement fee) has been processed and transferred to your bank account.`
+          : `Your withdrawal request of ₦${transaction.amount.toLocaleString()} has been processed and transferred to your bank account.`,
+        linkUrl: '/dashboard/wallet',
+        actionText: 'View Wallet'
       }
     })
   ]);
@@ -162,8 +170,64 @@ export async function approveWithdrawalAction(transactionId: string) {
   await sendWithdrawalProcessedEmail(transaction.user.email, transaction.user.firstName, transaction.amount, netAmount, fee);
 
   const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin');
   revalidatePath('/admin/finance');
+  revalidatePath(`/admin/customers/${transaction.userId}`);
+  revalidatePath('/dashboard');
   revalidatePath('/dashboard/wallet');
+  revalidatePath('/dashboard/notifications');
+
+  return { success: true };
+}
+
+export async function rejectWithdrawalAction(transactionId: string, reason?: string) {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') throw new Error("Unauthorized");
+
+  const transaction = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    include: { user: true }
+  });
+
+  if (!transaction || transaction.type !== 'withdrawal' || transaction.status !== 'pending') {
+    return { error: 'Invalid or already processed withdrawal request' };
+  }
+
+  await prisma.$transaction([
+    prisma.transaction.update({
+      where: { id: transactionId },
+      data: { status: 'failed' }
+    }),
+    prisma.user.update({
+      where: { id: transaction.userId },
+      data: { walletBalance: { increment: transaction.amount } }
+    }),
+    prisma.notification.create({
+      data: {
+        userId: transaction.userId,
+        type: 'SYSTEM',
+        title: 'Withdrawal Request Returned to Wallet',
+        message: `Your withdrawal request of ₦${transaction.amount.toLocaleString()} could not be completed and the full amount has been refunded to your wallet balance.${reason ? ` Reason: ${reason}` : ' Please verify your bank details in Settings or contact support.'}`,
+        linkUrl: '/dashboard/wallet',
+        actionText: 'View Wallet'
+      }
+    })
+  ]);
+
+  try {
+    const { sendWithdrawalRejectedEmail } = await import('@/lib/email');
+    await sendWithdrawalRejectedEmail(transaction.user.email, transaction.user.firstName, transaction.amount, reason);
+  } catch (e) {
+    console.error("Failed to send withdrawal rejection email:", e);
+  }
+
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin');
+  revalidatePath('/admin/finance');
+  revalidatePath(`/admin/customers/${transaction.userId}`);
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/wallet');
+  revalidatePath('/dashboard/notifications');
 
   return { success: true };
 }
@@ -204,7 +268,14 @@ export async function releaseDueCommissionsAction() {
           data: { userId: commission.agentId, type: 'commission_payout', amount: commission.amount, status: 'success', reference: `COMM-${commission.id.substring(0, 8).toUpperCase()}` }
         }),
         prisma.notification.create({
-          data: { userId: commission.agentId, title: "Commission Released!", message: `Your ₦${commission.amount.toLocaleString()} commission has exited escrow and is now in your wallet.`, type: "TRANSACTION", linkUrl: "/agent/earnings", actionText: "View Earnings" }
+          data: {
+            userId: commission.agentId,
+            title: "Commission Released to Wallet!",
+            message: `Your ₦${commission.amount.toLocaleString()} commission has exited escrow and is now in your wallet. To receive it in your bank account, submit a withdrawal request from your Wallet (processed within 24 to 48 hours).`,
+            type: "TRANSACTION",
+            linkUrl: "/dashboard/wallet?withdraw=true",
+            actionText: "Withdraw to Bank"
+          }
         })
       ];
       await prisma.$transaction(transactions);
