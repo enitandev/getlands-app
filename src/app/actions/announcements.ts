@@ -35,6 +35,14 @@ async function getTargetUsers(targetAudience: string) {
       where: { kycStatus: { not: 'verified' }, email: { contains: '@' } },
       select: { id: true, email: true, firstName: true },
     });
+  } else if (targetAudience === 'has_wallet_balance') {
+    return await prisma.user.findMany({
+      where: {
+        walletBalance: { gt: 0 },
+        email: { contains: '@' },
+      },
+      select: { id: true, email: true, firstName: true },
+    });
   } else if (targetAudience === 'missing_bank') {
     return await prisma.user.findMany({
       where: {
@@ -366,7 +374,7 @@ export async function getActiveAnnouncements({
     audienceFilter.push('agents');
   } else if (userRole === 'admin') {
     // Admin sees announcements for testing
-    audienceFilter.push('customers', 'agents', 'unverified_kyc', 'missing_bank');
+    audienceFilter.push('customers', 'agents', 'unverified_kyc', 'missing_bank', 'has_wallet_balance');
   }
 
   const whereClause: any = {

@@ -524,6 +524,60 @@ export async function sendWalletReconciliationEmail(to: string, userName: string
   await sendResendEmail(to, "Getlands Wallet Adjustment Notice", html);
 }
 
+export async function sendWalletWithdrawalReminderEmail(
+  to: string,
+  userName: string,
+  walletBalance: number
+) {
+  const html = `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #182a20; padding: 24px 20px; text-align: center; color: white; border-bottom: 3px solid #008b45;">
+        <h2 style="margin: 0; font-size: 22px;">You Have Funds Available in Your Getlands Wallet</h2>
+      </div>
+      <div style="padding: 28px 24px;">
+        <p>Hello ${userName},</p>
+        <p>This is a friendly reminder that you currently have <strong>₦${walletBalance.toLocaleString()}</strong> available in your Getlands Wallet from your investment returns or commissions.</p>
+
+        <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 12px; padding: 18px 20px; margin: 22px 0; text-align: center;">
+          <div style="font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #68736d; margin-bottom: 6px;">Available Wallet Balance</div>
+          <div style="font-size: 28px; font-weight: 800; color: #008b45;">₦${walletBalance.toLocaleString()}</div>
+        </div>
+
+        <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 18px 20px; margin: 22px 0;">
+          <strong style="color: #92400e; font-size: 15px; display: block; margin-bottom: 6px;">How to Receive This Money in Your Bank Account:</strong>
+          <p style="color: #78350f; font-size: 14px; line-height: 1.55; margin: 0;">
+            Funds credited to your Getlands Wallet stay in your wallet until you request a withdrawal (or reinvest them). <strong>To get your money paid into your bank account, please log in to your Getlands dashboard, go to your Wallet, and click "Withdraw to Bank" to submit a withdrawal request.</strong>
+          </p>
+          <p style="color: #78350f; font-size: 13px; line-height: 1.5; margin: 10px 0 0 0;">
+            <strong>Payout Schedule:</strong> Bank payouts are processed and transferred within <strong>24 to 48 hours</strong> after your withdrawal request is submitted.
+          </p>
+        </div>
+
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="https://getlands.ng/dashboard/wallet?withdraw=true" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 15px; display: inline-block;">
+            Log In &amp; Withdraw to Bank &rarr;
+          </a>
+        </div>
+
+        <p style="font-size: 13px; color: #4a554f; text-align: center;">
+          Want to compound your returns instead? You can also use your wallet balance to reinvest in our active Food Commodity cycles (from ₦50,000) or Abeokuta Land Banking (up to 40% return) in 1 click.
+        </p>
+
+        <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 16px;">
+          If you have any questions or need help logging in, simply reply to this email.<br><br>
+          <strong>The Getlands Team</strong>
+        </p>
+      </div>
+    </div>
+  `;
+
+  await sendResendEmail(
+    to,
+    `You have ₦${walletBalance.toLocaleString()} in your Getlands Wallet (How to Withdraw to Your Bank)`,
+    html
+  );
+}
+
 export interface AnnouncementEmailOptions {
   recipients: { email: string; firstName?: string | null }[];
   title: string;

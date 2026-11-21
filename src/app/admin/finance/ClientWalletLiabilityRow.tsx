@@ -1,7 +1,9 @@
 "use client";
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { reconcileWalletBalanceAction } from '@/app/actions/accounting';
+import { reconcileWalletBalanceAction, notifyUserToWithdrawWalletAction } from '@/app/actions/accounting';
+import { getCustomerProfileUrl } from '@/lib/customerSlug';
 import { toast } from '@/components/ui/Toast';
 
 interface ClientWalletLiabilityRowProps {
@@ -16,11 +18,30 @@ export default function ClientWalletLiabilityRow({ user, formatCurrency }: Clien
   const [reason, setReason] = useState('Settled directly via corporate bank transfer');
   const [sendEmail, setSendEmail] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [notified, setNotified] = useState(false);
 
   const activeBank = user.bankAccounts?.[0];
   const bankName = activeBank?.bankName || user.bankName;
   const accountNumber = activeBank?.accountNumber || user.accountNumber;
   const accountName = activeBank?.accountName || user.accountName || `${user.firstName} ${user.lastName}`.trim();
+
+  const handleSendWithdrawalEmail = async () => {
+    setIsNotifying(true);
+    try {
+      const res = await notifyUserToWithdrawWalletAction(user.id);
+      if (res?.error) {
+        toast(res.error, 'error');
+      } else {
+        setNotified(true);
+        toast(`Sent withdrawal reminder email (${formatCurrency(user.walletBalance)}) to ${user.email}`, 'success');
+      }
+    } catch (err: any) {
+      toast(err.message || 'Failed to send reminder email', 'error');
+    } finally {
+      setIsNotifying(false);
+    }
+  };
 
   const handleReconcile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +66,9 @@ export default function ClientWalletLiabilityRow({ user, formatCurrency }: Clien
     <>
       <tr className="text-[13px] hover:bg-gray-50/50 transition-colors">
         <td className="p-[14px_0]">
-          <strong className="block text-[14px] text-ink">{user.firstName} {user.lastName}</strong>
+          <Link href={getCustomerProfileUrl(user)} className="block text-[14px] font-bold text-ink hover:text-[#008b45] hover:underline">
+            {user.firstName} {user.lastName}
+          </Link>
           <span className="text-[12px] text-[#68736d]">{user.email}</span>
         </td>
         <td className="p-[14px]">
@@ -83,16 +106,31 @@ export default function ClientWalletLiabilityRow({ user, formatCurrency }: Clien
           )}
         </td>
         <td className="p-[14px] text-right">
-          <button
-            type="button"
-            onClick={() => {
-              setDeductAmount(user.walletBalance);
-              setIsModalOpen(true);
-            }}
-            className="px-[14px] py-[7px] bg-[#182a20] text-white hover:bg-black text-[12px] font-bold rounded-full transition-colors shadow-sm whitespace-nowrap"
-          >
-            Clear Settled Payout
-          </button>
+          <div className="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-[8px]">
+            <button
+              type="button"
+              onClick={handleSendWithdrawalEmail}
+              disabled={isNotifying}
+              className={`px-[13px] py-[7px] rounded-full text-[11px] font-bold transition-colors whitespace-nowrap ${
+                notified
+                  ? 'bg-[#eef3ef] text-[#008b45]'
+                  : 'bg-[#008b45] text-white hover:bg-[#007339] shadow-sm'
+              }`}
+              title={`Email ${user.firstName} to log in and request a wallet withdrawal`}
+            >
+              {isNotifying ? 'Emailing...' : notified ? 'Email Sent ✓' : 'Email to Withdraw'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDeductAmount(user.walletBalance);
+                setIsModalOpen(true);
+              }}
+              className="px-[13px] py-[7px] bg-[#f4f7f5] text-ink hover:bg-black/10 text-[11px] font-bold rounded-full transition-colors whitespace-nowrap"
+            >
+              Clear Settled Payout
+            </button>
+          </div>
         </td>
       </tr>
 

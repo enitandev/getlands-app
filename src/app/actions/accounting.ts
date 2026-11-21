@@ -760,3 +760,96 @@ export async function reconcileWalletBalanceAction(userId: string, amount: numbe
     return { error: err.message || 'Failed to reconcile wallet balance' };
   }
 }
+
+export async function notifyUserToWithdrawWalletAction(userId: string) {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, firstName: true, lastName: true, email: true, walletBalance: true }
+  });
+
+  if (!user) {
+    return { error: 'User not found' };
+  }
+
+  if (user.walletBalance <= 0) {
+    return { error: 'This user has ₦0 in their wallet.' };
+  }
+
+  try {
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        type: 'TRANSACTION',
+        title: 'Funds Available in Your Wallet: Request Withdrawal',
+        message: `You have ₦${user.walletBalance.toLocaleString()} available in your Getlands Wallet. To receive these funds in your bank account, open your Wallet and submit a withdrawal request (processed within 24 to 48 hours).`,
+        linkUrl: '/dashboard/wallet?withdraw=true',
+        actionText: 'Withdraw to Bank'
+      }
+    });
+
+    const { sendWalletWithdrawalReminderEmail } = await import('@/lib/email');
+    await sendWalletWithdrawalReminderEmail(user.email, user.firstName, user.walletBalance);
+
+    revalidatePath('/admin/finance');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to send withdrawal reminder email' };
+  }
+}
+
+export async function notifyAllUsersWithWalletBalanceAction() {
+  const session = await getSession();
+  if (session?.role !== 'admin') throw new Error("Unauthorized");
+
+  const users = await prisma.user.findMany({
+    where: {
+      walletBalance: { gt: 0 },
+      email: { contains: '@' }
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      walletBalance: true
+    }
+  });
+
+  if (users.length === 0) {
+    return { error: 'No users currently have a positive wallet balance.' };
+  }
+
+  try {
+    // 1. Create in-app notifications for all users with positive wallet balances
+    await prisma.notification.createMany({
+      data: users.map(u => ({
+        userId: u.id,
+        type: 'TRANSACTION',
+        title: 'Funds Available in Your Wallet: Request Withdrawal',
+        message: `You have ₦${u.walletBalance.toLocaleString()} available in your Getlands Wallet. To receive these funds in your bank account, open your Wallet and submit a withdrawal request (processed within 24 to 48 hours).`,
+        linkUrl: '/dashboard/wallet?withdraw=true',
+        actionText: 'Withdraw to Bank'
+      }))
+    });
+
+    // 2. Send personalized emails showing each customer their exact wallet balance
+    const { sendWalletWithdrawalReminderEmail } = await import('@/lib/email');
+    let sentCount = 0;
+    for (const u of users) {
+      try {
+        await sendWalletWithdrawalReminderEmail(u.email, u.firstName, u.walletBalance);
+        sentCount++;
+      } catch (e) {
+        console.error(`Failed to send wallet reminder email to ${u.email}:`, e);
+      }
+    }
+
+    revalidatePath('/admin/finance');
+    return { success: true, count: sentCount };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to broadcast wallet withdrawal reminders' };
+  }
+}

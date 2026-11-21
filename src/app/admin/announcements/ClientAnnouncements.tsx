@@ -35,6 +35,7 @@ function getAudienceLabel(aud: string) {
     case 'all': return 'Everyone';
     case 'customers': return 'Customers Only';
     case 'agents': return 'Sales Agents Only';
+    case 'has_wallet_balance': return 'Users with Wallet Balance';
     case 'unverified_kyc': return 'Unverified KYC';
     case 'missing_bank': return 'Missing Bank Details';
     default: return aud;
@@ -119,6 +120,26 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
     setFormExpiresAt('');
     setFormBroadcast(false);
     setFormSendEmail(false); // Not automatic
+    setIsModalOpen(true);
+  };
+
+  const openWalletWithdrawalPresetModal = () => {
+    setEditingAnnouncement(null);
+    setFormTitle('Your Returns Are in Your Getlands Wallet: How to Withdraw to Your Bank');
+    setFormMessage(
+      'Your investment returns (ROI) or referral commissions have been credited to your Getlands Wallet.\n\nTo receive your money in your personal bank account, please log in to your dashboard, open your Wallet, and click "Withdraw to Bank" to submit a withdrawal request. Bank payouts are processed within 24 to 48 hours after your withdrawal request is made.'
+    );
+    setFormType('warning');
+    setFormPlacement('dashboard_card');
+    setFormAudience('has_wallet_balance');
+    setFormActionText('Log In & Withdraw to Bank');
+    setFormActionUrl('/dashboard/wallet?withdraw=true');
+    setFormIsDismissible(true);
+    setFormPriority(10);
+    setFormStartsAt('');
+    setFormExpiresAt('');
+    setFormBroadcast(true);
+    setFormSendEmail(true);
     setIsModalOpen(true);
   };
 
@@ -281,13 +302,23 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
             Publish targeted promotional banners, system alerts, and spotlight cards across Getlands.
           </p>
         </div>
-        <button 
-          onClick={openCreateModal} 
-          className="px-[24px] py-[12px] bg-[#008b45] text-white text-[13px] font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)] flex items-center justify-center gap-2 self-start sm:self-auto cursor-pointer"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Create Announcement
-        </button>
+        <div className="flex flex-wrap items-center gap-[10px]">
+          <button
+            type="button"
+            onClick={openWalletWithdrawalPresetModal}
+            className="px-[18px] py-[12px] bg-[#182a20] text-white text-[12px] font-bold rounded-full hover:bg-black transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+            Email Wallet Withdrawal Notice
+          </button>
+          <button 
+            onClick={openCreateModal} 
+            className="px-[24px] py-[12px] bg-[#008b45] text-white text-[13px] font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.2)] flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Create Announcement
+          </button>
+        </div>
       </div>
 
       {/* Metric Cards */}
@@ -767,9 +798,10 @@ export default function ClientAnnouncements({ initialAnnouncements }: { initialA
                 <label className="block text-[13px] font-bold text-ink mb-[10px]">
                   3. Target Audience (Who Sees It) *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                   {[
                     { id: 'all', label: 'Everyone', desc: 'Homepage & all registered users' },
+                    { id: 'has_wallet_balance', label: 'Users with Wallet Balance', desc: 'Users with returns > ₦0 in wallet' },
                     { id: 'customers', label: 'Customers Only', desc: 'Investors and farmland buyers' },
                     { id: 'agents', label: 'Sales Agents Only', desc: 'Agent portal commission updates' },
                     { id: 'unverified_kyc', label: 'Unverified KYC', desc: 'Users pending ID verification' },

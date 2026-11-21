@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { approveTransaction, rejectTransaction, bulkApproveTransactions, bulkRejectTransactions } from '@/app/actions/admin';
 import { releaseDueCommissionsAction } from '@/app/actions/admin-ops';
+import { notifyAllUsersWithWalletBalanceAction } from '@/app/actions/accounting';
 import { formatCurrency } from '@/lib/mockData';
 import { toast } from '@/components/ui/Toast';
 import ClientPayoutRow from './ClientPayoutRow';
@@ -37,6 +38,35 @@ export default function ClientAdminFinance({
   const [withdrawalFilter, setWithdrawalFilter] = useState<'PENDING' | 'PAID' | 'REJECTED' | 'ALL'>('PENDING');
   const [payoutFilter, setPayoutFilter] = useState<'MONTH' | 'ALL_PENDING' | 'PAID'>('ALL_PENDING');
   const [isReleasingComms, setIsReleasingComms] = useState(false);
+  const [isNotifyingWalletUsers, setIsNotifyingWalletUsers] = useState(false);
+
+  const handleNotifyAllWalletHolders = async () => {
+    const count = ledger?.usersWithBalance?.length || 0;
+    if (count === 0) {
+      toast('No users currently have a positive wallet balance.', 'info');
+      return;
+    }
+    if (
+      !confirm(
+        `Send a personalized email and in-app notification to all ${count} user(s) who currently have money in their Getlands Wallet?\n\nEach user will see their exact wallet balance in Naira and instructions to log in, go to their Wallet, and submit a withdrawal request (processed in 24 to 48 hours).`
+      )
+    )
+      return;
+
+    setIsNotifyingWalletUsers(true);
+    try {
+      const res = await notifyAllUsersWithWalletBalanceAction();
+      if (res?.error) {
+        toast(res.error, 'error');
+      } else {
+        toast(`Sent personalized wallet withdrawal reminder emails to ${res.count} user(s)!`, 'success');
+      }
+    } catch (err: any) {
+      toast(err.message || 'Failed to send wallet reminder emails', 'error');
+    } finally {
+      setIsNotifyingWalletUsers(false);
+    }
+  };
 
   useEffect(() => {
     setTxList(transactions);
@@ -314,22 +344,34 @@ export default function ClientAdminFinance({
                   {formatCurrency(ledger?.walletLiabilities || 0)}
                 </strong>
                 <p className="text-[12px] text-white/80 leading-relaxed">
-                  Funds currently sitting in customer wallets that have <strong>not</strong> been requested for withdrawal yet. Customers see a notice instructing them to request a withdrawal from their wallet to get paid in 24 to 48 hours.
+                  Funds currently sitting in customer wallets that have <strong>not</strong> been requested for withdrawal yet. Click below to email all users with a balance even if they have not logged in.
                 </p>
               </div>
               {ledger && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('ledger');
-                    setTimeout(() => {
-                      document.getElementById('wallet-liabilities-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 100);
-                  }}
-                  className="mt-[12px] text-[12px] font-bold text-[#a9e7bd] hover:underline text-left"
-                >
-                  View passive wallet balances ({ledger?.usersWithBalance?.length || 0} users) &rarr;
-                </button>
+                <div className="mt-[14px] flex flex-wrap items-center gap-[10px]">
+                  <button
+                    type="button"
+                    onClick={handleNotifyAllWalletHolders}
+                    disabled={isNotifyingWalletUsers || (ledger?.usersWithBalance?.length || 0) === 0}
+                    className="px-[14px] py-[8px] bg-[#008b45] hover:bg-[#007339] text-white text-[11px] font-bold rounded-full transition-colors disabled:opacity-50"
+                  >
+                    {isNotifyingWalletUsers
+                      ? 'Sending Emails...'
+                      : `Email All (${ledger?.usersWithBalance?.length || 0} Users) to Withdraw`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('ledger');
+                      setTimeout(() => {
+                        document.getElementById('wallet-liabilities-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }}
+                    className="text-[11px] font-bold text-[#a9e7bd] hover:underline"
+                  >
+                    View List &rarr;
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -893,14 +935,28 @@ export default function ClientAdminFinance({
 
           {/* Active Wallet Liabilities & Settlement Reconciliation */}
           <div id="wallet-liabilities-section" className="bg-white rounded-[24px] border border-black/5 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col sm:flex-row justify-between sm:items-center gap-[10px]">
+            <div className="p-[20px] border-b border-black/5 bg-[#fcfdfc] flex flex-col lg:flex-row justify-between lg:items-center gap-[12px]">
               <div>
-                <h3 className="font-manrope text-[16px] font-bold text-ink">Active Wallet Liabilities & Customer Balances</h3>
-                <p className="text-[13px] text-[#68736d]">Users holding digital wallet balances. If a customer was already paid directly via bank, clear their balance below.</p>
+                <h3 className="font-manrope text-[16px] font-bold text-ink">Active Wallet Liabilities &amp; Customer Balances</h3>
+                <p className="text-[13px] text-[#68736d]">Users holding digital wallet balances. Email them to log in and request a withdrawal, or clear balances already paid offline.</p>
               </div>
-              <div className="text-left sm:text-right">
-                <span className="block text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[2px]">Total Platform Liability</span>
-                <strong className="text-[18px] text-red-600 font-manrope">{formatCurrency(ledger.walletLiabilities || 0)}</strong>
+              <div className="flex flex-wrap items-center gap-[15px]">
+                {(ledger.usersWithBalance?.length || 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleNotifyAllWalletHolders}
+                    disabled={isNotifyingWalletUsers}
+                    className="px-[16px] py-[9px] bg-[#008b45] hover:bg-[#007339] text-white text-[12px] font-bold rounded-full transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    {isNotifyingWalletUsers
+                      ? 'Sending Emails...'
+                      : `Email All (${ledger.usersWithBalance.length}) Users to Withdraw`}
+                  </button>
+                )}
+                <div className="text-left lg:text-right">
+                  <span className="block text-[11px] text-[#7a847f] font-bold uppercase tracking-[0.05em] mb-[2px]">Total Platform Liability</span>
+                  <strong className="text-[18px] text-red-600 font-manrope">{formatCurrency(ledger.walletLiabilities || 0)}</strong>
+                </div>
               </div>
             </div>
             
