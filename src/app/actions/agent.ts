@@ -41,17 +41,40 @@ export async function draftPortfolioAction(formData: FormData) {
   // Generate Reference Code
   const referenceCode = `DRF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
+  // Create linked pending transaction so it also appears in Admin Finance Verifications
+  const tx = await prisma.transaction.create({
+    data: {
+      userId: clientId,
+      type: 'investment',
+      amount: totalAmount,
+      status: 'pending',
+      reference: referenceCode
+    }
+  });
+
   const holding = await prisma.holding.create({
     data: {
       userId: clientId,
       opportunityId,
       totalAmount,
-      units: 1, // Basic assumption for now
+      units: 1,
       status: 'pending',
       referenceCode,
+      transactionId: tx.id,
       ...planData
     }
   });
+
+  // Save optional proof of payment receipt if attached by the sales agent
+  const receiptFile = formData.get('receipt') as File | null;
+  if (receiptFile && receiptFile.size > 0) {
+    const { savePaymentReceipt } = await import('@/lib/receiptStorage');
+    await savePaymentReceipt(referenceCode, receiptFile);
+  }
+
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin/sales');
+  revalidatePath('/admin/finance');
 
   return { success: true, referenceCode, holdingId: holding.id };
 }

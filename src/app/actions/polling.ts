@@ -25,7 +25,7 @@ export async function getPollingUnreadCount() {
   return await getUnreadMessageCount();
 }
 
-export async function getLatestNotifications(userId: string) {
+export async function getLatestNotifications(userId: string, portalType: 'customer' | 'admin' | 'agent' = 'customer') {
   noStore();
   const session = await getSession();
   if (!session?.userId) return null;
@@ -36,9 +36,26 @@ export async function getLatestNotifications(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     if (!user) return null;
 
-    const whereClause = user.role === 'admin'
-      ? { OR: [{ userId }, { userId: null }] }
-      : { userId };
+    let whereClause: any;
+    if (portalType === 'admin') {
+      whereClause = user.role === 'admin'
+        ? { OR: [{ userId }, { userId: null }] }
+        : { userId };
+    } else if (portalType === 'agent') {
+      whereClause = {
+        userId,
+        NOT: [{ linkUrl: { startsWith: '/admin' } }]
+      };
+    } else {
+      // Customer portal: strictly customer-facing notifications
+      whereClause = {
+        userId,
+        NOT: [
+          { linkUrl: { startsWith: '/admin' } },
+          { linkUrl: { startsWith: '/agent' } }
+        ]
+      };
+    }
 
     const notifications = await prisma.notification.findMany({
       where: whereClause,

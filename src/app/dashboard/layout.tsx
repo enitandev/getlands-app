@@ -18,7 +18,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const notifications = await prisma.notification.findMany({
     where: {
-      userId: user.id
+      userId: user.id,
+      NOT: [
+        { linkUrl: { startsWith: '/admin' } },
+        { linkUrl: { startsWith: '/agent' } }
+      ]
     },
     orderBy: { createdAt: 'desc' },
     take: 30

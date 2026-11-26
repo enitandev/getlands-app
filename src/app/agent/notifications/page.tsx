@@ -19,7 +19,10 @@ export default async function AgentNotificationsPage() {
 
   const notifications = await prisma.notification.findMany({
     where: {
-      userId: session.userId as string
+      userId: session.userId as string,
+      NOT: [
+        { linkUrl: { startsWith: '/admin' } }
+      ]
     },
     orderBy: { createdAt: 'desc' },
     take: 100

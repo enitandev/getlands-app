@@ -122,6 +122,11 @@ model Holding {
   maturityDate    DateTime?
   transactionId   String?
 
+  // Land Acquisition & Legal Conveyancing
+  totalContractPrice Float?
+  paymentStatus      String       @default("paid_in_full") // paid_in_full, installment
+  plotNumber         String?
+
   user          User         @relation(fields: [userId], references: [id])
   opportunity   Opportunity  @relation(fields: [opportunityId], references: [id])
   cohort        Cohort?      @relation(fields: [cohortId], references: [id])

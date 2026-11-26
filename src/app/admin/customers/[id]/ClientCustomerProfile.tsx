@@ -604,6 +604,20 @@ export default function ClientCustomerProfile({
                     <div className="text-[13px] text-[#68736d]">
                       Acquired: <strong>{new Date(h.dateAcquired).toLocaleDateString()}</strong> •{' '}
                       <strong>{h.units}</strong> Unit{h.units === 1 ? '' : 's'}
+                      {h.plotNumber && (
+                        <span>
+                          {' '}• Plot: <strong className="text-ink">{h.plotNumber}</strong>
+                        </span>
+                      )}
+                      {h.paymentStatus && h.opportunity?.category === 'land' && (
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          h.paymentStatus === 'paid_in_full'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}>
+                          {h.paymentStatus === 'paid_in_full' ? 'Paid in full' : 'Installment active'}
+                        </span>
+                      )}
                       {h.maturityDate && (
                         <span>
                           {' '}
@@ -675,23 +689,23 @@ export default function ClientCustomerProfile({
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                       </svg>
-                      Subscription Agreement
+                      {h.opportunity?.category === 'land'
+                        ? (h.paymentStatus === 'paid_in_full' ? 'Deed of Assignment' : 'Contract of Sale')
+                        : (h.opportunity?.category === 'land_banking' ? 'Land Banking Agreement' : 'Subscription Agreement')}
                     </a>
 
-                    {h.opportunity?.category !== 'land-banking' && (
-                      <a
-                        href={`/api/documents/certificate/${h.id}?t=${Date.now()}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-[12px] py-[6px] bg-[#f7f9f7] hover:bg-[#eef3ef] rounded-full flex items-center gap-[8px] text-[12px] font-bold text-[#008b45] transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                        Investment Certificate
-                      </a>
-                    )}
+                    <a
+                      href={`/api/documents/certificate/${h.id}?t=${Date.now()}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-[12px] py-[6px] bg-[#f7f9f7] hover:bg-[#eef3ef] rounded-full flex items-center gap-[8px] text-[12px] font-bold text-[#008b45] transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="8" r="7"></circle>
+                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                      </svg>
+                      {h.opportunity?.category === 'land' ? 'Land Allocation Cert' : 'Investment Certificate'}
+                    </a>
                   </div>
                 </div>
               ))
@@ -1466,6 +1480,53 @@ export default function ClientCustomerProfile({
                 </div>
               </div>
 
+              <div className="p-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[12px] space-y-3">
+                <div className="text-[12px] font-bold text-[#166534] uppercase tracking-wider">
+                  Land Conveyancing &amp; Deed Controls (For Land Assets)
+                </div>
+                <div className="grid grid-cols-2 gap-[10px]">
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink mb-[3px]">
+                      Plot Designation
+                    </label>
+                    <input
+                      name="plotNumber"
+                      type="text"
+                      placeholder="e.g. Plot 4, Block C"
+                      className="w-full h-[40px] bg-white rounded-[8px] px-[12px] text-[12px] border border-black/10 outline-none focus:border-[#008b45]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink mb-[3px]">
+                      Payment Status
+                    </label>
+                    <select
+                      name="paymentStatus"
+                      defaultValue="paid_in_full"
+                      className="w-full h-[40px] bg-white rounded-[8px] px-[10px] text-[12px] border border-black/10 outline-none focus:border-[#008b45]"
+                    >
+                      <option value="paid_in_full">Paid in Full (Issues Deed)</option>
+                      <option value="installment">Installment (Holds Deed)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-ink mb-[3px]">
+                    Total Agreed Contract Price (₦)
+                  </label>
+                  <input
+                    name="totalContractPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="Leave empty to use Amount Paid"
+                    className="w-full h-[40px] bg-white rounded-[8px] px-[12px] text-[12px] border border-black/10 outline-none focus:border-[#008b45]"
+                  />
+                  <p className="text-[10px] text-[#64748b] mt-1">
+                    When installment is active, the Deed of Assignment is held until 100% full payment is recorded.
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[12px] font-bold text-ink mb-[5px]">
                   Date Acquired
@@ -1588,6 +1649,56 @@ export default function ClientCustomerProfile({
                     <option value="completed">Completed</option>
                     <option value="matured">Matured</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Land Conveyancing Controls */}
+              <div className="p-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[12px] space-y-3">
+                <div className="text-[12px] font-bold text-[#166534] uppercase tracking-wider">
+                  Land Conveyancing &amp; Deed Controls (For Land Assets)
+                </div>
+                <div className="grid grid-cols-2 gap-[10px]">
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink mb-[3px]">
+                      Plot Designation
+                    </label>
+                    <input
+                      name="plotNumber"
+                      type="text"
+                      defaultValue={editingHolding.plotNumber || ''}
+                      placeholder="e.g. Plot 4, Block C"
+                      className="w-full h-[40px] bg-white rounded-[8px] px-[12px] text-[12px] border border-black/10 outline-none focus:border-[#008b45]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink mb-[3px]">
+                      Payment Status
+                    </label>
+                    <select
+                      name="paymentStatus"
+                      defaultValue={editingHolding.paymentStatus || 'paid_in_full'}
+                      className="w-full h-[40px] bg-white rounded-[8px] px-[10px] text-[12px] border border-black/10 outline-none focus:border-[#008b45]"
+                    >
+                      <option value="paid_in_full">Paid in Full (Issues Deed)</option>
+                      <option value="installment">Installment (Holds Deed)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-ink mb-[3px]">
+                    Total Agreed Contract Price (₦)
+                  </label>
+                  <input
+                    name="totalContractPrice"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingHolding.totalContractPrice || editingHolding.totalAmount || ''}
+                    placeholder="Total contract price"
+                    className="w-full h-[40px] bg-white rounded-[8px] px-[12px] text-[12px] border border-black/10 outline-none focus:border-[#008b45]"
+                  />
+                  <p className="text-[10px] text-[#64748b] mt-1">
+                    When marked as Paid in Full, the standard 6-Page Deed of Assignment is immediately unlocked.
+                  </p>
                 </div>
               </div>
 

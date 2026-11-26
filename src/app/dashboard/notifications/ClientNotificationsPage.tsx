@@ -26,12 +26,22 @@ export default function ClientNotificationsPage({
   portalType?: 'customer' | 'agent';
 }) {
   const router = useRouter();
-  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
+  const isAllowedForPortal = (n: NotificationItem) => {
+    if (portalType === 'customer' && (n.linkUrl?.startsWith('/admin') || n.linkUrl?.startsWith('/agent'))) {
+      return false;
+    }
+    if (portalType === 'agent' && n.linkUrl?.startsWith('/admin')) {
+      return false;
+    }
+    return true;
+  };
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => initialNotifications.filter(isAllowedForPortal));
   const [filterTab, setFilterTab] = useState<'all' | 'transactions' | 'updates' | 'unread'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const unreadCount = notifications.filter(n => isAllowedForPortal(n) && n.unread).length;
 
   const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -58,7 +68,7 @@ export default function ClientNotificationsPage({
     if (!confirm('Are you sure you want to remove all read notifications?')) return;
     setIsProcessing(true);
     setNotifications(prev => prev.filter(n => n.unread));
-    await clearReadNotificationsAction();
+    await clearReadNotificationsAction(portalType);
     toast('Read notifications cleared', 'success');
     setIsProcessing(false);
   };
@@ -115,6 +125,9 @@ export default function ClientNotificationsPage({
   };
 
   const filteredNotifications = notifications.filter(n => {
+    // Portal security boundary filter
+    if (!isAllowedForPortal(n)) return false;
+
     // Tab filter
     if (filterTab === 'unread' && !n.unread) return false;
     if (filterTab === 'transactions' && n.type !== 'TRANSACTION') return false;

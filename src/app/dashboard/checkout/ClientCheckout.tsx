@@ -8,9 +8,25 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'wallet'>('transfer');
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
   const [qty, setQty] = useState(initialQuantity);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0] || null;
+    if (selected && selected.size > 10 * 1024 * 1024) {
+      toast('Receipt file size must be under 10MB', 'error');
+      e.target.value = '';
+      return;
+    }
+    setFile(selected);
+    if (selected && selected.type.startsWith('image/')) {
+      setPreviewUrl(URL.createObjectURL(selected));
+    } else {
+      setPreviewUrl(null);
+    }
+  };
   
   // Timer state (25 minutes)
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -188,26 +204,34 @@ export default function ClientCheckout({ opportunity: opp, walletBalance, user, 
             </p>
             
             <div className="max-w-[400px] mx-auto">
-              <label htmlFor="dropzone-file" className="relative flex flex-col items-center justify-center w-full h-[200px] border-2 border-dashed border-gray-300 rounded-[16px] bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-6 group overflow-hidden">
+              <label htmlFor="dropzone-file" className="relative flex flex-col items-center justify-center w-full min-h-[210px] p-4 border-2 border-dashed border-gray-300 rounded-[16px] bg-gray-50 hover:bg-gray-100 hover:border-[#008b45] transition-colors cursor-pointer mb-6 group overflow-hidden">
                 <input 
                   id="dropzone-file" 
                   type="file" 
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
                   accept="image/*,application/pdf" 
-                  onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                  onChange={handleFileChange} 
                 />
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none z-10">
+                <div className="flex flex-col items-center justify-center pt-4 pb-4 pointer-events-none z-10">
                   {file ? (
                     <div className="text-center px-4">
-                      <svg className="w-10 h-10 text-[#008b45] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <p className="text-sm font-semibold text-gray-700 truncate max-w-[280px]">{file.name}</p>
+                      {previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt="Payment receipt preview"
+                          className="w-[120px] h-[120px] object-cover rounded-[12px] mx-auto mb-3 border border-black/10 shadow-sm"
+                        />
+                      ) : (
+                        <svg className="w-10 h-10 text-[#008b45] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      )}
+                      <p className="text-sm font-semibold text-[#008b45] truncate max-w-[280px] mx-auto">{file.name}</p>
                       <p className="text-xs text-gray-500 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB • Tap to replace</p>
                     </div>
                   ) : (
                     <>
                       <svg className="w-10 h-10 text-gray-400 group-hover:text-[#008b45] transition-colors mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                       <p className="mb-2 text-sm text-gray-500"><span className="font-semibold text-[#008b45]">Click to upload</span> or drag and drop</p>
-                      <p className="text-xs text-gray-500">PNG, JPG or PDF (MAX. 5MB)</p>
+                      <p className="text-xs text-gray-500">PNG, JPG or PDF (MAX. 10MB)</p>
                     </>
                   )}
                 </div>

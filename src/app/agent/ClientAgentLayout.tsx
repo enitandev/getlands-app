@@ -292,7 +292,7 @@ export default function ClientAgentLayout({
             >
               Investor Portal &rarr;
             </Link>
-            <NotificationDropdown notifications={notifications} userId={userId} />
+            <NotificationDropdown notifications={notifications} userId={userId} portalType="agent" />
             <Link href="/dashboard/settings" className="flex items-center gap-2.5 pl-2 group">
               <div className="w-[36px] h-[36px] rounded-full bg-[#008b45]/10 group-hover:bg-[#008b45] group-hover:text-white transition-colors flex items-center justify-center text-[#008b45] font-manrope font-bold text-[13px]">
                 {initials}
@@ -326,7 +326,7 @@ export default function ClientAgentLayout({
                 </span>
               )}
             </Link>
-            <NotificationDropdown notifications={notifications} userId={userId} />
+            <NotificationDropdown notifications={notifications} userId={userId} portalType="agent" />
             <Link 
               href="/dashboard" 
               className="text-[11px] font-bold text-[#008b45] bg-[#eef3ef] border border-[#008b45]/20 px-[10px] py-[5px] rounded-full"

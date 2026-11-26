@@ -178,46 +178,84 @@ export async function createAnnouncement(formData: FormData) {
   return createAnnouncementAction(formData);
 }
 
-export async function approveTransaction(transactionId: string) {
+export async function approveTransaction(transactionId: string, verifiedAmount?: number) {
   await checkAdmin();
   
-  const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    include: { user: true }
+  });
   if (!tx || tx.status !== 'pending') {
     return { success: false, error: 'Transaction not found or already processed' };
   }
 
+  const finalAmount =
+    typeof verifiedAmount === 'number' && !isNaN(verifiedAmount) && verifiedAmount > 0
+      ? verifiedAmount
+      : tx.amount;
+
   await prisma.transaction.update({
     where: { id: transactionId },
-    data: { status: 'success' }
+    data: {
+      status: 'success',
+      amount: finalAmount
+    }
   });
 
   if (tx.type === 'deposit') {
     // Credit user's wallet
     await prisma.user.update({
       where: { id: tx.userId },
-      data: { walletBalance: { increment: tx.amount } }
+      data: { walletBalance: { increment: finalAmount } }
     });
     await prisma.notification.create({
       data: {
         userId: tx.userId,
-        title: "Deposit Confirmed",
-        message: `Your deposit of ₦${tx.amount.toLocaleString()} has been confirmed and credited to your wallet.`,
+        title: "Deposit Verified & Credited",
+        message: `Your deposit of ₦${finalAmount.toLocaleString()} (Ref: ${tx.reference}) has been verified and credited to your Getlands Wallet.`,
         type: "TRANSACTION",
         linkUrl: "/dashboard/wallet",
         actionText: "View Wallet"
       }
     });
   } else if (tx.type === 'investment') {
-    // If it's a direct bank transfer investment, find the pending holding and activate it
-    const holding = await prisma.holding.findFirst({
-      where: { userId: tx.userId, status: 'pending', totalAmount: tx.amount },
-      orderBy: { dateAcquired: 'desc' }
+    // 1. First look up by exact transactionId or referenceCode, then fall back to user's pending holding
+    let holding = await prisma.holding.findFirst({
+      where: {
+        userId: tx.userId,
+        status: 'pending',
+        OR: [
+          { transactionId: tx.id },
+          { referenceCode: tx.reference }
+        ]
+      },
+      include: { opportunity: true }
     });
+
+    if (!holding) {
+      holding = await prisma.holding.findFirst({
+        where: { userId: tx.userId, status: 'pending', totalAmount: tx.amount },
+        include: { opportunity: true },
+        orderBy: { dateAcquired: 'desc' }
+      });
+    }
+
+    if (!holding) {
+      holding = await prisma.holding.findFirst({
+        where: { userId: tx.userId, status: 'pending' },
+        include: { opportunity: true },
+        orderBy: { dateAcquired: 'desc' }
+      });
+    }
 
     if (holding) {
       await prisma.holding.update({
         where: { id: holding.id },
-        data: { status: 'active' }
+        data: {
+          status: 'active',
+          totalAmount: finalAmount,
+          transactionId: tx.id
+        }
       });
       
       await generatePayoutSchedule(holding.id);
@@ -225,24 +263,33 @@ export async function approveTransaction(transactionId: string) {
       await prisma.notification.create({
         data: {
           userId: tx.userId,
-          title: "Investment Active",
-          message: `Your payment was confirmed and your investment is now active.`,
+          title: "Investment Verified & Active",
+          message: `Your payment of ₦${finalAmount.toLocaleString()} for ${holding.opportunity?.title || 'your investment'} was verified and your holding is now active.`,
           type: "TRANSACTION",
           linkUrl: "/dashboard/holdings",
           actionText: "View Holdings"
         }
       });
 
+      if (tx.user?.email && holding.opportunity?.title) {
+        try {
+          const { sendNewInvestmentEmail } = await import('@/lib/email');
+          await sendNewInvestmentEmail(tx.user.email, tx.user.firstName, holding.opportunity.title, holding.units);
+        } catch (emailErr) {
+          console.error("Failed to send investment confirmation email:", emailErr);
+        }
+      }
+
       // Check referral bonus
-      await triggerReferralBonus(tx.userId, tx.amount, holding.id);
+      await triggerReferralBonus(tx.userId, finalAmount, holding.id);
       
       // Update cohort committed amount if holding is tied to a cohort
       if (holding.cohortId) {
         await prisma.cohort.update({
           where: { id: holding.cohortId },
           data: {
-            committedAmount: { increment: holding.totalAmount },
-            availableAmount: { decrement: holding.totalAmount },
+            committedAmount: { increment: finalAmount },
+            availableAmount: { decrement: finalAmount },
             fundedUnits: { increment: holding.units },
             availableUnits: { decrement: holding.units }
           }
@@ -250,17 +297,16 @@ export async function approveTransaction(transactionId: string) {
       }
     }
   } else if (tx.type === 'withdrawal') {
-    // Wallet was already deducted. Notify user of success and send email.
-    const user = await prisma.user.findUnique({ where: { id: tx.userId } });
+    const user = tx.user || (await prisma.user.findUnique({ where: { id: tx.userId } }));
     const fee = tx.fee ?? 0;
-    const netAmount = tx.netAmount ?? (tx.amount - fee);
+    const netAmount = tx.netAmount ?? (finalAmount - fee);
     await prisma.notification.create({
       data: {
         userId: tx.userId,
         title: "Withdrawal Sent to Your Bank",
         message: fee > 0
-          ? `Your withdrawal of ₦${tx.amount.toLocaleString()} (Net payout: ₦${netAmount.toLocaleString()} after ₦${fee.toLocaleString()} settlement fee) has been processed and sent to your bank.`
-          : `Your withdrawal of ₦${tx.amount.toLocaleString()} has been processed and sent to your bank.`,
+          ? `Your withdrawal of ₦${finalAmount.toLocaleString()} (Net payout: ₦${netAmount.toLocaleString()} after ₦${fee.toLocaleString()} settlement fee) has been processed and sent to your bank.`
+          : `Your withdrawal of ₦${finalAmount.toLocaleString()} has been processed and sent to your bank.`,
         type: "TRANSACTION",
         linkUrl: "/dashboard/wallet",
         actionText: "View Wallet"
@@ -269,17 +315,27 @@ export async function approveTransaction(transactionId: string) {
     if (user?.email) {
       try {
         const { sendWithdrawalProcessedEmail } = await import('@/lib/email');
-        await sendWithdrawalProcessedEmail(user.email, user.firstName, tx.amount, netAmount, fee);
+        await sendWithdrawalProcessedEmail(user.email, user.firstName, finalAmount, netAmount, fee);
       } catch (e) {
         console.error("Failed to send withdrawal processed email:", e);
       }
     }
   }
 
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin');
+  revalidatePath('/admin/finance');
+  revalidatePath('/admin/sales');
+  revalidatePath('/admin/customers');
+  revalidatePath(`/admin/customers/${tx.userId}`);
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/wallet');
+  revalidatePath('/dashboard/holdings');
+
   return { success: true };
 }
 
-export async function rejectTransaction(transactionId: string) {
+export async function rejectTransaction(transactionId: string, reason?: string) {
   await checkAdmin();
   
   const tx = await prisma.transaction.findUnique({ where: { id: transactionId }});
@@ -301,20 +357,36 @@ export async function rejectTransaction(transactionId: string) {
   } else if (tx.type === 'investment') {
     // If there is an associated pending holding, clean it up so it doesn't linger
     await prisma.holding.deleteMany({
-      where: { transactionId: tx.id, status: 'pending' }
+      where: {
+        status: 'pending',
+        OR: [
+          { transactionId: tx.id },
+          { referenceCode: tx.reference }
+        ]
+      }
     });
   }
+
+  const reasonSuffix = reason?.trim() ? ` Reason: ${reason.trim()}` : ' Please upload a clear payment receipt or contact support.';
 
   await prisma.notification.create({
     data: {
       userId: tx.userId,
-      title: "Transaction Rejected",
+      title: tx.type === 'deposit' ? "Deposit Verification Unsuccessful" : tx.type === 'investment' ? "Payment Verification Unsuccessful" : "Transaction Rejected",
       message: tx.type === 'withdrawal' 
-        ? `Your withdrawal request of ₦${tx.amount.toLocaleString()} was rejected and the funds were returned to your wallet. Please contact support.`
-        : `Your recent transaction of ₦${tx.amount.toLocaleString()} was rejected. Please contact support.`,
-      type: "SYSTEM"
+        ? `Your withdrawal request of ₦${tx.amount.toLocaleString()} was rejected and the funds were returned to your wallet.${reasonSuffix}`
+        : `Your payment submission of ₦${tx.amount.toLocaleString()} (Ref: ${tx.reference}) could not be verified.${reasonSuffix}`,
+      type: "SYSTEM",
+      linkUrl: tx.type === 'deposit' || tx.type === 'withdrawal' ? '/dashboard/wallet' : '/dashboard/holdings'
     }
   });
+
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin');
+  revalidatePath('/admin/finance');
+  revalidatePath('/admin/sales');
+  revalidatePath('/dashboard/wallet');
+  revalidatePath('/dashboard/holdings');
 
   return { success: true };
 }

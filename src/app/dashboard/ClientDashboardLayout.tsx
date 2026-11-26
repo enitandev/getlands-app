@@ -272,7 +272,7 @@ export default function ClientDashboardLayout({
                 Agent Portal
               </Link>
             )}
-            <NotificationDropdown notifications={notifications} userId={userId} />
+            <NotificationDropdown notifications={notifications} userId={userId} portalType="customer" />
             <Link href="/dashboard/settings" className="flex items-center gap-2.5 pl-2 group">
               <div className="w-[36px] h-[36px] rounded-full bg-[#008b45]/10 group-hover:bg-[#008b45] group-hover:text-white transition-colors flex items-center justify-center text-[#008b45] font-manrope font-bold text-[13px]">
                 {initials}
@@ -309,7 +309,7 @@ export default function ClientDashboardLayout({
                 </span>
               )}
             </Link>
-            <NotificationDropdown notifications={notifications} userId={userId} />
+            <NotificationDropdown notifications={notifications} userId={userId} portalType="customer" />
             <Link href="/dashboard/settings" className="w-[32px] h-[32px] rounded-full bg-[#eef3ef] flex items-center justify-center text-[#18201c] text-[12px] font-bold hover:bg-[#008b45] hover:text-white transition-colors">
               {initials}
             </Link>

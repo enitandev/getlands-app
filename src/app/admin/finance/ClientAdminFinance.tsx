@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { approveTransaction, rejectTransaction, bulkApproveTransactions, bulkRejectTransactions } from '@/app/actions/admin';
+import { uploadTransactionReceiptAction } from '@/app/actions/checkout';
 import { releaseDueCommissionsAction } from '@/app/actions/admin-ops';
 import { notifyAllUsersWithWalletBalanceAction } from '@/app/actions/accounting';
 import { formatCurrency } from '@/lib/mockData';
@@ -39,6 +40,46 @@ export default function ClientAdminFinance({
   const [payoutFilter, setPayoutFilter] = useState<'MONTH' | 'ALL_PENDING' | 'PAID'>('ALL_PENDING');
   const [isReleasingComms, setIsReleasingComms] = useState(false);
   const [isNotifyingWalletUsers, setIsNotifyingWalletUsers] = useState(false);
+
+  // Verification & Receipt states
+  const [verifiedAmountInput, setVerifiedAmountInput] = useState<string>('');
+  const [rejectionReasonInput, setRejectionReasonInput] = useState<string>('');
+  const [adminReceiptFile, setAdminReceiptFile] = useState<File | null>(null);
+  const [isAdminUploadingReceipt, setIsAdminUploadingReceipt] = useState<boolean>(false);
+  const [receiptRefreshKey, setReceiptRefreshKey] = useState<number>(0);
+
+  useEffect(() => {
+    if (selectedTx) {
+      setVerifiedAmountInput(selectedTx.amount !== undefined ? String(selectedTx.amount) : '0');
+      setRejectionReasonInput('');
+      setAdminReceiptFile(null);
+    }
+  }, [selectedTx]);
+
+  const handleAdminUploadReceipt = async () => {
+    if (!selectedTx || !adminReceiptFile) {
+      toast('Please choose a receipt file to upload', 'error');
+      return;
+    }
+    setIsAdminUploadingReceipt(true);
+    try {
+      const fd = new FormData();
+      fd.append('reference', selectedTx.reference);
+      fd.append('receipt', adminReceiptFile);
+      const res = await uploadTransactionReceiptAction(fd);
+      if (res?.error) {
+        toast(res.error, 'error');
+      } else {
+        toast('Proof of payment attached to reference successfully!', 'success');
+        setAdminReceiptFile(null);
+        setReceiptRefreshKey(prev => prev + 1);
+      }
+    } catch (e: any) {
+      toast(e.message || 'Failed to upload receipt', 'error');
+    } finally {
+      setIsAdminUploadingReceipt(false);
+    }
+  };
 
   const handleNotifyAllWalletHolders = async () => {
     const count = ledger?.usersWithBalance?.length || 0;
@@ -155,15 +196,15 @@ export default function ClientAdminFinance({
     );
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, customAmount?: number) => {
     setIsProcessing(id);
     try {
-      const res = await approveTransaction(id);
+      const res = await approveTransaction(id, customAmount);
       if (res?.error) {
         toast(res.error, 'error');
       } else {
         toast('Payment verified and holding activated!', 'success');
-        setTxList(prev => prev.map(t => t.id === id ? { ...t, status: 'success' } : t));
+        setTxList(prev => prev.map(t => t.id === id ? { ...t, status: 'success', amount: customAmount || t.amount } : t));
         setSelectedTx(null);
         setSelectedIds(prev => prev.filter(item => item !== id));
         router.refresh();
@@ -175,10 +216,10 @@ export default function ClientAdminFinance({
     }
   };
 
-  const handleReject = async (id: string) => {
+  const handleReject = async (id: string, reason?: string) => {
     setIsProcessing(id);
     try {
-      const res = await rejectTransaction(id);
+      const res = await rejectTransaction(id, reason);
       if (res?.error) {
         toast(res.error, 'error');
       } else {
@@ -530,7 +571,7 @@ export default function ClientAdminFinance({
           )}
 
           <div className="bg-white rounded-[20px] shadow-sm border border-black/5 overflow-hidden">
-            <div className="hidden lg:grid grid-cols-[40px_1.5fr_1.8fr_1fr_1fr_180px] gap-[15px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em] items-center">
+            <div className="hidden lg:grid grid-cols-[36px_1.4fr_1.6fr_1fr_125px_100px_165px] gap-[15px] p-[20px_24px] bg-[#fcfdfc] border-b border-black/5 text-[11px] font-bold text-[#7a847f] uppercase tracking-[0.05em] items-center">
               <div>
                 <input 
                   type="checkbox" 
@@ -542,6 +583,7 @@ export default function ClientAdminFinance({
               <div>Customer</div>
               <div>Type & Reference</div>
               <div>Amount</div>
+              <div>Proof of Payment</div>
               <div>Date</div>
               <div className="text-right">Actions</div>
             </div>
@@ -550,7 +592,7 @@ export default function ClientAdminFinance({
                 const isSelected = selectedIds.includes(tx.id);
                 const isItemProcessing = isProcessing === tx.id;
                 return (
-                  <div key={tx.id} className={`grid grid-cols-1 lg:grid-cols-[40px_1.5fr_1.8fr_1fr_1fr_180px] gap-[15px] p-[20px] lg:p-[20px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors ${isSelected ? 'bg-[#008b45]/5' : ''}`}>
+                  <div key={tx.id} className={`grid grid-cols-1 lg:grid-cols-[36px_1.4fr_1.6fr_1fr_125px_100px_165px] gap-[15px] p-[20px] lg:p-[20px_24px] items-start lg:items-center hover:bg-[#fcfdfc] transition-colors ${isSelected ? 'bg-[#008b45]/5' : ''}`}>
                     <div className="hidden lg:block">
                       <input 
                         type="checkbox" 
@@ -560,15 +602,39 @@ export default function ClientAdminFinance({
                       />
                     </div>
                     <div>
-                      <strong className="block text-[14px] text-ink">{tx.user?.firstName || 'User'} {tx.user?.lastName || ''}</strong>
-                      <span className="text-[12px] text-[#68736d]">{tx.user?.email || 'N/A'}</span>
+                      <strong className="block text-[14px] text-ink leading-snug">{tx.user?.firstName || 'User'} {tx.user?.lastName || ''}</strong>
+                      <span className="text-[12px] text-[#68736d] block truncate">{tx.user?.email || 'N/A'}</span>
+                      {tx.user?.phoneNumber && (
+                        <span className="text-[11px] text-[#7a847f] font-mono block mt-0.5">{tx.user.phoneNumber}</span>
+                      )}
                     </div>
                     <div>
-                      <strong className="block text-[14px] text-ink capitalize">{tx.type}</strong>
-                      <span className="text-[12px] text-[#68736d] font-mono">{tx.reference}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/5 text-ink">
+                          {tx.type}
+                        </span>
+                        {tx.holding?.opportunity?.title && (
+                          <span className="text-[10px] font-bold text-[#008b45] bg-[#008b45]/10 px-2 py-0.5 rounded-full truncate max-w-[150px]">
+                            {tx.holding.opportunity.title}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[12px] text-[#68736d] font-mono block truncate">{tx.reference}</span>
                     </div>
                     <div>
                       <strong className="text-[15px] text-[#008b45] font-bold font-manrope">{formatCurrency(tx.amount)}</strong>
+                    </div>
+                    <div>
+                      <a 
+                        href={`/api/receipt/${encodeURIComponent(tx.reference)}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#008b45]/10 text-[#008b45] hover:bg-[#008b45]/20 transition-colors"
+                        title="View uploaded transfer receipt"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        View Slip ↗
+                      </a>
                     </div>
                     <div className="text-[13px] text-[#68736d]">
                       {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1100,87 +1166,297 @@ export default function ClientAdminFinance({
 
       {/* Review Transfer Modal */}
       {selectedTx && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-[20px] animate-fade-in">
-          <div className="bg-white rounded-[24px] w-full max-w-[500px] shadow-2xl overflow-hidden">
-            <div className="p-[20px] lg:p-[30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
-              <h2 className="font-manrope text-[20px] font-bold text-ink">Review Transfer</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-[16px] lg:p-[24px] animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-[24px] w-full max-w-[760px] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden my-auto">
+            {/* Header */}
+            <div className="p-[20px] lg:p-[24px_30px] border-b border-black/5 flex justify-between items-center bg-[#fcfdfc]">
+              <div>
+                <h2 className="font-manrope text-[18px] lg:text-[20px] font-bold text-ink leading-tight">
+                  Verify Transfer &amp; Proof of Payment
+                </h2>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="font-mono text-[12px] text-[#68736d] bg-black/5 px-2 py-0.5 rounded">
+                    Ref: {selectedTx.reference}
+                  </span>
+                  <span className="text-[12px] text-[#7a847f]">
+                    Submitted {new Date(selectedTx.date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}
+                  </span>
+                </div>
+              </div>
               <button 
                 onClick={() => setSelectedTx(null)} 
-                disabled={isProcessing !== null}
-                className="w-[32px] h-[32px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] disabled:opacity-50"
+                disabled={isProcessing !== null || isAdminUploadingReceipt}
+                className="w-[34px] h-[34px] bg-[#f7f9f7] rounded-full flex items-center justify-center hover:bg-[#eef3ef] disabled:opacity-50 transition-colors text-[#68736d] hover:text-ink"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
-            <div className="p-[30px] space-y-[20px]">
-              <div className="space-y-[15px] bg-[#fcfdfc] p-[20px] rounded-[16px] border border-black/5">
-                <div>
-                  <span className="block text-[12px] text-[#7a847f] mb-[2px]">Customer</span>
-                  <strong className="block text-[15px] text-ink">{selectedTx.user?.firstName || 'User'} {selectedTx.user?.lastName || ''}</strong>
-                  <span className="block text-[12px] text-[#68736d]">{selectedTx.user?.email || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="block text-[12px] text-[#7a847f] mb-[2px]">Type</span>
-                  <strong className="block text-[15px] text-ink capitalize">{selectedTx.type}</strong>
-                </div>
-                <div>
-                  <span className="block text-[12px] text-[#7a847f] mb-[2px]">Expected Amount</span>
-                  <strong className="block text-[24px] font-manrope text-[#008b45]">{formatCurrency(selectedTx.amount)}</strong>
+
+            {/* Scrollable Modal Content */}
+            <div className="p-[20px] lg:p-[24px_30px] space-y-[20px] overflow-y-auto max-h-[calc(92vh-170px)]">
+              {/* Context Grid: Customer Info & Asset Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">
+                {/* Customer Details */}
+                <div className="bg-[#fcfdfc] p-[16px] rounded-[16px] border border-black/5 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-[#7a847f] uppercase tracking-wider block mb-1">Customer</span>
+                    <strong className="block text-[15px] text-ink font-manrope">
+                      {selectedTx.user?.firstName || 'User'} {selectedTx.user?.lastName || ''}
+                    </strong>
+                    <span className="text-[12px] text-[#68736d] block break-all">{selectedTx.user?.email || 'N/A'}</span>
+                    {selectedTx.user?.phoneNumber && (
+                      <span className="text-[12px] text-ink font-mono block mt-1">{selectedTx.user.phoneNumber}</span>
+                    )}
+                  </div>
+                  {selectedTx.user?.phoneNumber && (
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-black/5">
+                      <a 
+                        href={`https://wa.me/${selectedTx.user.phoneNumber.replace(/[^0-9]/g, '')}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#25d366]/10 text-[#075e54] text-[11px] font-bold rounded-full hover:bg-[#25d366]/20 transition-colors"
+                      >
+                        WhatsApp Client ↗
+                      </a>
+                      <a 
+                        href={`tel:${selectedTx.user.phoneNumber}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-black/5 text-ink text-[11px] font-bold rounded-full hover:bg-black/10 transition-colors"
+                      >
+                        Call ↗
+                      </a>
+                    </div>
+                  )}
                 </div>
 
-                <div className="pt-[10px] border-t border-black/5">
-                  <span className="block text-[12px] text-[#7a847f] mb-[6px] font-bold uppercase tracking-wider">Proof of Payment</span>
-                  <a 
-                    href={`/api/receipt/${selectedTx.reference}`} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#008b45]/10 hover:bg-[#008b45]/20 text-[#008b45] font-bold text-[13px] rounded-[12px] transition-colors"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    View Uploaded Receipt ↗
-                  </a>
+                {/* Deal / Transaction Purpose */}
+                <div className="bg-[#fcfdfc] p-[16px] rounded-[16px] border border-black/5 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-[#7a847f] uppercase tracking-wider block mb-1">
+                      {selectedTx.type === 'deposit' ? 'Transaction Type' : 'Linked Investment'}
+                    </span>
+                    {selectedTx.holding?.opportunity ? (
+                      <div>
+                        <strong className="block text-[15px] text-ink font-manrope leading-tight">
+                          {selectedTx.holding.opportunity.title}
+                        </strong>
+                        <span className="inline-block mt-1 text-[11px] font-bold text-[#008b45] bg-[#008b45]/10 px-2 py-0.5 rounded-full capitalize">
+                          {selectedTx.holding.opportunity.category?.replace('_', ' ')}
+                        </span>
+                        <div className="mt-2 text-[12px] text-[#68736d] space-y-0.5">
+                          <p>Allocation: <strong className="text-ink">{selectedTx.holding.units || 1} unit(s)</strong></p>
+                          {selectedTx.holding.expectedReturn && (
+                            <p>Target ROI: <strong className="text-ink">{selectedTx.holding.expectedReturn}</strong></p>
+                          )}
+                        </div>
+                      </div>
+                    ) : selectedTx.type === 'deposit' ? (
+                      <div>
+                        <strong className="block text-[15px] text-ink font-manrope">Wallet Top-up</strong>
+                        <p className="text-[12px] text-[#68736d] mt-1">
+                          Direct bank transfer deposit. Approving will credit customer available balance immediately.
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <strong className="block text-[15px] text-ink font-manrope capitalize">{selectedTx.type}</strong>
+                        <p className="text-[12px] text-[#68736d] mt-1">
+                          Standard transaction allocation.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-black/5 flex items-center justify-between">
+                    <span className="text-[11px] text-[#7a847f] font-bold uppercase">Stated by Customer</span>
+                    <strong className="text-[15px] font-bold text-ink font-manrope">{formatCurrency(selectedTx.amount)}</strong>
+                  </div>
                 </div>
-                
-                {selectedTx.type === 'withdrawal' && selectedTx.user?.bankAccounts?.[0] && (
-                  <div className="pt-[10px] border-t border-black/5 mt-[10px]">
-                    <span className="block text-[12px] text-[#7a847f] mb-[8px] uppercase tracking-wider font-bold">Transfer To</span>
-                    <div className="bg-[#eef3ef]/50 p-[15px] rounded-[12px] space-y-[8px]">
-                      <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-[#68736d]">Bank:</span>
-                        <strong className="text-ink">{selectedTx.user.bankAccounts[0].bankName}</strong>
-                      </div>
-                      <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-[#68736d]">Name:</span>
-                        <strong className="text-ink">{selectedTx.user.bankAccounts[0].accountName}</strong>
-                      </div>
-                      <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-[#68736d]">Account:</span>
-                        <strong className="font-mono text-ink text-[15px] tracking-wider">{selectedTx.user.bankAccounts[0].accountNumber}</strong>
-                      </div>
+              </div>
+
+              {/* Bank Details for Withdrawal if applicable */}
+              {selectedTx.type === 'withdrawal' && selectedTx.user?.bankAccounts?.[0] && (
+                <div className="bg-[#eef3ef]/60 p-[16px] rounded-[16px] border border-[#008b45]/20 space-y-[6px]">
+                  <span className="block text-[11px] text-[#008b45] mb-[4px] uppercase tracking-wider font-bold">
+                    Payout Destination (Bank on File)
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[13px]">
+                    <div>
+                      <span className="text-[#68736d] block text-[11px]">Bank</span>
+                      <strong className="text-ink">{selectedTx.user.bankAccounts[0].bankName}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#68736d] block text-[11px]">Account Name</span>
+                      <strong className="text-ink">{selectedTx.user.bankAccounts[0].accountName}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#68736d] block text-[11px]">Account Number</span>
+                      <strong className="font-mono text-ink text-[14px]">{selectedTx.user.bankAccounts[0].accountNumber}</strong>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
+
+              {/* Proof of Payment Viewer & Offline Attachment */}
+              <div className="bg-[#fcfdfc] p-[16px] lg:p-[20px] rounded-[18px] border border-black/5 space-y-[14px]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#008b45" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Proof of Payment / Transfer Slip
+                    </span>
+                  </div>
+                  <a 
+                    href={`/api/receipt/${encodeURIComponent(selectedTx.reference)}`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="inline-flex items-center gap-1 text-[12px] text-[#008b45] font-bold hover:underline"
+                  >
+                    Open Full Slip ↗
+                  </a>
+                </div>
+
+                {/* Live Embedded Preview Frame */}
+                <div className="relative w-full h-[260px] bg-white rounded-[14px] overflow-hidden border border-black/10 shadow-inner">
+                  <iframe 
+                    key={`receipt-frame-${selectedTx.reference}-${receiptRefreshKey}`}
+                    src={`/api/receipt/${encodeURIComponent(selectedTx.reference)}?t=${receiptRefreshKey}`} 
+                    className="w-full h-full border-0" 
+                    title="Transfer Slip Preview" 
+                  />
+                </div>
+
+                {/* Offline Receipt Attachment (Admin override) */}
+                <div className="p-[12px] bg-white rounded-[14px] border border-dashed border-black/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <span className="block text-[12px] font-bold text-ink">
+                      Attach or Replace Proof (Admin Override)
+                    </span>
+                    <p className="text-[11px] text-[#68736d]">
+                      Received slip via WhatsApp or email? Upload here to store on Supabase Storage.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <label className="cursor-pointer px-3 py-1.5 bg-[#f4f7f5] hover:bg-black/5 text-ink text-[11px] font-bold rounded-lg border border-black/10 transition-colors whitespace-nowrap">
+                      {adminReceiptFile ? adminReceiptFile.name.substring(0, 18) + '...' : 'Choose File'}
+                      <input 
+                        type="file" 
+                        accept="image/*,application/pdf" 
+                        className="hidden" 
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) setAdminReceiptFile(f);
+                        }} 
+                      />
+                    </label>
+                    {adminReceiptFile && (
+                      <button 
+                        type="button"
+                        onClick={handleAdminUploadReceipt}
+                        disabled={isAdminUploadingReceipt}
+                        className="px-3 py-1.5 bg-[#008b45] text-white text-[11px] font-bold rounded-lg hover:bg-[#007339] disabled:opacity-50 transition-colors whitespace-nowrap"
+                      >
+                        {isAdminUploadingReceipt ? 'Uploading...' : 'Save Slip'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-[15px]">
+
+              {/* Verification & Amount Override */}
+              <div className="bg-[#fcfdfc] p-[16px] lg:p-[20px] rounded-[18px] border border-black/5 space-y-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-bold text-ink uppercase tracking-wider">
+                    Verified Amount Received
+                  </span>
+                  {verifiedAmountInput !== String(selectedTx.amount) && (
+                    <button 
+                      type="button" 
+                      onClick={() => setVerifiedAmountInput(String(selectedTx.amount))}
+                      className="text-[11px] text-[#008b45] font-bold hover:underline"
+                    >
+                      Reset to Stated ({formatCurrency(selectedTx.amount)})
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[#68736d] text-[14px]">₦</span>
+                    <input 
+                      type="number"
+                      step="any"
+                      value={verifiedAmountInput}
+                      onChange={e => setVerifiedAmountInput(e.target.value)}
+                      placeholder="Verified Amount"
+                      className="w-full pl-8 pr-4 py-2.5 bg-white border border-black/15 rounded-[12px] text-[15px] font-manrope font-bold text-ink focus:outline-none focus:border-[#008b45] focus:ring-2 focus:ring-[#008b45]/10"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] text-[#7a847f] block">Preview Credit</span>
+                    <strong className="text-[15px] font-manrope font-bold text-[#008b45]">
+                      {formatCurrency(parseFloat(verifiedAmountInput) || 0)}
+                    </strong>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#68736d] leading-normal">
+                  If the bank alert reflects a different figure, edit the sum above. The customer&apos;s holding or wallet balance will be activated with this verified amount.
+                </p>
+
+                {/* Optional Rejection Reason */}
+                <div className="pt-2 border-t border-black/5">
+                  <label className="block text-[11px] font-bold text-[#7a847f] uppercase tracking-wider mb-1">
+                    Rejection Reason (Optional, sent to customer if rejected)
+                  </label>
+                  <input 
+                    type="text" 
+                    value={rejectionReasonInput}
+                    onChange={e => setRejectionReasonInput(e.target.value)}
+                    placeholder="e.g. Reference code not found on bank statement, payment unconfirmed, please contact support"
+                    className="w-full px-3.5 py-2 bg-white border border-black/15 rounded-[10px] text-[12px] text-ink focus:outline-none focus:border-red-500 placeholder:text-black/30"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div className="p-[16px_20px] lg:p-[18px_30px] border-t border-black/5 bg-[#fcfdfc] flex items-center justify-between gap-3">
+              <button 
+                type="button"
+                onClick={() => setSelectedTx(null)} 
+                disabled={isProcessing !== null || isAdminUploadingReceipt}
+                className="px-4 py-2.5 bg-[#f4f7f5] hover:bg-black/5 text-ink text-[12px] font-bold rounded-full transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => handleReject(selectedTx.id)} 
-                  disabled={isProcessing !== null}
-                  className="flex-1 py-[14px] bg-[#fdeeee] text-[#e53935] font-bold rounded-full disabled:opacity-50 hover:bg-[#fbdada] transition-colors"
+                  type="button"
+                  onClick={() => handleReject(selectedTx.id, rejectionReasonInput)} 
+                  disabled={isProcessing !== null || isAdminUploadingReceipt}
+                  className="px-5 py-2.5 bg-[#fdeeee] text-[#e53935] hover:bg-[#fbdada] text-[12px] font-bold rounded-full disabled:opacity-50 transition-colors"
                 >
-                  {isProcessing === selectedTx.id ? 'Processing...' : 'Reject'}
+                  {isProcessing === selectedTx.id ? 'Processing...' : 'Reject Transfer'}
                 </button>
                 <button 
-                  onClick={() => handleApprove(selectedTx.id)} 
-                  disabled={isProcessing !== null}
-                  className="flex-[2] py-[14px] bg-[#008b45] text-white font-bold rounded-full shadow-[0_8px_20px_rgba(0,139,69,0.25)] hover:bg-[#007339] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={() => {
+                    const finalNum = parseFloat(verifiedAmountInput);
+                    handleApprove(selectedTx.id, !isNaN(finalNum) && finalNum > 0 ? finalNum : undefined);
+                  }} 
+                  disabled={isProcessing !== null || isAdminUploadingReceipt}
+                  className="px-6 py-2.5 bg-[#008b45] hover:bg-[#007339] text-white text-[12px] font-bold rounded-full shadow-[0_4px_14px_rgba(0,139,69,0.25)] disabled:opacity-50 transition-all flex items-center gap-2"
                 >
                   {isProcessing === selectedTx.id ? (
                     <>
-                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                      Verifying & Crediting...
+                      <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                      Verifying &amp; Crediting...
                     </>
                   ) : (
-                    selectedTx.type === 'withdrawal' ? 'Mark as Transferred' : 'Approve & Verify'
+                    <>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      {selectedTx.type === 'withdrawal'
+                        ? 'Mark as Transferred'
+                        : `Approve & Verify (${formatCurrency(parseFloat(verifiedAmountInput) || selectedTx.amount)})`}
+                    </>
                   )}
                 </button>
               </div>

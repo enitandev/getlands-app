@@ -58,6 +58,10 @@ export async function assignOpportunityAction(formData: FormData) {
   const units = parseFloat(formData.get('units') as string);
   const dateAcquiredStr = formData.get('dateAcquired') as string;
   const planId = formData.get('planId') as string | null;
+  const plotNumber = (formData.get('plotNumber') as string) || null;
+  const paymentStatus = (formData.get('paymentStatus') as string) || 'paid_in_full';
+  const totalContractPriceRaw = parseFloat(formData.get('totalContractPrice') as string);
+  const totalContractPrice = !isNaN(totalContractPriceRaw) && totalContractPriceRaw > 0 ? totalContractPriceRaw : amountPaid;
   
   if (!userId || !opportunityId || isNaN(amountPaid) || isNaN(units)) {
     return { error: 'Invalid input data' };
@@ -113,6 +117,9 @@ export async function assignOpportunityAction(formData: FormData) {
       units,
       dateAcquired,
       status: 'active',
+      plotNumber,
+      paymentStatus,
+      totalContractPrice,
       ...planData
     }
   });
@@ -360,6 +367,10 @@ export async function editCustomerHoldingAction(formData: FormData) {
   const status = (formData.get('status') as string) || 'active';
   const planId = (formData.get('planId') as string) || null;
   const recalculatePayouts = formData.get('recalculatePayouts') === 'on' || formData.get('recalculatePayouts') === 'true';
+  const plotNumber = (formData.get('plotNumber') as string) || null;
+  const paymentStatus = (formData.get('paymentStatus') as string) || 'paid_in_full';
+  const totalContractPriceRaw = parseFloat(formData.get('totalContractPrice') as string);
+  const totalContractPrice = !isNaN(totalContractPriceRaw) && totalContractPriceRaw > 0 ? totalContractPriceRaw : totalAmount;
 
   if (!holdingId || isNaN(totalAmount) || isNaN(units)) {
     return { error: 'Invalid holding details provided.' };
@@ -399,6 +410,9 @@ export async function editCustomerHoldingAction(formData: FormData) {
         units,
         dateAcquired,
         status,
+        plotNumber,
+        paymentStatus,
+        totalContractPrice,
         ...planData
       }
     });

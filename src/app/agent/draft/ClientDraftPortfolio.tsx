@@ -7,6 +7,7 @@ export default function ClientDraftPortfolio({ clients, opportunities, returnPla
   const [selectedOppId, setSelectedOppId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successRef, setSuccessRef] = useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   const selectedOpp = opportunities.find((o: any) => o.id === selectedOppId);
   const isFarm = selectedOpp?.category === 'farm';
@@ -120,6 +121,40 @@ export default function ClientDraftPortfolio({ clients, opportunities, returnPla
                 <p className="text-[12px] text-[#7a847f] mt-[8px]">Minimum: {formatCurrency(minAmount)}</p>
               </div>
             )}
+
+            <div>
+              <label className="block text-[13px] font-bold text-ink mb-[8px]">
+                Client Payment Receipt (Optional)
+              </label>
+              <label className="relative flex flex-col items-center justify-center w-full p-[22px] border-2 border-dashed border-black/10 rounded-[14px] bg-[#f7f9f7] hover:bg-[#eef3ef]/60 hover:border-[#008b45]/50 transition-colors cursor-pointer text-center">
+                <input
+                  type="file"
+                  name="receipt"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                {receiptFile ? (
+                  <div>
+                    <strong className="block text-[13px] text-[#008b45] mb-[2px] truncate max-w-[280px] mx-auto">
+                      {receiptFile.name}
+                    </strong>
+                    <span className="text-[11px] text-[#68736d]">
+                      {(receiptFile.size / 1024 / 1024).toFixed(2)} MB • Click to replace
+                    </span>
+                  </div>
+                ) : (
+                  <div>
+                    <strong className="block text-[13px] text-ink mb-[2px]">
+                      Click to attach client transfer receipt
+                    </strong>
+                    <span className="text-[11px] text-[#7a847f]">
+                      PNG, JPG or PDF (or leave blank if client has not paid yet)
+                    </span>
+                  </div>
+                )}
+              </label>
+            </div>
 
             <button disabled={isSubmitting || !selectedOppId} type="submit" className="w-full h-[55px] bg-[#008b45] hover:bg-[#007339] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[16px] rounded-[12px] mt-[10px] transition-colors shadow-lg">
               {isSubmitting ? 'Drafting...' : 'Generate Draft & Reference'}

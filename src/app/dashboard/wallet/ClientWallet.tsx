@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/mockData';
-import { fundWalletAction } from '@/app/actions/checkout';
+import { fundWalletAction, uploadTransactionReceiptAction } from '@/app/actions/checkout';
 import { requestWithdrawalAction } from '@/app/actions/wallet';
 import { toast } from '@/components/ui/Toast';
 import Link from 'next/link';
@@ -30,6 +30,47 @@ export default function ClientWallet({
   const isSubmittingWithdrawalRef = useRef(false);
   const [isSubmittingFund, setIsSubmittingFund] = useState(false);
   const isSubmittingFundRef = useRef(false);
+  const [fundReceiptFile, setFundReceiptFile] = useState<File | null>(null);
+  const [fundPreviewUrl, setFundPreviewUrl] = useState<string | null>(null);
+  const [uploadingRef, setUploadingRef] = useState<string | null>(null);
+
+  const handleFundFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0] || null;
+    if (selected && selected.size > 10 * 1024 * 1024) {
+      toast('Receipt file size must be under 10MB', 'error');
+      e.target.value = '';
+      return;
+    }
+    setFundReceiptFile(selected);
+    if (selected && selected.type.startsWith('image/')) {
+      setFundPreviewUrl(URL.createObjectURL(selected));
+    } else {
+      setFundPreviewUrl(null);
+    }
+  };
+
+  const handleReuploadReceipt = async (reference: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingRef(reference);
+    try {
+      const fd = new FormData();
+      fd.append('reference', reference);
+      fd.append('receipt', file);
+      const res = await uploadTransactionReceiptAction(fd);
+      if (res.error) {
+        toast(res.error, 'error');
+      } else {
+        toast('Proof of payment uploaded successfully!', 'success');
+        router.refresh();
+      }
+    } catch (err: any) {
+      toast(err?.message || 'Failed to upload receipt', 'error');
+    } finally {
+      setUploadingRef(null);
+      e.target.value = '';
+    }
+  };
 
   useEffect(() => {
     if (autoOpenWithdraw) {
@@ -44,14 +85,24 @@ export default function ClientWallet({
 
   const handleFundSubmit = async (formData: FormData) => {
     if (isSubmittingFundRef.current || isSubmittingFund) return;
+    if (fundReceiptFile) {
+      formData.set('receipt', fundReceiptFile);
+    }
     isSubmittingFundRef.current = true;
     setIsSubmittingFund(true);
     try {
       await fundWalletAction(formData);
       setIsFundModalOpen(false);
+      setFundReceiptFile(null);
+      setFundPreviewUrl(null);
+      toast('Deposit receipt submitted for verification!', 'success');
     } catch (err: any) {
       if (err?.message?.includes('NEXT_REDIRECT') || err?.digest?.includes('NEXT_REDIRECT')) {
         setIsFundModalOpen(false);
+        setFundReceiptFile(null);
+        setFundPreviewUrl(null);
+        toast('Deposit receipt submitted for verification!', 'success');
+        router.refresh();
         return;
       }
       toast(err?.message || "Failed to submit deposit receipt", 'error');
@@ -323,6 +374,30 @@ export default function ClientWallet({
                         )}
                       </div>
                       <span className="text-[12px] text-[#7a847f] font-mono block mt-[2px]">{tx.reference || tx.id.slice(0, 8)}</span>
+                      {(normType === 'deposit' || normType === 'investment') && tx.reference && !tx.reference.startsWith('INV-W-') && (
+                        <div className="flex items-center gap-[10px] mt-[6px] flex-wrap">
+                          <a
+                            href={`/api/receipt/${encodeURIComponent(tx.reference)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-bold text-[#008b45] hover:underline"
+                          >
+                            View Receipt ↗
+                          </a>
+                          {tx.status === 'pending' && (
+                            <label className="text-[11px] font-bold text-[#182a20] bg-[#f4f7f5] hover:bg-[#eef3ef] px-[8px] py-[2px] rounded-full cursor-pointer transition-colors">
+                              <input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                className="hidden"
+                                onChange={(e) => handleReuploadReceipt(tx.reference, e)}
+                                disabled={uploadingRef === tx.reference}
+                              />
+                              {uploadingRef === tx.reference ? 'Uploading...' : 'Upload / Replace Proof'}
+                            </label>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -395,18 +470,50 @@ export default function ClientWallet({
               </div>
 
               <div>
-                <label className="block text-[13px] font-bold text-ink mb-[8px]">Upload Payment Receipt</label>
-                <div className="border-2 border-dashed border-black/10 rounded-[12px] p-[30px] text-center hover:bg-[#f7f9f7] hover:border-[#008b45]/50 transition-colors cursor-pointer">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto text-[#008b45] mb-[10px]"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                  <strong className="block text-[13px] text-ink mb-[2px]">Click to upload receipt</strong>
-                  <span className="text-[11px] text-[#7a847f]">PNG, JPG or PDF (max. 5MB)</span>
-                </div>
+                <label className="block text-[13px] font-bold text-ink mb-[8px]">Upload Payment Receipt *</label>
+                <label className="relative flex flex-col items-center justify-center border-2 border-dashed border-black/15 rounded-[14px] p-[24px] text-center hover:bg-[#f7f9f7] hover:border-[#008b45] transition-colors cursor-pointer overflow-hidden">
+                  <input
+                    type="file"
+                    name="receipt"
+                    accept="image/*,application/pdf"
+                    required
+                    onChange={handleFundFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  />
+                  {fundReceiptFile ? (
+                    <div className="space-y-[8px] z-10 pointer-events-none">
+                      {fundPreviewUrl ? (
+                        <img
+                          src={fundPreviewUrl}
+                          alt="Receipt preview"
+                          className="w-[100px] h-[100px] object-cover rounded-[10px] mx-auto border border-black/10 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-[44px] h-[44px] rounded-full bg-[#eef3ef] text-[#008b45] flex items-center justify-center mx-auto">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                      )}
+                      <strong className="block text-[13px] text-[#008b45] truncate max-w-[260px] mx-auto">
+                        {fundReceiptFile.name}
+                      </strong>
+                      <span className="block text-[11px] text-[#68736d]">
+                        {(fundReceiptFile.size / 1024 / 1024).toFixed(2)} MB • Click to change file
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="z-10 pointer-events-none">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto text-[#008b45] mb-[10px]"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                      <strong className="block text-[13px] text-ink mb-[2px]">Click to upload transfer receipt</strong>
+                      <span className="text-[11px] text-[#7a847f]">PNG, JPG or PDF (max. 10MB)</span>
+                    </div>
+                  )}
+                </label>
               </div>
 
               <div className="pt-[10px]">
                 <button 
                   type="submit" 
-                  disabled={isSubmittingFund}
+                  disabled={isSubmittingFund || !fundReceiptFile}
                   className="w-full py-[14px] bg-[#008b45] text-white font-bold rounded-full hover:bg-[#007339] transition-colors shadow-[0_8px_20px_rgba(0,139,69,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubmittingFund ? (

@@ -2,10 +2,10 @@
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { triggerReferralBonus } from '@/lib/referral';
 import { generatePayoutSchedule } from '@/lib/payouts';
-import fs from 'fs';
-import path from 'path';
+import { savePaymentReceipt } from '@/lib/receiptStorage';
 
 async function checkCustomer() {
   const session = await getSession();
@@ -19,49 +19,97 @@ export async function fundWalletAction(formData: FormData) {
   const userId = await checkCustomer();
   const amountStr = formData.get('amount') as string;
   const amount = parseFloat(amountStr);
+  const receiptFile = formData.get('receipt') as File | null;
   
   if (isNaN(amount) || amount <= 0) {
     throw new Error('Invalid deposit amount');
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, firstName: true, lastName: true, email: true }
+  });
+
   // Idempotency / Deduplication Guard:
-  // Prevent rapid duplicate clicks or retries from recording multiple deposit records
   const existingPendingDeposit = await prisma.transaction.findFirst({
     where: {
       userId,
       type: 'deposit',
       status: 'pending',
       amount,
-      date: { gte: new Date(Date.now() - 60 * 1000) } // within last 60 seconds
+      date: { gte: new Date(Date.now() - 60 * 1000) }
     },
     orderBy: { date: 'desc' }
   });
 
   if (existingPendingDeposit) {
-    console.warn(`[Deduplication] Blocked duplicate fundWalletAction for user ${userId}, reusing tx ${existingPendingDeposit.id}`);
+    if (receiptFile && receiptFile.size > 0) {
+      await savePaymentReceipt(existingPendingDeposit.reference, receiptFile);
+    }
+    revalidatePath('/dashboard/wallet');
+    revalidatePath('/admin/finance');
     redirect('/dashboard/wallet');
     return;
   }
   
-  await prisma.transaction.create({
+  const reference = `DEP-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+
+  const tx = await prisma.transaction.create({
     data: {
       userId,
       type: 'deposit',
       amount,
       status: 'pending',
-      reference: `DEP-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+      reference
     }
   });
 
+  if (receiptFile && receiptFile.size > 0) {
+    await savePaymentReceipt(tx.reference, receiptFile);
+  }
+
+  // Notify Customer
+  await prisma.notification.create({
+    data: {
+      userId,
+      type: 'TRANSACTION',
+      title: 'Deposit Receipt Submitted',
+      message: `Your wallet deposit receipt for ₦${amount.toLocaleString()} (${reference}) has been received and is pending verification by our finance team.`,
+      linkUrl: '/dashboard/wallet',
+      actionText: 'View Wallet'
+    }
+  });
+
+  // Notify Admins
+  const admins = await prisma.user.findMany({
+    where: { role: 'admin' },
+    select: { id: true }
+  });
+  if (admins.length > 0) {
+    await prisma.notification.createMany({
+      data: admins.map(adm => ({
+        userId: adm.id,
+        type: 'TRANSACTION',
+        title: 'New Wallet Deposit Pending Verification',
+        message: `${user ? `${user.firstName} ${user.lastName}` : 'A customer'} submitted a wallet deposit of ₦${amount.toLocaleString()} (Ref: ${reference}).`,
+        linkUrl: '/admin/finance?tab=pending',
+        actionText: 'Verify Receipt'
+      }))
+    });
+  }
+
+  revalidatePath('/dashboard/wallet');
+  revalidatePath('/admin');
+  revalidatePath('/admin/finance');
   redirect('/dashboard/wallet');
 }
 
 export async function checkoutAction(formData: FormData) {
   const userId = await checkCustomer();
   const opportunityId = formData.get('opportunityId') as string;
-  const paymentMethod = formData.get('paymentMethod') as string; // 'wallet' or 'bank'
+  const paymentMethod = formData.get('paymentMethod') as string; // 'wallet' or 'transfer'
   const totalAmount = parseFloat(formData.get('totalAmount') as string);
-  const units = parseFloat(formData.get('units') as string || '1');
+  const units = parseFloat((formData.get('units') as string) || '1');
   const cohortId = formData.get('cohortId') as string | null;
   const planId = formData.get('planId') as string | null;
 
@@ -69,7 +117,10 @@ export async function checkoutAction(formData: FormData) {
     throw new Error('Invalid checkout parameters');
   }
   
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const [user, opp] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.opportunity.findUnique({ where: { id: opportunityId }, select: { id: true, title: true } })
+  ]);
   if (!user) throw new Error('User not found');
 
   let planData = {};
@@ -103,7 +154,6 @@ export async function checkoutAction(formData: FormData) {
     });
 
     if (existingWalletTx) {
-      console.warn(`[Deduplication] Blocked duplicate wallet checkout for user ${userId}`);
       redirect('/dashboard/holdings');
       return;
     }
@@ -158,13 +208,18 @@ export async function checkoutAction(formData: FormData) {
     // 5. Trigger Referral Bonus if applicable
     await triggerReferralBonus(user.id, totalAmount, holding.id);
 
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/holdings');
+    revalidatePath('/dashboard/wallet');
+    revalidatePath('/admin');
+    revalidatePath('/admin/finance');
     redirect('/dashboard/holdings');
 
   } else {
     // Bank Transfer Route
+    const receiptFile = formData.get('receipt') as File | null;
+
     // Idempotency / Deduplication Guard:
-    // If an identical pending transaction or holding was created within the last 60s,
-    // do NOT create duplicates! Reuse the existing transaction and proceed cleanly.
     const existingPendingTx = await prisma.transaction.findFirst({
       where: {
         userId,
@@ -177,10 +232,16 @@ export async function checkoutAction(formData: FormData) {
     });
 
     if (existingPendingTx) {
-      console.warn(`[Deduplication] Blocked duplicate bank transfer checkout for user ${userId}, reusing tx ${existingPendingTx.id}`);
+      if (receiptFile && receiptFile.size > 0) {
+        await savePaymentReceipt(existingPendingTx.reference, receiptFile);
+      }
+      revalidatePath('/dashboard/holdings');
+      revalidatePath('/admin/finance');
       redirect('/dashboard/holdings');
       return;
     }
+
+    const reference = `INV-B-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
     // Create pending transaction
     const tx = await prisma.transaction.create({
@@ -189,46 +250,16 @@ export async function checkoutAction(formData: FormData) {
         type: 'investment',
         amount: totalAmount,
         status: 'pending',
-        reference: `INV-B-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+        reference
       }
     });
 
-    // Handle Receipt Upload
-    const receiptFile = formData.get('receipt') as File;
+    // Save receipt to Supabase Storage (and local dev fallback)
     if (receiptFile && receiptFile.size > 0) {
-      try {
-        const bytes = await receiptFile.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const originalName = receiptFile.name || 'receipt.jpg';
-        const ext = originalName.split('.').pop() || 'jpg';
-        
-        // 1. Save to local public/uploads/receipts
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'receipts');
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        const filePath = path.join(uploadDir, `${tx.reference}.${ext}`);
-        fs.writeFileSync(filePath, buffer);
-
-        // 2. Optionally upload to Supabase Storage if configured
-        if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-          try {
-            const { createClient } = require('@supabase/supabase-js');
-            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-            await supabase.storage.from('getlands').upload(`receipts/${tx.reference}.${ext}`, buffer, {
-              contentType: receiptFile.type || 'image/jpeg',
-              upsert: true
-            });
-          } catch (supaErr) {
-            console.error("Supabase receipt upload fallback:", supaErr);
-          }
-        }
-      } catch (err) {
-        console.error("Error saving receipt file:", err);
-      }
+      await savePaymentReceipt(tx.reference, receiptFile);
     }
 
-    // Create pending holding
+    // Create pending holding linked to transactionId AND referenceCode
     await prisma.holding.create({
       data: {
         userId,
@@ -238,10 +269,106 @@ export async function checkoutAction(formData: FormData) {
         units,
         status: 'pending',
         transactionId: tx.id,
+        referenceCode: tx.reference,
         ...planData
       }
     });
 
+    // Notify Customer
+    await prisma.notification.create({
+      data: {
+        userId,
+        type: 'TRANSACTION',
+        title: 'Payment Proof Submitted',
+        message: `Your payment receipt of ₦${totalAmount.toLocaleString()} for ${opp?.title || 'your investment'} (Ref: ${reference}) has been submitted and is awaiting verification.`,
+        linkUrl: '/dashboard/holdings',
+        actionText: 'View Holdings'
+      }
+    });
+
+    // Notify Admins
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin' },
+      select: { id: true }
+    });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map(adm => ({
+          userId: adm.id,
+          type: 'TRANSACTION',
+          title: 'New Investment Transfer Pending Verification',
+          message: `${user.firstName} ${user.lastName} uploaded payment proof of ₦${totalAmount.toLocaleString()} for ${opp?.title || 'an opportunity'} (Ref: ${reference}).`,
+          linkUrl: '/admin/finance?tab=pending',
+          actionText: 'Verify Payment'
+        }))
+      });
+    }
+
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/holdings');
+    revalidatePath('/dashboard/wallet');
+    revalidatePath('/admin');
+    revalidatePath('/admin/finance');
     redirect('/dashboard/holdings');
   }
+}
+
+export async function uploadTransactionReceiptAction(formData: FormData) {
+  const session = await getSession();
+  if (!session?.userId) {
+    return { error: 'Unauthorized' };
+  }
+
+  const reference = (formData.get('reference') as string)?.trim();
+  const receiptFile = formData.get('receipt') as File | null;
+
+  if (!reference) {
+    return { error: 'Transaction reference is required' };
+  }
+
+  if (!receiptFile || receiptFile.size <= 0) {
+    return { error: 'Please select a valid receipt image or PDF file' };
+  }
+
+  if (receiptFile.size > 10 * 1024 * 1024) {
+    return { error: 'File size exceeds 10MB limit' };
+  }
+
+  // Verify permission: either admin, or owner of transaction/holding, or agent of the client
+  if (session.role !== 'admin') {
+    const tx = await prisma.transaction.findUnique({
+      where: { reference },
+      include: { user: { select: { id: true, referredById: true } } }
+    });
+
+    const holding = !tx
+      ? await prisma.holding.findUnique({
+          where: { referenceCode: reference },
+          include: { user: { select: { id: true, referredById: true } } }
+        })
+      : null;
+
+    const ownerId = tx?.userId || holding?.userId;
+    const agentId = tx?.user?.referredById || holding?.user?.referredById;
+
+    if (ownerId !== session.userId && agentId !== session.userId) {
+      return { error: 'You do not have permission to upload a receipt for this reference' };
+    }
+  }
+
+  const result = await savePaymentReceipt(reference, receiptFile);
+  if (!result.saved) {
+    return { error: result.error || 'Failed to store receipt file' };
+  }
+
+  revalidatePath('/dashboard/wallet');
+  revalidatePath('/dashboard/holdings');
+  revalidatePath('/admin/finance');
+  revalidatePath('/admin/sales');
+
+  return {
+    success: true,
+    filename: result.filename,
+    url: result.url
+  };
 }

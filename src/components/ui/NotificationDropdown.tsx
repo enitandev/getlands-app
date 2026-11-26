@@ -5,19 +5,44 @@ import { useRouter, usePathname } from 'next/navigation';
 import { markNotificationAsRead, markAllNotificationsAsRead } from '@/app/actions/notifications';
 import { toast } from '@/components/ui/Toast';
 
-export function NotificationDropdown({ notifications = [], userId }: { notifications: any[], userId?: string }) {
+export function NotificationDropdown({ 
+  notifications = [], 
+  userId,
+  portalType 
+}: { 
+  notifications: any[], 
+  userId?: string,
+  portalType?: 'customer' | 'admin' | 'agent'
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   
-  const [localNotifications, setLocalNotifications] = useState(notifications);
+  const effectivePortal: 'customer' | 'admin' | 'agent' = portalType || (
+    pathname.startsWith('/admin') ? 'admin' : pathname.startsWith('/agent') ? 'agent' : 'customer'
+  );
+
+  const filterForPortal = (items: any[]) => {
+    return items.filter((n: any) => {
+      if (effectivePortal === 'customer' && (n.linkUrl?.startsWith('/admin') || n.linkUrl?.startsWith('/agent'))) {
+        return false;
+      }
+      if (effectivePortal === 'agent' && n.linkUrl?.startsWith('/admin')) {
+        return false;
+      }
+      return true;
+    });
+  };
+
+  const [localNotifications, setLocalNotifications] = useState(() => filterForPortal(notifications));
   const knownIdsRef = useRef<Set<string>>(new Set(notifications.map((n: any) => n.id)));
 
   useEffect(() => {
-    setLocalNotifications(notifications);
-    notifications.forEach((n: any) => knownIdsRef.current.add(n.id));
-  }, [notifications]);
+    const filtered = filterForPortal(notifications);
+    setLocalNotifications(filtered);
+    filtered.forEach((n: any) => knownIdsRef.current.add(n.id));
+  }, [notifications, effectivePortal]);
 
   useEffect(() => {
     if (!userId) return;
@@ -26,18 +51,19 @@ export function NotificationDropdown({ notifications = [], userId }: { notificat
     const fetchNotifs = async () => {
       try {
         const { getLatestNotifications } = await import('@/app/actions/polling');
-        const latest = await getLatestNotifications(userId);
+        const latest = await getLatestNotifications(userId, effectivePortal);
         if (latest && Array.isArray(latest)) {
+          const filtered = filterForPortal(latest);
           // Check for brand new incoming notifications to trigger live toast
-          latest.forEach((n: any) => {
+          filtered.forEach((n: any) => {
             if (!knownIdsRef.current.has(n.id)) {
               knownIdsRef.current.add(n.id);
               if (n.unread) {
-                toast(`${n.title} — ${n.message.length > 60 ? n.message.substring(0, 60) + '...' : n.message}`, 'info');
+                toast(`${n.title}: ${n.message.length > 60 ? n.message.substring(0, 60) + '...' : n.message}`, 'info');
               }
             }
           });
-          setLocalNotifications(latest);
+          setLocalNotifications(filtered);
         }
       } catch (err) {
         console.error("Polling notifications error:", err);
@@ -46,7 +72,7 @@ export function NotificationDropdown({ notifications = [], userId }: { notificat
 
     const interval = setInterval(fetchNotifs, 10000);
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [userId, effectivePortal]);
 
   const unreadCount = localNotifications.filter((n: any) => n.unread).length;
 

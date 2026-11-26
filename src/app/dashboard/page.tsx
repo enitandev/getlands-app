@@ -17,7 +17,13 @@ export default async function DashboardOverviewPage() {
         include: { opportunity: true, cohort: true }
       },
       notifications: {
-        take: 3,
+        where: {
+          NOT: [
+            { linkUrl: { startsWith: '/admin' } },
+            { linkUrl: { startsWith: '/agent' } }
+          ]
+        },
+        take: 5,
         orderBy: { createdAt: 'desc' }
       },
       bankAccounts: true

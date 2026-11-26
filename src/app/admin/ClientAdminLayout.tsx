@@ -120,7 +120,7 @@ export default function ClientAdminLayout({ children, initials, fullName, unread
             </h2>
           </div>
           <div className="flex items-center gap-[15px] lg:gap-[20px]">
-            <NotificationDropdown notifications={notifications} userId={userId} />
+            <NotificationDropdown notifications={notifications} userId={userId} portalType="admin" />
             <Link href="/" className="hidden lg:block text-[13px] font-bold text-[#008b45] hover:underline">View Live Site ↗</Link>
             {/* Mobile Menu Toggle for extra items */}
             <button className="lg:hidden w-[32px] h-[32px] flex items-center justify-center text-ink" onClick={() => setMobileMenuOpen(true)}>

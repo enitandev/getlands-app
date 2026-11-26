@@ -102,12 +102,12 @@ export async function deleteNotificationAction(notificationId: string) {
   }
 }
 
-export async function clearReadNotificationsAction() {
+export async function clearReadNotificationsAction(portalType: 'customer' | 'admin' | 'agent' = 'customer') {
   const session = await getSession();
   if (!session?.userId) return { success: false, error: "Unauthorized" };
 
   try {
-    if (session.role === 'admin') {
+    if (portalType === 'admin' && session.role === 'admin') {
       await prisma.notification.deleteMany({
         where: {
           OR: [
@@ -117,11 +117,25 @@ export async function clearReadNotificationsAction() {
           unread: false
         }
       });
+    } else if (portalType === 'agent') {
+      await prisma.notification.deleteMany({
+        where: {
+          userId: session.userId as string,
+          unread: false,
+          NOT: [
+            { linkUrl: { startsWith: '/admin' } }
+          ]
+        }
+      });
     } else {
       await prisma.notification.deleteMany({
         where: {
           userId: session.userId as string,
-          unread: false
+          unread: false,
+          NOT: [
+            { linkUrl: { startsWith: '/admin' } },
+            { linkUrl: { startsWith: '/agent' } }
+          ]
         }
       });
     }
