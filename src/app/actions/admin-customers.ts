@@ -1,7 +1,7 @@
 "use server";
 import { getSession, createSession } from "@/lib/session";
 import { prisma } from '@/lib/prisma';
-import { sendClaimAccountEmail, sendNewInvestmentEmail } from '@/lib/email';
+import { sendClaimAccountEmail, sendNewInvestmentEmail, sendDeedUnlockedEmail } from '@/lib/email';
 import { triggerReferralBonus } from '@/lib/referral';
 import { generatePayoutSchedule } from '@/lib/payouts';
 import { revalidatePath } from 'next/cache';
@@ -150,17 +150,40 @@ export async function assignOpportunityAction(formData: FormData) {
   if (user.resetPasswordToken && user.resetPasswordExpires && user.resetPasswordExpires > new Date()) {
     token = user.resetPasswordToken;
   }
-  await sendNewInvestmentEmail(user.email, user.firstName, opportunity.title, units, token);
+  await sendNewInvestmentEmail(user.email, user.firstName, opportunity.title, units, token, {
+    category: opportunity.category,
+    paymentStatus,
+    holdingId: holding.id
+  });
 
   // 4. Create In-App Notification for customer
+  let notifTitle = `Asset Allocation: ${opportunity.title}`;
+  let notifMessage = `You have been allocated ${units} unit(s) of ${opportunity.title} (₦${amountPaid.toLocaleString()}). Your investment schedule and legal agreements are now active.`;
+
+  if (opportunity.category === 'land') {
+    if (paymentStatus === 'installment') {
+      notifTitle = `Land Allocation (Installment): ${opportunity.title}`;
+      notifMessage = `You have been allocated ${units} plot(s) in ${opportunity.title} under an installment plan. Your Land Allocation Certificate and Contract of Sale are ready. Deed of Assignment will unlock upon 100% liquidation.`;
+    } else {
+      notifTitle = `Land Allocation (Paid in Full): ${opportunity.title}`;
+      notifMessage = `You have been allocated ${units} plot(s) in ${opportunity.title}. Your official 6-page Deed of Assignment, Land Allocation Certificate, and Receipt are ready for download.`;
+    }
+  } else if (opportunity.category === 'farm') {
+    notifTitle = `Commodity Allocation: ${opportunity.title}`;
+    notifMessage = `You have been allocated ${units} unit(s) of ${opportunity.title}. Your Subscription Agreement and Allocation Certificate are ready for download.`;
+  } else if (opportunity.category === 'land_banking') {
+    notifTitle = `Land Banking Allocation: ${opportunity.title}`;
+    notifMessage = `You have been allocated ${units} unit(s) of ${opportunity.title}. Your Buyback Guarantee and Allocation Certificate are ready for download.`;
+  }
+
   await prisma.notification.create({
     data: {
       userId,
       type: 'TRANSACTION',
-      title: `Asset Allocation: ${opportunity.title}`,
-      message: `You have been allocated ${units} unit(s) of ${opportunity.title} (₦${amountPaid.toLocaleString()}). Your investment schedule and legal agreements are now active.`,
+      title: notifTitle,
+      message: notifMessage,
       linkUrl: `/dashboard/holdings/${holding.id}`,
-      actionText: 'View Allocation'
+      actionText: 'View Documents'
     }
   });
 
@@ -425,6 +448,39 @@ export async function editCustomerHoldingAction(formData: FormData) {
         where: { holdingId, status: 'PENDING' }
       });
       await generatePayoutSchedule(holdingId);
+    }
+
+    if (existingHolding.paymentStatus !== 'paid_in_full' && paymentStatus === 'paid_in_full') {
+      const oppTitle = opportunity?.title || existingHolding.opportunity?.title || 'your property';
+
+      await prisma.notification.create({
+        data: {
+          userId: existingHolding.userId,
+          title: "Deed of Assignment Unlocked!",
+          message: `Your land acquisition for ${oppTitle} is now 100% liquidated! Your official 6-page Deed of Assignment has been unlocked and is ready for download.`,
+          type: "TRANSACTION",
+          linkUrl: `/dashboard/holdings/${holdingId}`,
+          actionText: "Download Deed"
+        }
+      });
+
+      const customer = await prisma.user.findUnique({
+        where: { id: existingHolding.userId },
+        select: { email: true, firstName: true }
+      });
+
+      if (customer?.email) {
+        try {
+          await sendDeedUnlockedEmail(
+            customer.email,
+            customer.firstName,
+            oppTitle,
+            holdingId
+          );
+        } catch (emailErr) {
+          console.error("Failed to send deed unlocked email:", emailErr);
+        }
+      }
     }
 
     revalidatePath('/admin/customers');

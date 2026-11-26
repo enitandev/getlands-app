@@ -260,21 +260,51 @@ export async function approveTransaction(transactionId: string, verifiedAmount?:
       
       await generatePayoutSchedule(holding.id);
 
+      let notifTitle = "Investment Verified & Active";
+      let notifMessage = `Your payment of ₦${finalAmount.toLocaleString()} for ${holding.opportunity?.title || 'your investment'} was verified and your holding is now active.`;
+
+      if (holding.opportunity?.category === 'land') {
+        if (holding.paymentStatus === 'installment') {
+          notifTitle = "Land Installment Verified";
+          notifMessage = `Your deposit of ₦${finalAmount.toLocaleString()} for ${holding.opportunity.title} was verified. Your Land Allocation Certificate and Contract of Sale are ready. Deed of Assignment will unlock upon 100% liquidation.`;
+        } else {
+          notifTitle = "Land Acquisition Verified (Paid in Full)";
+          notifMessage = `Your payment of ₦${finalAmount.toLocaleString()} for ${holding.opportunity.title} was verified! Your official 6-page Deed of Assignment, Land Allocation Certificate, and Receipt are ready for download.`;
+        }
+      } else if (holding.opportunity?.category === 'farm') {
+        notifTitle = "Commodity Cycle Subscription Active";
+        notifMessage = `Your payment of ₦${finalAmount.toLocaleString()} for ${holding.opportunity.title} was verified! Your Subscription Agreement and Allocation Certificate are ready for download.`;
+      } else if (holding.opportunity?.category === 'land_banking') {
+        notifTitle = "Land Banking Investment Active";
+        notifMessage = `Your payment of ₦${finalAmount.toLocaleString()} for ${holding.opportunity.title} was verified! Your Buyback Guarantee and Allocation Certificate are ready for download.`;
+      }
+
       await prisma.notification.create({
         data: {
           userId: tx.userId,
-          title: "Investment Verified & Active",
-          message: `Your payment of ₦${finalAmount.toLocaleString()} for ${holding.opportunity?.title || 'your investment'} was verified and your holding is now active.`,
+          title: notifTitle,
+          message: notifMessage,
           type: "TRANSACTION",
-          linkUrl: "/dashboard/holdings",
-          actionText: "View Holdings"
+          linkUrl: `/dashboard/holdings/${holding.id}`,
+          actionText: "View Documents"
         }
       });
 
       if (tx.user?.email && holding.opportunity?.title) {
         try {
           const { sendNewInvestmentEmail } = await import('@/lib/email');
-          await sendNewInvestmentEmail(tx.user.email, tx.user.firstName, holding.opportunity.title, holding.units);
+          await sendNewInvestmentEmail(
+            tx.user.email,
+            tx.user.firstName,
+            holding.opportunity.title,
+            holding.units,
+            null,
+            {
+              category: holding.opportunity.category,
+              paymentStatus: holding.paymentStatus,
+              holdingId: holding.id
+            }
+          );
         } catch (emailErr) {
           console.error("Failed to send investment confirmation email:", emailErr);
         }

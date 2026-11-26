@@ -124,22 +124,111 @@ export async function sendClaimAccountEmail(email: string, firstName: string, to
   await sendResendEmail(email, 'Claim your Getlands Account', html);
 }
 
-export async function sendNewInvestmentEmail(email: string, firstName: string, opportunityName: string, units: number, resetToken?: string | null) {
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-w-xl mx-auto p-6 bg-white border border-gray-200 rounded-xl">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h1 style="color: #008b45; font-size: 24px; margin: 0;">New Investment Assigned</h1>
-      </div>
-      <p style="color: #333; font-size: 16px;">Hello ${firstName},</p>
+export async function sendNewInvestmentEmail(
+  email: string,
+  firstName: string,
+  opportunityName: string,
+  units: number,
+  resetToken?: string | null,
+  options?: {
+    category?: string;
+    paymentStatus?: string;
+    holdingId?: string;
+  }
+) {
+  const category = options?.category;
+  const isInstallment = options?.paymentStatus === 'installment';
+  const holdingLink = options?.holdingId
+    ? `https://getlands.ng/dashboard/holdings/${options.holdingId}`
+    : 'https://getlands.ng/dashboard/holdings';
+  const destinationUrl = resetToken
+    ? `https://getlands.ng/reset-password?token=${resetToken}`
+    : holdingLink;
+  const buttonText = resetToken
+    ? 'Set Password & View Portfolio'
+    : 'View & Download Documents';
+
+  let subject = 'New Getlands Investment Assigned';
+  let heading = 'New Investment Assigned';
+  let bodyContent = '';
+
+  if (category === 'land') {
+    if (isInstallment) {
+      subject = 'Land Allocation Confirmed: Contract of Sale & Allocation Issued';
+      heading = 'Land Allocation Confirmed';
+      bodyContent = `
+        <p style="color: #333; font-size: 16px; line-height: 1.5;">
+          Congratulations! Your deposit for <strong>${units} plot(s)</strong> in <strong>${opportunityName}</strong> has been confirmed under an installment plan.
+        </p>
+        <p style="color: #333; font-size: 16px; line-height: 1.5;">
+          Your official <strong>Land Allocation Certificate</strong>, <strong>Contract of Sale & Allocation Terms</strong> (with Condition Precedent), and <strong>Deposit Receipt</strong> have been issued and are now available for download in your dashboard.
+        </p>
+        <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin: 20px 0;">
+          <p style="color: #92400e; font-size: 14px; line-height: 1.5; margin: 0;">
+            <strong>Condition Precedent Notice:</strong> Your official 6-page Deed of Assignment (prepared by The Bridge Chambers, complete with official Chambers crest and NBA Practicing Seal) is secured and will be unlocked automatically upon 100% full liquidation of your contract balance.
+          </p>
+        </div>
+      `;
+    } else {
+      subject = 'Land Acquisition Confirmed: Official Deed of Assignment & Allocation Issued';
+      heading = 'Land Acquisition Confirmed';
+      bodyContent = `
+        <p style="color: #333; font-size: 16px; line-height: 1.5;">
+          Congratulations! Your acquisition of <strong>${units} plot(s)</strong> in <strong>${opportunityName}</strong> has been confirmed in full.
+        </p>
+        <p style="color: #333; font-size: 16px; line-height: 1.5;">
+          Your complete legal conveyancing documentation has been generated and is ready for download:
+        </p>
+        <ul style="color: #333; font-size: 15px; line-height: 1.6; padding-left: 20px;">
+          <li><strong>Official 6-Page Deed of Assignment:</strong> Prepared by Chief Wakeel Olawale Liady of The Bridge Chambers, legal counsel to Getlands Properties Co., complete with Chambers crest, NBA Practicing Seal (SCN053202), and registered Assignor execution.</li>
+          <li><strong>Official Land Allocation Certificate:</strong> High-resolution certificate documenting your assigned parcel ownership.</li>
+          <li><strong>Official Payment Receipt:</strong> Complete financial breakdown and transaction verification.</li>
+        </ul>
+      `;
+    }
+  } else if (category === 'farm') {
+    subject = 'Commodity Subscription Confirmed: Allocation Certificate Issued';
+    heading = 'Commodity Subscription Confirmed';
+    bodyContent = `
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        Your subscription of <strong>${units} unit(s)</strong> in <strong>${opportunityName}</strong> has been successfully confirmed and activated.
+      </p>
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        Your official <strong>Commodity Cycle Subscription Agreement</strong>, <strong>Commodity Allocation Certificate</strong>, and <strong>Payment Receipt</strong> have been generated and are now available for download in your dashboard.
+      </p>
+    `;
+  } else if (category === 'land_banking') {
+    subject = 'Land Banking Investment Confirmed: Buyback Guarantee Issued';
+    heading = 'Land Banking Investment Confirmed';
+    bodyContent = `
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        Your investment of <strong>${units} unit(s)</strong> in <strong>${opportunityName}</strong> has been successfully confirmed and activated.
+      </p>
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        Your official <strong>Land Banking Investment & Buyback Guarantee</strong>, <strong>Allocation Certificate</strong>, and <strong>Payment Receipt</strong> have been generated and are now available for download in your dashboard.
+      </p>
+    `;
+  } else {
+    bodyContent = `
       <p style="color: #333; font-size: 16px; line-height: 1.5;">
         A new holding of <strong>${units} unit(s)</strong> in <strong>${opportunityName}</strong> has been successfully assigned to your portfolio.
       </p>
       <p style="color: #333; font-size: 16px; line-height: 1.5;">
         Your official Allocation Letter, Subscription Agreement, and Payment Receipt have been generated and are now available for download.
       </p>
+    `;
+  }
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #008b45; font-size: 24px; margin: 0;">${heading}</h1>
+      </div>
+      <p style="color: #333; font-size: 16px;">Hello ${firstName},</p>
+      ${bodyContent}
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${resetToken ? `https://getlands.ng/reset-password?token=${resetToken}` : `https://getlands.ng/dashboard/holdings`}" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">
-          ${resetToken ? "Set Password & View Portfolio" : "View Your Portfolio"}
+        <a href="${destinationUrl}" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; display: inline-block;">
+          ${buttonText}
         </a>
       </div>
       <p style="color: #666; font-size: 14px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
@@ -149,7 +238,44 @@ export async function sendNewInvestmentEmail(email: string, firstName: string, o
     </div>
   `;
 
-  await sendResendEmail(email, 'New Getlands Investment Assigned', html);
+  await sendResendEmail(email, subject, html);
+}
+
+export async function sendDeedUnlockedEmail(
+  email: string,
+  firstName: string,
+  opportunityName: string,
+  holdingId?: string
+) {
+  const holdingLink = holdingId
+    ? `https://getlands.ng/dashboard/holdings/${holdingId}`
+    : 'https://getlands.ng/dashboard/holdings';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #008b45; font-size: 24px; margin: 0;">Deed of Assignment Unlocked!</h1>
+      </div>
+      <p style="color: #333; font-size: 16px;">Hello ${firstName},</p>
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        Congratulations! Your land acquisition for <strong>${opportunityName}</strong> is now <strong>100% liquidated</strong>.
+      </p>
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        With the Condition Precedent satisfied in full, your official <strong>6-page Deed of Assignment</strong> prepared by Chief Wakeel Olawale Liady of The Bridge Chambers (complete with official Chambers crest, high-resolution NBA Practicing Seal SCN053202, and Assignor execution) has been unlocked and is ready for immediate download.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${holdingLink}" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; display: inline-block;">
+          Download Your Deed of Assignment
+        </a>
+      </div>
+      <p style="color: #666; font-size: 14px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+        If you have any questions, please contact your account manager.<br><br>
+        <strong>The Getlands Team</strong>
+      </p>
+    </div>
+  `;
+
+  await sendResendEmail(email, 'Deed of Assignment Unlocked: 100% Liquidation Complete', html);
 }
 
 export async function sendAgentPromotionEmail(email: string, firstName: string, referralCode?: string) {

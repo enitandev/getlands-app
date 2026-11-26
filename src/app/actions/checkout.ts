@@ -119,7 +119,7 @@ export async function checkoutAction(formData: FormData) {
   
   const [user, opp] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
-    prisma.opportunity.findUnique({ where: { id: opportunityId }, select: { id: true, title: true } })
+    prisma.opportunity.findUnique({ where: { id: opportunityId }, select: { id: true, title: true, category: true } })
   ]);
   if (!user) throw new Error('User not found');
 
@@ -210,6 +210,71 @@ export async function checkoutAction(formData: FormData) {
 
     // 5. Trigger Referral Bonus if applicable
     await triggerReferralBonus(user.id, totalAmount, holding.id);
+
+    // 6. Notify Customer
+    let notifTitle = "Investment Verified & Active";
+    let notifMessage = `Your payment of ₦${totalAmount.toLocaleString()} for ${opp?.title || 'your investment'} was completed via wallet balance.`;
+
+    if (opp?.category === 'land') {
+      notifTitle = "Land Acquisition Confirmed (Paid in Full)";
+      notifMessage = `Your acquisition of ${units} plot(s) in ${opp?.title || 'Land'} is complete! Your official 6-page Deed of Assignment, Land Allocation Certificate, and Payment Receipt are ready for download.`;
+    } else if (opp?.category === 'farm') {
+      notifTitle = "Commodity Cycle Subscription Active";
+      notifMessage = `Your subscription of ${units} unit(s) in ${opp?.title || 'Farm'} is active! Your Subscription Agreement and Allocation Certificate are ready for download.`;
+    } else if (opp?.category === 'land_banking') {
+      notifTitle = "Land Banking Investment Active";
+      notifMessage = `Your investment of ${units} unit(s) in ${opp?.title || 'Land Banking'} is active! Your Buyback Guarantee and Allocation Certificate are ready for download.`;
+    }
+
+    await prisma.notification.create({
+      data: {
+        userId,
+        type: 'TRANSACTION',
+        title: notifTitle,
+        message: notifMessage,
+        linkUrl: `/dashboard/holdings/${holding.id}`,
+        actionText: 'View Documents'
+      }
+    });
+
+    // 7. Notify Admins
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin' },
+      select: { id: true }
+    });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map(adm => ({
+          userId: adm.id,
+          type: 'TRANSACTION',
+          title: 'New Investment Completed (Wallet)',
+          message: `${user.firstName} ${user.lastName} completed an investment of ₦${totalAmount.toLocaleString()} for ${opp?.title || 'an opportunity'} via wallet balance.`,
+          linkUrl: '/admin/finance',
+          actionText: 'View Accounting'
+        }))
+      });
+    }
+
+    // 8. Send Confirmation Email
+    if (user.email && opp?.title) {
+      try {
+        const { sendNewInvestmentEmail } = await import('@/lib/email');
+        await sendNewInvestmentEmail(
+          user.email,
+          user.firstName,
+          opp.title,
+          units,
+          null,
+          {
+            category: opp.category,
+            paymentStatus: 'paid_in_full',
+            holdingId: holding.id
+          }
+        );
+      } catch (emailErr) {
+        console.error("Failed to send investment confirmation email:", emailErr);
+      }
+    }
 
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/holdings');
