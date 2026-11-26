@@ -3,11 +3,14 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 
 const styles = StyleSheet.create({
   page: {
-    padding: 50,
+    paddingTop: 36,
+    paddingBottom: 36,
+    paddingLeft: 42,
+    paddingRight: 42,
     fontFamily: 'Helvetica',
     backgroundColor: '#ffffff',
-    fontSize: 11,
-    lineHeight: 1.6,
+    fontSize: 9.6,
+    lineHeight: 1.45,
     color: '#333333',
   },
   header: {
@@ -15,67 +18,67 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottom: '2px solid #008b45',
-    paddingBottom: 20,
-    marginBottom: 30,
+    paddingBottom: 12,
+    marginBottom: 16,
   },
   logo: {
-    width: 140,
+    width: 130,
   },
   headerText: {
-    fontSize: 9,
+    fontSize: 8.5,
     color: '#68736d',
     textAlign: 'right',
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
     fontFamily: 'Times-Roman',
     textDecoration: 'underline',
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 10.5,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 12,
+    marginBottom: 5,
     color: '#102218',
   },
   paragraph: {
-    marginBottom: 10,
+    marginBottom: 6,
     textAlign: 'justify',
   },
   bold: {
     fontWeight: 'bold',
   },
   signatureSection: {
-    marginTop: 50,
+    marginTop: 24,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-signatureBox: {
+  signatureBox: {
     width: '30%',
   },
   signatureImage: {
     width: 100,
-    height: 50,
+    height: 45,
     marginBottom: -5,
   },
   signatureLine: {
     borderTop: '1px solid #333',
-    paddingTop: 5,
-    marginTop: 5,
+    paddingTop: 4,
+    marginTop: 4,
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 50,
-    right: 50,
+    bottom: 24,
+    left: 42,
+    right: 42,
     textAlign: 'center',
-    fontSize: 8,
+    fontSize: 7.5,
     color: '#999999',
     borderTop: '1px solid #eeeeee',
-    paddingTop: 10,
+    paddingTop: 8,
   }
 });
 
