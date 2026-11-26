@@ -185,6 +185,9 @@ export async function checkoutAction(formData: FormData) {
         units,
         status: 'active',
         transactionId: tx.id,
+        referenceCode: tx.reference,
+        paymentStatus: 'paid_in_full',
+        totalContractPrice: totalAmount,
         ...planData
       }
     });
@@ -270,6 +273,8 @@ export async function checkoutAction(formData: FormData) {
         status: 'pending',
         transactionId: tx.id,
         referenceCode: tx.reference,
+        paymentStatus: 'paid_in_full',
+        totalContractPrice: totalAmount,
         ...planData
       }
     });
