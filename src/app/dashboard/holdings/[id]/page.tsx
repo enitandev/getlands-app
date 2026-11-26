@@ -347,16 +347,34 @@ export default async function ManageHoldingPage({ params }: { params: Promise<{ 
             )}
 
             {isLand && !isPaidInFull && (
-              <div className="bg-white/10 border border-white/10 rounded-[12px] p-[14px] mb-[16px]">
+              <div className="bg-white/10 border border-white/10 rounded-[12px] p-[16px] mb-[16px]">
                 <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#a9e7bd] mb-[4px]">
                   Installment Outstanding
                 </div>
-                <strong className="text-[18px] text-white block mb-1">
+                <strong className="text-[20px] text-white block mb-1">
                   {formatCurrency(balanceDue)}
                 </strong>
-                <p className="text-[12px] text-[#8ea096]">
-                  Pay remaining installments directly to unlock the full 6-Page Deed of Assignment.
+                <p className="text-[12px] text-[#8ea096] mb-3">
+                  Pay remaining balance to satisfy the Condition Precedent and unlock your official 6-page Deed of Assignment.
                 </p>
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-[11px] text-white/90 space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60">Bank:</span>
+                    <span className="font-bold">Moniepoint Microfinance Bank</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60">Account Number:</span>
+                    <span className="font-bold text-[#a9e7bd] font-mono text-[12px] tracking-wider">9133485636</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60">Account Name:</span>
+                    <span className="font-bold">GETLANDS</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1.5 border-t border-white/10">
+                    <span className="text-white/60">Payment Ref:</span>
+                    <span className="font-bold font-mono text-[#a9e7bd]">{holding.referenceCode || holding.id.substring(0, 8).toUpperCase()}</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>

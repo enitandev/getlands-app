@@ -9,6 +9,10 @@
       "schedule": "0 1 * * *"
     },
     {
+      "path": "/api/cron/installment-reminders",
+      "schedule": "0 9 * * *"
+    },
+    {
       "path": "/api/cron/sales-nurture",
       "schedule": "0 10 * * *"
     }

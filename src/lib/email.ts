@@ -278,6 +278,78 @@ export async function sendDeedUnlockedEmail(
   await sendResendEmail(email, 'Deed of Assignment Unlocked: 100% Liquidation Complete', html);
 }
 
+export async function sendInstallmentReminderEmail(
+  email: string,
+  firstName: string,
+  opportunityName: string,
+  amountPaid: number,
+  totalContractPrice: number,
+  balanceDue: number,
+  holdingId: string
+) {
+  const percentSettled = totalContractPrice > 0
+    ? Math.round((amountPaid / totalContractPrice) * 100)
+    : 0;
+
+  const holdingLink = `https://getlands.ng/dashboard/holdings/${holdingId}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #008b45; font-size: 24px; margin: 0;">Land Installment Milestone Reminder</h1>
+      </div>
+      <p style="color: #333; font-size: 16px;">Hello ${firstName},</p>
+      <p style="color: #333; font-size: 16px; line-height: 1.5;">
+        This is a friendly milestone update regarding your land acquisition for <strong>${opportunityName}</strong> under your active installment plan.
+      </p>
+
+      <div style="background-color: #f7f9f7; border: 1px solid #e2e8e5; border-radius: 10px; padding: 18px; margin: 20px 0;">
+        <p style="margin: 0 0 10px 0; font-weight: bold; color: #182a20; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Financial Status Breakdown</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #333;">
+          <tr>
+            <td style="padding: 6px 0; color: #666;">Total Agreed Contract Price:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: bold;">₦${totalContractPrice.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #666;">Total Settled to Date:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #008b45;">₦${amountPaid.toLocaleString()} (${percentSettled}% settled)</td>
+          </tr>
+          <tr style="border-top: 1px solid #e2e8e5;">
+            <td style="padding: 8px 0 0 0; font-weight: bold; color: #92400e;">Outstanding Balance Due:</td>
+            <td style="padding: 8px 0 0 0; text-align: right; font-weight: bold; color: #92400e; font-size: 16px;">₦${balanceDue.toLocaleString()}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin: 20px 0;">
+        <p style="color: #92400e; font-size: 13px; line-height: 1.5; margin: 0;">
+          <strong>Condition Precedent Notice:</strong> In accordance with your Contract of Sale, your official 6-page Deed of Assignment (prepared by Chief Wakeel Olawale Liady of The Bridge Chambers, complete with official Chambers crest and NBA Practicing Seal SCN053202) is secured and will be automatically unlocked immediately upon 100% full liquidation.
+        </p>
+      </div>
+
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #166534;">
+        <p style="margin: 0 0 6px 0; font-weight: bold;">Official Payment Account:</p>
+        <p style="margin: 0 0 3px 0;">Bank: <strong>Moniepoint Microfinance Bank</strong></p>
+        <p style="margin: 0 0 3px 0;">Account Number: <strong>9133485636</strong></p>
+        <p style="margin: 0;">Account Name: <strong>GETLANDS</strong></p>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${holdingLink}" style="background-color: #008b45; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; display: inline-block;">
+          View Holding &amp; Payment Details
+        </a>
+      </div>
+
+      <p style="color: #666; font-size: 14px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+        If you have already made this payment or have any questions, please contact your account manager.<br><br>
+        <strong>The Getlands Team</strong>
+      </p>
+    </div>
+  `;
+
+  await sendResendEmail(email, `Land Installment Milestone Reminder: ${opportunityName}`, html);
+}
+
 export async function sendAgentPromotionEmail(email: string, firstName: string, referralCode?: string) {
   const refLink = referralCode ? `https://getlands.ng?ref=${referralCode}` : null;
   const html = `
