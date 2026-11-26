@@ -166,6 +166,8 @@ export async function assignOpportunityAction(formData: FormData) {
 
   revalidatePath('/admin/customers');
   revalidatePath(`/admin/customers/${userId}`);
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/holdings');
 
   return { success: true };
 }
@@ -582,6 +584,8 @@ export async function appointSalesAgentAction(userId: string) {
   
   revalidatePath('/admin/customers');
   revalidatePath(`/admin/customers/${userId}`);
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/holdings');
   revalidatePath('/admin/sales');
   return { success: true, referralCode };
 }
@@ -593,6 +597,8 @@ export async function removeSalesAgentAction(userId: string) {
   });
   revalidatePath('/admin/customers');
   revalidatePath(`/admin/customers/${userId}`);
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/holdings');
   revalidatePath('/admin/sales');
   return { success: true };
 }

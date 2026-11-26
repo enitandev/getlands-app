@@ -110,11 +110,22 @@ export default function ClientHoldings({ holdings }: { holdings: any[] }) {
                   <span className="lg:hidden text-[#7a847f]">Status:</span>
                   <div className="flex flex-col lg:items-start items-end gap-[4px]">
                     <span className="capitalize">{holding.opportunity.category.replace('_', ' ')}</span>
-                    <span className={`px-[8px] py-[2px] rounded-full text-[10px] font-bold uppercase tracking-wider w-fit ${
-                      isPending ? 'bg-[#fff8e1] text-[#d48806]' : 'bg-[#eef3ef] text-[#008b45]'
-                    }`}>
-                      {isPending ? 'Pending Verification' : holding.status}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`px-[8px] py-[2px] rounded-full text-[10px] font-bold uppercase tracking-wider w-fit ${
+                        isPending ? 'bg-[#fff8e1] text-[#d48806]' : 'bg-[#eef3ef] text-[#008b45]'
+                      }`}>
+                        {isPending ? 'Pending Verification' : holding.status}
+                      </span>
+                      {holding.opportunity.category === 'land' && (
+                        <span className={`px-[8px] py-[2px] rounded-full text-[10px] font-bold uppercase tracking-wider w-fit ${
+                          holding.paymentStatus === 'installment'
+                            ? 'bg-[#fffbeb] text-[#92400e] border border-[#fde68a]'
+                            : 'bg-[#ecfdf5] text-[#065f46] border border-[#a7f3d0]'
+                        }`}>
+                          {holding.paymentStatus === 'installment' ? 'Installment' : 'Paid in Full'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 

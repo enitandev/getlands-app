@@ -25,7 +25,9 @@ export default async function ManageHoldingPage({ params }: { params: Promise<{ 
   const isLandBanking = holding.opportunity.category === 'land_banking';
 
   const isPaidInFull = holding.paymentStatus !== 'installment';
-  const totalContract = holding.totalContractPrice || holding.totalAmount;
+  const totalContract = holding.totalContractPrice && holding.totalContractPrice > holding.totalAmount
+    ? holding.totalContractPrice
+    : (holding.paymentStatus === 'installment' ? holding.totalAmount * 2 : holding.totalAmount);
   const balanceDue = Math.max(0, totalContract - holding.totalAmount);
 
   const dateAcquired = new Date(holding.dateAcquired);
