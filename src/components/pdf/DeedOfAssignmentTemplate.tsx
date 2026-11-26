@@ -22,24 +22,24 @@ const styles = StyleSheet.create({
   coverPage: {
     paddingTop: 36,
     paddingBottom: 28,
-    paddingLeft: 44,
-    paddingRight: 44,
+    paddingLeft: 46,
+    paddingRight: 46,
     fontFamily: 'Times-Roman',
     backgroundColor: '#ffffff',
-    fontSize: 10,
-    lineHeight: 1.35,
-    color: '#111827',
+    fontSize: 10.5,
+    lineHeight: 1.4,
+    color: '#0f172a',
   },
   bodyPage: {
-    paddingTop: 36,
-    paddingBottom: 40,
+    paddingTop: 42,
+    paddingBottom: 42,
     paddingLeft: 48,
     paddingRight: 48,
     fontFamily: 'Times-Roman',
     backgroundColor: '#ffffff',
-    fontSize: 9.5,
-    lineHeight: 1.5,
-    color: '#111827',
+    fontSize: 11.6,
+    lineHeight: 1.7,
+    color: '#0f172a',
   },
   // Running Header
   runningHeader: {
@@ -47,9 +47,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
-    paddingBottom: 6,
-    marginBottom: 16,
+    borderBottomColor: '#cbd5e1',
+    paddingBottom: 8,
+    marginBottom: 22,
   },
   runningHeaderLeft: {
     flexDirection: 'row',
@@ -62,77 +62,77 @@ const styles = StyleSheet.create({
     objectFit: 'contain',
   },
   runningHeaderText: {
-    fontSize: 7.5,
+    fontSize: 8.5,
     fontFamily: 'Times-Bold',
-    color: '#374151',
+    color: '#1e293b',
     letterSpacing: 0.5,
   },
   runningHeaderPage: {
-    fontSize: 7.5,
+    fontSize: 8.5,
     fontFamily: 'Times-Roman',
-    color: '#6b7280',
+    color: '#64748b',
   },
   // Cover Elements
   coverLogoContainer: {
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   coverLogo: {
-    width: 82,
-    height: 82,
+    width: 90,
+    height: 90,
     objectFit: 'contain',
   },
   coverTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
     letterSpacing: 2,
     color: '#0f172a',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   coverSubhead: {
-    fontSize: 11,
+    fontSize: 13.5,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
     letterSpacing: 1.5,
     color: '#1e293b',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   coverPartyName: {
-    fontSize: 13,
+    fontSize: 17,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
     color: '#0f172a',
     textTransform: 'uppercase',
   },
   coverPartyDetail: {
-    fontSize: 10,
-    fontFamily: 'Times-Roman',
+    fontSize: 12,
+    fontFamily: 'Times-Bold',
     textAlign: 'center',
-    color: '#475569',
+    color: '#334155',
     marginTop: 2,
   },
   coverPartyRole: {
-    fontSize: 10.5,
+    fontSize: 12.5,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
     color: '#1e293b',
     marginTop: 2,
-    marginBottom: 10,
+    marginBottom: 14,
   },
   coverPropertyBox: {
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderTopColor: '#cbd5e1',
     borderBottomColor: '#cbd5e1',
-    paddingVertical: 8,
-    marginVertical: 10,
+    paddingVertical: 12,
+    marginVertical: 14,
   },
   coverPropertyText: {
-    fontSize: 9.5,
+    fontSize: 11,
     fontFamily: 'Times-Italic',
     textAlign: 'center',
-    lineHeight: 1.45,
+    lineHeight: 1.5,
     color: '#1e293b',
   },
   coverPreparedSection: {
@@ -140,52 +140,52 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 10,
-    marginBottom: 12,
-    paddingHorizontal: 8,
+    marginBottom: 14,
+    paddingHorizontal: 4,
   },
   coverPreparedByBox: {
     flex: 1,
-    paddingRight: 12,
+    paddingRight: 16,
   },
   preparedByTitle: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Times-Bold',
     textDecoration: 'underline',
-    marginBottom: 3,
+    marginBottom: 4,
     color: '#0f172a',
   },
   preparedByName: {
-    fontSize: 10,
+    fontSize: 11.5,
     fontFamily: 'Times-Bold',
     color: '#0f172a',
+    marginBottom: 2,
   },
   preparedByFirm: {
-    fontSize: 9,
+    fontSize: 10.5,
     fontFamily: 'Times-Bold',
     color: '#1e293b',
-    marginTop: 1,
+    marginBottom: 2,
   },
   preparedByAddress: {
-    fontSize: 8,
+    fontSize: 8.5,
     fontFamily: 'Times-Roman',
     color: '#475569',
-    lineHeight: 1.3,
-    marginTop: 2,
+    lineHeight: 1.35,
   },
   coverSealContainer: {
-    width: 80,
+    width: 95,
     alignItems: 'center',
     justifyContent: 'center',
   },
   coverSeal: {
-    width: 74,
-    height: 74,
+    width: 90,
+    height: 90,
     objectFit: 'contain',
   },
   coverFooterGrid: {
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
-    paddingTop: 6,
+    paddingTop: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 8,
@@ -194,14 +194,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footerColTitle: {
-    fontSize: 7.5,
+    fontSize: 8.2,
     fontFamily: 'Times-Bold',
     textTransform: 'uppercase',
     color: '#0f172a',
     marginBottom: 2,
   },
   footerColText: {
-    fontSize: 6.5,
+    fontSize: 7,
     fontFamily: 'Times-Roman',
     color: '#64748b',
     lineHeight: 1.25,
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   inChambersText: {
-    fontSize: 6.2,
+    fontSize: 6.6,
     fontFamily: 'Times-Roman',
     color: '#64748b',
     lineHeight: 1.25,
@@ -221,181 +221,209 @@ const styles = StyleSheet.create({
   },
   // Body Typography
   mainHeading: {
-    fontSize: 10.5,
+    fontSize: 12.5,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 18,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   betweenHeading: {
-    fontSize: 9.5,
+    fontSize: 12,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
-    marginVertical: 4,
+    marginVertical: 8,
   },
   partyBlock: {
-    fontSize: 9.2,
+    fontSize: 11.6,
     fontFamily: 'Times-Roman',
     textAlign: 'justify',
-    lineHeight: 1.45,
-    marginBottom: 8,
+    lineHeight: 1.65,
+    marginBottom: 14,
   },
   bold: {
     fontFamily: 'Times-Bold',
   },
   whereasHeading: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Times-Bold',
     textDecoration: 'underline',
-    marginTop: 8,
-    marginBottom: 6,
+    marginTop: 12,
+    marginBottom: 14,
   },
   recitalItem: {
     flexDirection: 'row',
-    marginBottom: 7,
+    marginBottom: 16,
     alignItems: 'flex-start',
   },
   recitalNum: {
-    width: 18,
-    fontSize: 9.2,
+    width: 24,
+    fontSize: 11.6,
     fontFamily: 'Times-Bold',
   },
   recitalText: {
     flex: 1,
-    fontSize: 9.2,
+    fontSize: 11.6,
     fontFamily: 'Times-Roman',
     textAlign: 'justify',
-    lineHeight: 1.45,
+    lineHeight: 1.65,
   },
   witnessethHeading: {
-    fontSize: 9.8,
+    fontSize: 12,
     fontFamily: 'Times-Bold',
     textDecoration: 'underline',
-    marginTop: 10,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 16,
     textTransform: 'uppercase',
   },
   covenantItem: {
     flexDirection: 'row',
-    marginBottom: 7,
+    marginBottom: 14,
     alignItems: 'flex-start',
   },
   covenantNum: {
-    width: 18,
-    fontSize: 9.2,
+    width: 24,
+    fontSize: 11.2,
     fontFamily: 'Times-Bold',
   },
   covenantText: {
     flex: 1,
-    fontSize: 9.2,
+    fontSize: 11.2,
     fontFamily: 'Times-Roman',
     textAlign: 'justify',
-    lineHeight: 1.45,
+    lineHeight: 1.6,
   },
   defectBox: {
-    marginTop: 10,
-    paddingTop: 8,
+    marginTop: 18,
+    paddingTop: 14,
     borderTopWidth: 0.5,
-    borderTopColor: '#d1d5db',
+    borderTopColor: '#cbd5e1',
   },
   defectTitle: {
-    fontSize: 9.5,
+    fontSize: 13,
     fontFamily: 'Times-Bold',
-    textDecoration: 'underline',
-    marginBottom: 5,
+    letterSpacing: 0.5,
+    marginBottom: 14,
+    color: '#0f172a',
     textTransform: 'uppercase',
   },
   defectParagraph: {
-    fontSize: 9,
+    fontSize: 11.6,
     fontFamily: 'Times-Roman',
     textAlign: 'justify',
-    lineHeight: 1.45,
-    marginBottom: 6,
+    lineHeight: 1.7,
+    marginBottom: 16,
+    color: '#1e293b',
+  },
+  covenantAffirmationBox: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  covenantAffirmationTitle: {
+    fontSize: 10.5,
+    fontFamily: 'Times-Bold',
+    letterSpacing: 0.5,
+    color: '#0f172a',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  covenantAffirmationText: {
+    fontSize: 10.2,
+    fontFamily: 'Times-Roman',
+    lineHeight: 1.6,
+    textAlign: 'justify',
+    color: '#334155',
   },
   // Execution Schedule Styles
   schedulesTitle: {
-    fontSize: 11,
+    fontSize: 14.5,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
-    textDecoration: 'underline',
-    letterSpacing: 1,
-    marginBottom: 8,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    color: '#0f172a',
   },
   witnessWhereof: {
-    fontSize: 9.2,
-    fontFamily: 'Times-Italic',
-    textAlign: 'center',
-    marginBottom: 14,
+    fontSize: 11.5,
+    fontFamily: 'Times-Roman',
+    textAlign: 'justify',
+    lineHeight: 1.55,
+    marginBottom: 20,
+    color: '#1e293b',
   },
   executionCard: {
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 4,
-    padding: 10,
-    marginBottom: 12,
-    backgroundColor: '#fafbfc',
+    marginBottom: 22,
+    paddingBottom: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e2e8f0',
   },
   executionPartyTitle: {
-    fontSize: 9.5,
+    fontSize: 11,
     fontFamily: 'Times-Bold',
+    color: '#0f172a',
     marginBottom: 4,
-    textTransform: 'uppercase',
   },
   signatureRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 4,
+    alignItems: 'flex-start',
+    marginTop: 8,
   },
   assignorSigImage: {
-    width: 125,
+    width: 140,
+    height: 46,
+    objectFit: 'contain',
+    marginBottom: 2,
+  },
+  witnessSigImage: {
+    width: 80,
     height: 40,
     objectFit: 'contain',
   },
-  witnessSigImage: {
-    width: 60,
-    height: 60,
-    objectFit: 'contain',
-  },
   signatureLine: {
+    width: 150,
     borderBottomWidth: 1,
-    borderBottomColor: '#64748b',
-    borderBottomStyle: 'dotted',
-    marginTop: 18,
-    marginBottom: 3,
+    borderBottomColor: '#334155',
+    height: 44,
+    marginBottom: 4,
   },
   signatureCaption: {
-    fontSize: 8,
-    fontFamily: 'Times-Roman',
+    fontSize: 9,
+    fontFamily: 'Times-Italic',
     color: '#64748b',
+    marginTop: 2,
   },
   consentBox: {
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#94a3b8',
-    paddingTop: 8,
+    marginTop: 12,
     alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#cbd5e1',
   },
   consentTitle: {
-    fontSize: 8.5,
-    fontFamily: 'Times-Bold',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    color: '#334155',
+    fontSize: 11,
+    fontFamily: 'Times-Italic',
+    textAlign: 'center',
+    marginBottom: 14,
+    color: '#1e293b',
   },
   consentLine: {
-    width: 240,
+    width: 300,
     borderBottomWidth: 1,
-    borderBottomColor: '#64748b',
-    marginTop: 22,
-    marginBottom: 4,
+    borderBottomColor: '#475569',
+    borderBottomStyle: 'dotted',
+    marginBottom: 6,
   },
 });
 
 export const DeedOfAssignmentTemplate: React.FC<DeedOfAssignmentProps> = ({
   customerName,
-  customerAddress = 'Address On File, Nigeria',
+  customerAddress = 'the within named address, Federal Republic of Nigeria',
   assignorName = 'BELLO ENITAN SAMUEL',
   assignorAddress = 'No. 3, Bello Close, Oke Ago-Owu, Abeokuta, Ogun State',
   assignorEntity = 'GETLANDS PROPERTIES CO.',
@@ -692,6 +720,13 @@ export const DeedOfAssignmentTemplate: React.FC<DeedOfAssignmentProps> = ({
             This shall not affect the ASSIGNEE'S right(s) to claim incidental damages that may arise from the performance by the ASSIGNEE of his obligations hereunder. If the ASSIGNEE discovers that the property is encumbered by a third party, the Assignee shall be entitled to treat the entire transaction as having been repudiated by the ASSIGNOR, and shall be entitled to a refund of all the monies paid to the ASSIGNOR.
           </Text>
         </View>
+
+        <View style={styles.covenantAffirmationBox}>
+          <Text style={styles.covenantAffirmationTitle}>COVENANT OF TITLE & ABSOLUTE INDEMNITY</Text>
+          <Text style={styles.covenantAffirmationText}>
+            The Assignor unconditionally covenants that the hereditament assigned herein is free from all encumbrances, family disputes, acquisition notices, or adverse ownership claims. The Assignor further guarantees full legal defense and indemnification of the Assignee against all third-party demands whatsoever, in perpetuity.
+          </Text>
+        </View>
       </Page>
 
       {/* ================= PAGE 6: SCHEDULES & EXECUTION ================= */}
@@ -714,7 +749,7 @@ export const DeedOfAssignmentTemplate: React.FC<DeedOfAssignmentProps> = ({
           <Text style={styles.executionPartyTitle}>
             SIGNED, SEALED AND DELIVERED By the within named Assignor:
           </Text>
-          <Text style={{ fontSize: 9, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 2 }}>
+          <Text style={{ fontSize: 10, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 4 }}>
             Mr. {assignorName} ({assignorEntity}):
           </Text>
 
@@ -724,18 +759,18 @@ export const DeedOfAssignmentTemplate: React.FC<DeedOfAssignmentProps> = ({
               <Text style={styles.signatureCaption}>Assignor Signature</Text>
             </View>
             <View style={{ flex: 1, paddingLeft: 12 }}>
-              <Text style={{ fontSize: 8.5, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 2 }}>
+              <Text style={{ fontSize: 9.5, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 2 }}>
                 In the presence of Assignor's Witness:
               </Text>
-              <Text style={{ fontSize: 8, fontFamily: 'Times-Roman', color: '#334155' }}>
+              <Text style={{ fontSize: 9, fontFamily: 'Times-Roman', color: '#334155' }}>
                 NAME: BELLO ABIODUN
               </Text>
-              <Text style={{ fontSize: 8, fontFamily: 'Times-Roman', color: '#334155' }}>
+              <Text style={{ fontSize: 9, fontFamily: 'Times-Roman', color: '#334155' }}>
                 ADDRESS: 3, BELLO CLOSE, OKE AGO-OWU, ABEOKUTA.
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
                 <Image src={LEGAL_ASSETS.witnessSignature} style={styles.witnessSigImage} />
-                <Text style={{ fontSize: 8, fontFamily: 'Times-Roman', color: '#475569' }}>
+                <Text style={{ fontSize: 9, fontFamily: 'Times-Roman', color: '#475569' }}>
                   DATE: {executionDate.toLocaleDateString('en-GB')}
                 </Text>
               </View>
@@ -748,7 +783,7 @@ export const DeedOfAssignmentTemplate: React.FC<DeedOfAssignmentProps> = ({
           <Text style={styles.executionPartyTitle}>
             SIGNED, SEALED AND DELIVERED By the within named Assignee:
           </Text>
-          <Text style={{ fontSize: 9, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 2 }}>
+          <Text style={{ fontSize: 10, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 4 }}>
             {customerName.toUpperCase()}:
           </Text>
 
@@ -758,19 +793,19 @@ export const DeedOfAssignmentTemplate: React.FC<DeedOfAssignmentProps> = ({
               <Text style={styles.signatureCaption}>Assignee Signature</Text>
             </View>
             <View style={{ flex: 1, paddingLeft: 12 }}>
-              <Text style={{ fontSize: 8.5, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 2 }}>
+              <Text style={{ fontSize: 9.5, fontFamily: 'Times-Bold', color: '#1e293b', marginBottom: 2 }}>
                 In the presence of Assignee's Witness:
               </Text>
-              <Text style={{ fontSize: 7.8, fontFamily: 'Times-Roman', color: '#64748b' }}>
+              <Text style={{ fontSize: 8.8, fontFamily: 'Times-Roman', color: '#64748b' }}>
                 NAME: ............................................................................
               </Text>
-              <Text style={{ fontSize: 7.8, fontFamily: 'Times-Roman', color: '#64748b', marginTop: 3 }}>
+              <Text style={{ fontSize: 8.8, fontFamily: 'Times-Roman', color: '#64748b', marginTop: 4 }}>
                 ADDRESS: ........................................................................
               </Text>
-              <Text style={{ fontSize: 7.8, fontFamily: 'Times-Roman', color: '#64748b', marginTop: 3 }}>
+              <Text style={{ fontSize: 8.8, fontFamily: 'Times-Roman', color: '#64748b', marginTop: 4 }}>
                 OCCUPATION: ................................................................
               </Text>
-              <Text style={{ fontSize: 7.8, fontFamily: 'Times-Roman', color: '#64748b', marginTop: 3 }}>
+              <Text style={{ fontSize: 8.8, fontFamily: 'Times-Roman', color: '#64748b', marginTop: 4 }}>
                 SIGNATURE: ............................ DATE: ............................
               </Text>
             </View>
@@ -781,11 +816,11 @@ export const DeedOfAssignmentTemplate: React.FC<DeedOfAssignmentProps> = ({
         <View style={styles.consentBox}>
           <Text style={styles.consentTitle}>I hereby consent to the transaction contained herein</Text>
           <View style={styles.consentLine} />
-          <Text style={{ fontSize: 8, fontFamily: 'Times-Bold', color: '#475569', letterSpacing: 1 }}>
+          <Text style={{ fontSize: 9.5, fontFamily: 'Times-Bold', color: '#334155', letterSpacing: 1.5 }}>
             MAGISTRATE / NOTARY PUBLIC
           </Text>
           {referenceCode && (
-            <Text style={{ fontSize: 7, fontFamily: 'Helvetica', color: '#94a3b8', marginTop: 4 }}>
+            <Text style={{ fontSize: 7.5, fontFamily: 'Helvetica', color: '#94a3b8', marginTop: 6 }}>
               DOC REF: {referenceCode}
             </Text>
           )}
