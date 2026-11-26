@@ -178,7 +178,7 @@ export default async function ManageHoldingPage({ params }: { params: Promise<{ 
                     <span className="text-[11px] text-[#68736d]">Universal financial transaction record</span>
                   </div>
                 </div>
-                <a href={`/api/documents/receipt/${holding.id}`} target="_blank" className="px-[14px] py-[6px] bg-[#f7f9f7] hover:bg-[#eef3ef] border border-black/5 rounded-full text-[11px] font-bold text-[#008b45] transition-colors">
+                <a href={`/api/documents/receipt/${holding.id}?t=${Date.now()}`} target="_blank" className="px-[14px] py-[6px] bg-[#f7f9f7] hover:bg-[#eef3ef] border border-black/5 rounded-full text-[11px] font-bold text-[#008b45] transition-colors">
                   Download
                 </a>
               </div>
@@ -204,7 +204,7 @@ export default async function ManageHoldingPage({ params }: { params: Promise<{ 
                     </span>
                   </div>
                 </div>
-                <a href={`/api/documents/certificate/${holding.id}`} target="_blank" className="px-[14px] py-[6px] bg-[#f7f9f7] hover:bg-[#eef3ef] border border-black/5 rounded-full text-[11px] font-bold text-[#008b45] transition-colors">
+                <a href={`/api/documents/certificate/${holding.id}?t=${Date.now()}`} target="_blank" className="px-[14px] py-[6px] bg-[#f7f9f7] hover:bg-[#eef3ef] border border-black/5 rounded-full text-[11px] font-bold text-[#008b45] transition-colors">
                   Download
                 </a>
               </div>

@@ -5,6 +5,8 @@ import { renderToStream } from '@react-pdf/renderer';
 import { ReceiptTemplate } from '@/components/pdf/ReceiptTemplate';
 import React from 'react';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const id = resolvedParams.id;
@@ -46,6 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
+        'Cache-Control': 'no-store, max-age=0',
         'Content-Disposition': `inline; filename="receipt-${holding.id.substring(0,8)}.pdf"`,
       },
     });

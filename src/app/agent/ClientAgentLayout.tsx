@@ -257,7 +257,7 @@ export default function ClientAgentLayout({
                   Paid directly to your wallet for closing deals.
                 </p>
               </div>
-              <a href="/api/documents/agent-contract" download className="w-full h-[40px] border border-[#008b45]/30 text-[#008b45] text-[12px] font-bold rounded-full hover:bg-[#008b45]/5 transition-colors flex items-center justify-center gap-[8px]">
+              <a href="/api/documents/agent-contract" target="_blank" download className="w-full h-[40px] border border-[#008b45]/30 text-[#008b45] text-[12px] font-bold rounded-full hover:bg-[#008b45]/5 transition-colors flex items-center justify-center gap-[8px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 My Agent Contract
               </a>

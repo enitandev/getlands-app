@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { renderToStream } from '@react-pdf/renderer';
 import { AgentContractTemplate } from '@/components/pdf/AgentContractTemplate';
+import React from 'react';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,15 +26,24 @@ export async function GET(request: Request) {
       return new NextResponse('Agent has not signed the contract yet', { status: 403 });
     }
 
-    const stream = await renderToStream(AgentContractTemplate({ user }));
+    const stream = await renderToStream(<AgentContractTemplate user={user} />);
 
-    const headers = new Headers();
-    headers.set('Content-Type', 'application/pdf');
-    headers.set('Content-Disposition', `attachment; filename="Getlands_Agent_Contract_${user.firstName}_${user.lastName}.pdf"`);
+    const chunks = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const pdfBuffer = Buffer.concat(chunks);
 
-    return new NextResponse(stream as any, { status: 200, headers });
-  } catch (error) {
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Cache-Control': 'no-store, max-age=0',
+        'Content-Disposition': `attachment; filename="Getlands_Agent_Contract_${user.firstName}_${user.lastName}.pdf"`,
+      },
+    });
+  } catch (error: any) {
     console.error('Error generating Agent Contract:', error);
-    return new NextResponse('Error generating PDF', { status: 500 });
+    return new NextResponse(`Error generating PDF: ${error?.message || 'Internal error'}`, { status: 500 });
   }
 }
