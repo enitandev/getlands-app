@@ -410,6 +410,18 @@ export default function ClientCustomerProfile({
             userName={`${user.firstName} ${user.lastName}`}
             referralCode={user.referralCode}
           />
+          {user.role === 'sales' && user.agentContractSignedAt && (
+            <a
+              href={`/api/documents/agent-contract?userId=${user.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-[14px] py-[9px] bg-white border border-black/10 hover:border-[#008b45] text-ink hover:text-[#008b45] text-[12px] font-bold rounded-full transition-colors inline-flex items-center gap-1.5"
+              title="View Signed Sales Agent Contract"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              Signed Agent Contract
+            </a>
+          )}
           <RecordReferralModal referrerUserId={user.id} />
         </div>
       </div>

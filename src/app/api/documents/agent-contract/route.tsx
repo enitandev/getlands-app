@@ -14,8 +14,13 @@ export async function GET(request: Request) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const targetUserId = (session.role === 'admin' && searchParams.get('userId'))
+      ? (searchParams.get('userId') as string)
+      : (session.userId as string);
+
     const user = await prisma.user.findUnique({
-      where: { id: session.userId as string }
+      where: { id: targetUserId }
     });
 
     if (!user || user.role !== 'sales') {
